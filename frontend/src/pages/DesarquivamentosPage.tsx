@@ -1,0 +1,432 @@
+import React, { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { useDesarquivamentos, useDeleteDesarquivamento } from '@/hooks/useDesarquivamentos'
+import { useDesarquivamentosImport } from '@/hooks/useDesarquivamentosImport'
+import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table'
+import { Badge } from '@/components/ui/Badge'
+import { TableLoading } from '@/components/ui/Loading'
+import { ImportModal } from '@/components/ImportModal'
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  RefreshCw,
+  AlertTriangle,
+  FileText,
+  Upload
+} from 'lucide-react'
+import { formatDate, formatStatus, formatTipo, getTipoDesarquivamentoLabel } from '@/utils/format'
+import { TipoSolicitacao, StatusDesarquivamento, TipoDesarquivamento } from '@/types'
+import { toast } from 'sonner'
+
+const DesarquivamentosPage: React.FC = () => {
+  const { user } = useAuth()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [tipoFilter, setTipoFilter] = useState<string>('all')
+  const [tipoDesarquivamentoFilter, setTipoDesarquivamentoFilter] = useState<string>('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+
+  // Query parameters
+  const queryParams = useMemo(() => ({
+    page: currentPage,
+    limit: pageSize,
+    search: searchTerm || undefined,
+    status: statusFilter !== 'all' ? statusFilter as StatusDesarquivamento : undefined,
+    tipo: tipoFilter !== 'all' ? tipoFilter as TipoSolicitacao : undefined,
+  }), [currentPage, pageSize, searchTerm, statusFilter, tipoFilter])
+
+  const { data, isLoading, error, refetch } = useDesarquivamentos(queryParams)
+  const deleteDesarquivamento = useDeleteDesarquivamento()
+  const { isLoading: isImporting } = useDesarquivamentosImport(() => {
+    refetch()
+    setIsImportModalOpen(false)
+  })
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir esta solicitação?')) {
+      try {
+        await deleteDesarquivamento.mutateAsync(Number(id))
+        toast.success('Solicitação excluída com sucesso!')
+      } catch (error) {
+        toast.error('Erro ao excluir solicitação')
+      }
+    }
+  }
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1) // Reset to first page when searching
+  }
+
+  const handleStatusFilter = (value: string) => {
+    setStatusFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handleTipoFilter = (value: string) => {
+    setTipoFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handleTipoDesarquivamentoFilter = (value: string) => {
+    setTipoDesarquivamentoFilter(value)
+    setCurrentPage(1)
+  }
+
+  const canEdit = user?.role === 'admin' || user?.role === 'coordenador'
+  const canDelete = user?.role === 'admin'
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Erro ao carregar dados
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Não foi possível carregar as solicitações.
+          </p>
+          <Button onClick={() => refetch()} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Solicitações de Desarquivamento
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Gerencie todas as solicitações do sistema
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0 flex gap-2">
+          <Button onClick={() => refetch()} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+          {canEdit && (
+            <>
+              <Button onClick={() => setIsImportModalOpen(true)} 
+                variant="outline" 
+                size="sm"
+                disabled={isImporting}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Importar Planilha
+              </Button>
+              <Button asChild>
+                <Link to="/desarquivamentos/novo">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Solicitação
+                </Link>
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros
+          </CardTitle>
+          <CardDescription>
+            Use os filtros abaixo para encontrar solicitações específicas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar por código, requerente..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={statusFilter} onValueChange={handleStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value={StatusDesarquivamento.FINALIZADO}>
+                    {formatStatus(StatusDesarquivamento.FINALIZADO)}
+                  </SelectItem>
+                  <SelectItem value={StatusDesarquivamento.DESARQUIVADO}>
+                    {formatStatus(StatusDesarquivamento.DESARQUIVADO)}
+                  </SelectItem>
+                  <SelectItem value={StatusDesarquivamento.NAO_COLETADO}>
+                    {formatStatus(StatusDesarquivamento.NAO_COLETADO)}
+                  </SelectItem>
+                  <SelectItem value={StatusDesarquivamento.SOLICITADO}>
+                    {formatStatus(StatusDesarquivamento.SOLICITADO)}
+                  </SelectItem>
+                  <SelectItem value={StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO}>
+                    {formatStatus(StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO)}
+                  </SelectItem>
+                  <SelectItem value={StatusDesarquivamento.RETIRADO_PELO_SETOR}>
+                    {formatStatus(StatusDesarquivamento.RETIRADO_PELO_SETOR)}
+                  </SelectItem>
+                  <SelectItem value={StatusDesarquivamento.NAO_LOCALIZADO}>
+                    {formatStatus(StatusDesarquivamento.NAO_LOCALIZADO)}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo</label>
+              <Select value={tipoFilter} onValueChange={handleTipoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os tipos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value={TipoSolicitacao.DESARQUIVAMENTO}>
+                    {formatTipo(TipoSolicitacao.DESARQUIVAMENTO)}
+                  </SelectItem>
+                  <SelectItem value={TipoSolicitacao.COPIA}>
+                    {formatTipo(TipoSolicitacao.COPIA)}
+                  </SelectItem>
+                  <SelectItem value={TipoSolicitacao.VISTA}>
+                    {formatTipo(TipoSolicitacao.VISTA)}
+                  </SelectItem>
+                  <SelectItem value={TipoSolicitacao.CERTIDAO}>
+                    {formatTipo(TipoSolicitacao.CERTIDAO)}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Desarquivamento</label>
+              <Select value={tipoDesarquivamentoFilter} onValueChange={handleTipoDesarquivamentoFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os tipos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os tipos</SelectItem>
+                  <SelectItem value={TipoDesarquivamento.FISICO}>
+                    {getTipoDesarquivamentoLabel(TipoDesarquivamento.FISICO)}
+                  </SelectItem>
+                  <SelectItem value={TipoDesarquivamento.DIGITAL}>
+                    {getTipoDesarquivamentoLabel(TipoDesarquivamento.DIGITAL)}
+                  </SelectItem>
+                  <SelectItem value={TipoDesarquivamento.NAO_LOCALIZADO}>
+                    {getTipoDesarquivamentoLabel(TipoDesarquivamento.NAO_LOCALIZADO)}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Solicitações</CardTitle>
+          <CardDescription>
+            {data?.meta?.total ? `${data.meta.total} solicitação(ões) encontrada(s)` : 'Nenhuma solicitação encontrada'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <TableLoading />
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Desarquivamento Físico/Digital</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Nome completo</TableHead>
+                      <TableHead>Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA</TableHead>
+                      <TableHead>Nº Processo</TableHead>
+                      <TableHead>Tipo de Documento</TableHead>
+                      <TableHead>Data de Solicitação</TableHead>
+                      <TableHead>Data do Desarquivamento - SAG</TableHead>
+                      <TableHead>Data da Devolução Pelo Setor</TableHead>
+                      <TableHead>Setor Demandante</TableHead>
+                      <TableHead>SERVIDOR DO ITEP RESPONSÁVEL (MATRÍCULA)</TableHead>
+                      <TableHead>Finalidade do Desarquivamento</TableHead>
+                      <TableHead>Solicitação de Prorrogação de Prazo de Desarquivamento</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data?.data && data.data.length > 0 ? (
+                      data.data.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">
+                            {item.codigoBarras}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {item.tipoDesarquivamento ? getTipoDesarquivamentoLabel(item.tipoDesarquivamento) : '-'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={
+                                item.status === StatusDesarquivamento.FINALIZADO ? 'default' :
+                                item.status === StatusDesarquivamento.NAO_LOCALIZADO ? 'destructive' :
+                                item.status === StatusDesarquivamento.DESARQUIVADO ? 'secondary' :
+                                'outline'
+                              }
+                            >
+                              {formatStatus(item.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{item.nomeCompleto || item.nomeRequerente || '-'}</TableCell>
+                          <TableCell>{item.numeroNicLaudoAuto || '-'}</TableCell>
+                          <TableCell>{item.numeroProcesso || item.numeroRegistro || '-'}</TableCell>
+                          <TableCell>{item.tipoDocumento || '-'}</TableCell>
+                          <TableCell>
+                            {formatDate(item.dataSolicitacao || item.createdAt)}
+                          </TableCell>
+                          <TableCell>
+                            {item.dataDesarquivamentoSag ? formatDate(item.dataDesarquivamentoSag) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {item.dataDevolucaoSetor ? formatDate(item.dataDevolucaoSetor) : '-'}
+                          </TableCell>
+                          <TableCell>{item.setorDemandante || '-'}</TableCell>
+                          <TableCell>{item.servidorResponsavel || '-'}</TableCell>
+                          <TableCell>{item.finalidadeDesarquivamento || item.finalidade || '-'}</TableCell>
+                          <TableCell>
+                            {item.solicitacaoProrrogacao ? 'Sim' : 'Não'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                asChild
+                                variant="ghost"
+                                size="sm"
+                              >
+                                <Link to={`/desarquivamentos/${item.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              {canEdit && (
+                                <Button
+                                  asChild
+                                  variant="ghost"
+                                  size="sm"
+                                >
+                                  <Link to={`/desarquivamentos/${item.id}/editar`}>
+                                    <Edit className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDelete(String(item.id))}
+                                  disabled={deleteDesarquivamento.isPending}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={15} className="text-center py-8">
+                          <div className="text-gray-500">
+                            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                            <p>Nenhuma solicitação encontrada</p>
+                            <p className="text-sm mt-1">
+                              {searchTerm || statusFilter !== 'all' || tipoFilter !== 'all' || tipoDesarquivamentoFilter !== 'all'
+                                ? 'Tente ajustar os filtros de busca'
+                                : 'Comece criando uma nova solicitação'
+                              }
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {data && data.meta && data.meta.total > pageSize && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Mostrando {((currentPage - 1) * pageSize) + 1} a {Math.min(currentPage * pageSize, data.meta.total)} de {data.meta.total} resultados
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <span className="text-sm text-gray-600">
+                      Página {currentPage} de {Math.ceil(data.meta.total / pageSize)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={currentPage >= Math.ceil(data.meta.total / pageSize)}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Import Modal */}
+      <ImportModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImportSuccess={() => {
+          refetch()
+          setIsImportModalOpen(false)
+        }}
+      />
+    </div>
+  )
+}
+
+export default DesarquivamentosPage

@@ -1,0 +1,30 @@
+import { User } from '../../../users/entities/user.entity';
+export declare class DesarquivamentoTypeOrmEntity {
+    id: number;
+    codigoBarras: string;
+    tipoSolicitacao: string;
+    status: string;
+    nomeSolicitante: string;
+    nomeVitima?: string;
+    numeroRegistro: string;
+    tipoDocumento?: string;
+    dataFato?: Date;
+    prazoAtendimento?: Date;
+    dataAtendimento?: Date;
+    resultadoAtendimento?: string;
+    finalidade?: string;
+    observacoes?: string;
+    urgente: boolean;
+    localizacaoFisica?: string;
+    criadoPorId: number;
+    get createdBy(): number;
+    set createdBy(value: number);
+    responsavelId?: number;
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt?: Date;
+    criadoPor: Promise<User>;
+    responsavel?: Promise<User>;
+    static fromDomain(domain: any): DesarquivamentoTypeOrmEntity;
+    toDomain(): any;
+}

@@ -1,0 +1,290 @@
+# SGC-ITEP v2.0 - Sistema de Gestão de Conteúdo
+
+![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+
+## 📋 Sobre o Projeto
+
+O SGC-ITEP v2.0 é um sistema moderno de gestão de conteúdo desenvolvido para o Instituto Técnico-Científico de Perícia (ITEP/RN). Esta versão representa uma evolução completa do sistema anterior, implementando uma arquitetura de microserviços com foco em:
+
+- **Gestão de Desarquivamentos (NUGECID)**
+- **Controle de Acesso Baseado em Funções (RBAC)**
+- **Auditoria Completa de Ações**
+- **Interface Web Responsiva**
+- **API RESTful Documentada**
+
+## 🏗️ Arquitetura
+
+### Stack Tecnológica
+
+- **Backend**: Node.js + NestJS + TypeScript
+- **Banco de Dados**: SQLite (desenvolvimento) / PostgreSQL (produção)
+- **Autenticação**: JWT + Passport.js
+- **Documentação**: Swagger/OpenAPI 3.0
+- **Testes**: Jest
+- **Validação**: Class-validator + Class-transformer
+
+### Padrões Arquiteturais
+
+- **Arquitetura Hexagonal** (Portas e Adaptadores)
+- **Domain-Driven Design (DDD)**
+- **SOLID Principles**
+- **Clean Code**
+
+## 🚀 Instalação e Configuração
+
+### Pré-requisitos
+
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+- Git
+
+### Instalação
+
+```bash
+# Clone o repositório
+git clone <repository-url>
+cd sgc-itep-nestjs
+
+# Instale as dependências
+npm install
+
+# Configure as variáveis de ambiente
+cp .env.example .env
+
+# Execute as migrações do banco de dados
+npm run migration:run
+
+# Execute os seeds (dados iniciais)
+npm run seed
+```
+
+### Configuração do Ambiente
+
+Edite o arquivo `.env` com suas configurações:
+
+```env
+# Aplicação
+NODE_ENV=development
+PORT=3000
+APP_NAME="SGC-ITEP v2.0"
+
+# Banco de Dados
+DATABASE_TYPE=sqlite
+DATABASE_PATH=./data/nugecid_itep.sqlite
+
+# Autenticação
+JWT_SECRET=your-super-secret-jwt-key
+SESSION_SECRET=your-super-secret-session-key
+
+# ... outras configurações
+```
+
+## 🏃‍♂️ Executando o Projeto
+
+```bash
+# Desenvolvimento
+npm run start:dev
+
+# Produção
+npm run build
+npm run start:prod
+
+# Debug
+npm run start:debug
+```
+
+O sistema estará disponível em:
+- **Aplicação**: http://localhost:3000
+- **API Docs**: http://localhost:3000/api/docs
+- **Health Check**: http://localhost:3000/health
+
+## 📚 Documentação da API
+
+### Endpoints Principais
+
+#### Autenticação
+- `POST /auth/login` - Login do usuário
+- `POST /auth/logout` - Logout do usuário
+- `GET /auth/profile` - Perfil do usuário autenticado
+- `POST /auth/refresh` - Renovar token JWT
+
+#### Usuários
+- `GET /users` - Listar usuários
+- `POST /users` - Criar usuário
+- `GET /users/:id` - Buscar usuário por ID
+- `PUT /users/:id` - Atualizar usuário
+- `DELETE /users/:id` - Excluir usuário
+
+#### NUGECID (Desarquivamentos)
+- `GET /nugecid` - Listar desarquivamentos
+- `POST /nugecid` - Criar desarquivamento
+- `GET /nugecid/:id` - Buscar desarquivamento por ID
+- `PUT /nugecid/:id` - Atualizar desarquivamento
+- `DELETE /nugecid/:id` - Excluir desarquivamento
+- `POST /nugecid/import` - Importar planilha Excel
+- `GET /nugecid/export` - Exportar para Excel
+- `GET /nugecid/barcode/:codigo` - Buscar por código de barras
+
+### Autenticação
+
+A API utiliza autenticação JWT. Inclua o token no header:
+
+```http
+Authorization: Bearer <seu-jwt-token>
+```
+
+## 🧪 Testes
+
+```bash
+# Testes unitários
+npm run test
+
+# Testes com watch
+npm run test:watch
+
+# Cobertura de testes
+npm run test:cov
+
+# Testes e2e
+npm run test:e2e
+```
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── modules/                 # Módulos da aplicação
+│   ├── auth/               # Autenticação e autorização
+│   ├── users/              # Gestão de usuários
+│   ├── nugecid/            # NUGECID - Desarquivamentos
+│   └── audit/              # Auditoria do sistema
+├── common/                 # Recursos compartilhados
+│   ├── decorators/         # Decorators customizados
+│   ├── filters/            # Filtros de exceção
+│   ├── guards/             # Guards de autenticação/autorização
+│   ├── interceptors/       # Interceptors
+│   └── pipes/              # Pipes de validação
+├── config/                 # Configurações
+├── database/               # Migrações e seeds
+└── main.ts                 # Ponto de entrada da aplicação
+```
+
+## 🔐 Segurança
+
+### Medidas Implementadas
+
+- **Helmet.js** - Proteção de headers HTTP
+- **Rate Limiting** - Limitação de requisições
+- **CORS** - Controle de origem cruzada
+- **Validação de Entrada** - Sanitização de dados
+- **Criptografia de Senhas** - bcrypt
+- **JWT Tokens** - Autenticação stateless
+- **RBAC** - Controle de acesso baseado em funções
+
+### Funções de Usuário
+
+- **ADMIN** - Acesso total ao sistema
+- **COORDENADOR** - Gestão de desarquivamentos e usuários
+- **USUARIO** - Acesso básico para consultas
+
+## 📊 Monitoramento e Logs
+
+### Auditoria
+
+Todas as ações importantes são registradas:
+- Login/Logout de usuários
+- Criação/Edição/Exclusão de registros
+- Tentativas de acesso não autorizado
+- Erros do sistema
+
+### Health Check
+
+Endpoint `/health` fornece informações sobre:
+- Status da aplicação
+- Conectividade com banco de dados
+- Uso de memória
+- Tempo de atividade
+
+## 🚀 Deploy
+
+### Desenvolvimento
+
+```bash
+npm run start:dev
+```
+
+### Produção
+
+```bash
+# Build da aplicação
+npm run build
+
+# Executar migrações
+npm run migration:run
+
+# Iniciar aplicação
+npm run start:prod
+```
+
+### Docker (Opcional)
+
+```dockerfile
+# Dockerfile exemplo
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY dist ./dist
+EXPOSE 3000
+CMD ["node", "dist/main"]
+```
+
+## 🤝 Contribuição
+
+### Padrões de Código
+
+- **ESLint** - Linting de código
+- **Prettier** - Formatação de código
+- **Conventional Commits** - Padrão de commits
+- **Husky** - Git hooks (opcional)
+
+### Fluxo de Desenvolvimento
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Changelog
+
+### v2.0.0 (2024)
+
+- ✨ Reescrita completa em NestJS + TypeScript
+- 🏗️ Implementação de arquitetura hexagonal
+- 🔐 Sistema de autenticação JWT + RBAC
+- 📊 Dashboard com estatísticas em tempo real
+- 📤 Import/Export de planilhas Excel
+- 🔍 Busca por código de barras
+- 📱 Interface responsiva
+- 🧪 Cobertura de testes
+- 📚 Documentação completa da API
+
+## 📞 Suporte
+
+Para suporte técnico ou dúvidas:
+
+- **Email**: suporte@itep.rn.gov.br
+- **Documentação**: http://localhost:3000/api/docs
+- **Issues**: [GitHub Issues](link-para-issues)
+
+## 📄 Licença
+
+Este projeto é propriedade do Instituto Técnico-Científico de Perícia (ITEP/RN) e é licenciado sob termos proprietários.
+
+---
+
+**Desenvolvido com ❤️ para o ITEP/RN**

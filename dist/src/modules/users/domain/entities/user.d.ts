@@ -1,0 +1,53 @@
+import { UserId } from '../value-objects/user-id';
+import { Usuario } from '../value-objects/usuario';
+import { Password } from '../value-objects/password';
+import { Role } from './role';
+import { RoleId } from '../value-objects/role-id';
+export interface UserProps {
+    id?: UserId;
+    nome: string;
+    usuario: Usuario;
+    password: Password;
+    roleId: RoleId;
+    role?: Role;
+    ativo?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+    deletedAt?: Date;
+}
+export declare class User {
+    private _id?;
+    private _nome;
+    private _usuario;
+    private _password;
+    private _roleId;
+    private _role?;
+    private _ativo;
+    private _createdAt;
+    private _updatedAt;
+    private _deletedAt?;
+    constructor(props: UserProps);
+    private validateProps;
+    get id(): UserId | undefined;
+    get nome(): string;
+    get usuario(): Usuario;
+    get password(): Password;
+    get roleId(): RoleId;
+    get role(): Role | undefined;
+    get ativo(): boolean;
+    get createdAt(): Date;
+    get updatedAt(): Date;
+    get deletedAt(): Date | undefined;
+    get isDeleted(): boolean;
+    updateNome(nome: string): void;
+    updateUsuario(usuario: Usuario): void;
+    updatePassword(newPassword: string): Promise<void>;
+    updateRole(roleId: RoleId, role?: Role): void;
+    activate(): void;
+    deactivate(): void;
+    softDelete(): void;
+    restore(): void;
+    validatePassword(plainPassword: string): Promise<boolean>;
+    hasPermission(permission: string): boolean;
+    equals(other: User): boolean;
+}

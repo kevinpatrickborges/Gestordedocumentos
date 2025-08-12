@@ -1,0 +1,86 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SeedingService_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SeedingService = void 0;
+const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const bcrypt = require("bcryptjs");
+const user_entity_1 = require("../users/entities/user.entity");
+const role_entity_1 = require("../users/entities/role.entity");
+const role_type_enum_1 = require("../users/enums/role-type.enum");
+let SeedingService = SeedingService_1 = class SeedingService {
+    constructor(userRepository, roleRepository) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.logger = new common_1.Logger(SeedingService_1.name);
+    }
+    async onModuleInit() {
+        this.logger.log('Iniciando o processo de seeding do banco de dados...');
+        await this.seedRoles();
+        await this.seedAdminUser();
+        this.logger.log('Seeding do banco de dados concluído.');
+    }
+    async seedRoles() {
+        const roles = await this.roleRepository.find();
+        if (roles.length === 0) {
+            this.logger.log('Nenhuma role encontrada. Criando roles padrão...');
+            const adminRole = this.roleRepository.create({ name: role_type_enum_1.RoleType.ADMIN, description: 'Administrador do sistema' });
+            const userRole = this.roleRepository.create({ name: role_type_enum_1.RoleType.USUARIO, description: 'Usuário padrão' });
+            await this.roleRepository.save([adminRole, userRole]);
+            this.logger.log('Roles padrão criadas com sucesso.');
+        }
+        else {
+            this.logger.log('Roles já existem. Nenhuma ação necessária.');
+        }
+    }
+    async seedAdminUser() {
+        const adminRole = await this.roleRepository.findOne({ where: { name: role_type_enum_1.RoleType.ADMIN } });
+        if (!adminRole) {
+            this.logger.error('Role de Admin não encontrada. Não foi possível criar ou atualizar o usuário admin.');
+            return;
+        }
+        const adminUser = await this.userRepository.findOne({ where: { usuario: 'admin' } });
+        const hashedPassword = await bcrypt.hash('admin123', 12);
+        if (adminUser) {
+            this.logger.log('Usuário admin encontrado. Atualizando a senha...');
+            adminUser.senha = hashedPassword;
+            adminUser.role = adminRole;
+            await this.userRepository.save(adminUser);
+            this.logger.log('Usuário admin atualizado com sucesso.');
+        }
+        else {
+            this.logger.log('Usuário admin não encontrado. Criando usuário admin...');
+            const newAdminUser = this.userRepository.create({
+                nome: 'Administrador',
+                usuario: 'admin',
+                senha: hashedPassword,
+                ativo: true,
+                role: adminRole,
+            });
+            await this.userRepository.save(newAdminUser);
+            this.logger.log('Usuário admin criado com sucesso.');
+        }
+    }
+};
+exports.SeedingService = SeedingService;
+exports.SeedingService = SeedingService = SeedingService_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __param(1, (0, typeorm_1.InjectRepository)(role_entity_1.Role)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
+], SeedingService);
+//# sourceMappingURL=seeding.service.js.map
