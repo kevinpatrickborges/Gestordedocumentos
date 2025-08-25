@@ -56,7 +56,7 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
             .leftJoinAndSelect('d.responsavel', 'responsavel')
             .getManyAndCount();
         return {
-            data: entities.map((e) => this.mapper.toDomain(e)),
+            data: entities.map(e => this.mapper.toDomain(e)),
             total,
             page,
             limit,
@@ -73,29 +73,39 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
         await this.repository.restore(id.value);
     }
     async findByCodigoBarras(codigoBarras) {
-        const entity = await this.repository.findOneBy({ codigoBarras });
+        const entity = await this.repository.findOneBy({
+            codigoBarras: codigoBarras,
+        });
         return entity ? this.mapper.toDomain(entity) : null;
     }
     async findByNumeroRegistro(numeroRegistro) {
-        const entities = await this.repository.findBy({ numeroRegistro });
-        return entities.map((e) => this.mapper.toDomain(e));
+        const entities = await this.repository.findBy({
+            numeroRegistro: numeroRegistro,
+        });
+        return entities.map(e => this.mapper.toDomain(e));
     }
     async findByCriadoPor(userId, options) {
-        return this.findAll({ ...options, filters: { ...options?.filters, criadoPorId: userId } });
+        return this.findAll({
+            ...options,
+            filters: { ...options?.filters, criadoPorId: userId },
+        });
     }
     async findByResponsavel(userId, options) {
-        return this.findAll({ ...options, filters: { ...options?.filters, responsavelId: userId } });
+        return this.findAll({
+            ...options,
+            filters: { ...options?.filters, responsavelId: userId },
+        });
     }
     async findOverdue() {
         const qb = this.repository.createQueryBuilder('d');
         const entities = await qb
             .where("d.prazoAtendimento < NOW() AND d.status NOT IN ('CONCLUIDO', 'CANCELADO')")
             .getMany();
-        return entities.map((e) => this.mapper.toDomain(e));
+        return entities.map(e => this.mapper.toDomain(e));
     }
     async findUrgent() {
         const entities = await this.repository.findBy({ urgente: true });
-        return entities.map((e) => this.mapper.toDomain(e));
+        return entities.map(e => this.mapper.toDomain(e));
     }
     async getDashboardStats(userId, userRoles, dateRange) {
         const qb = this.repository.createQueryBuilder('d');
@@ -112,15 +122,35 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
             .addSelect("SUM(CASE WHEN d.status = 'CONCLUIDO' THEN 1 ELSE 0 END)", 'concluidos')
             .addSelect("SUM(CASE WHEN d.status = 'CANCELADO' THEN 1 ELSE 0 END)", 'cancelados')
             .addSelect("SUM(CASE WHEN d.prazoAtendimento < NOW() AND d.status NOT IN ('CONCLUIDO', 'CANCELADO') THEN 1 ELSE 0 END)", 'vencidos')
-            .addSelect("SUM(CASE WHEN d.urgente = TRUE THEN 1 ELSE 0 END)", 'urgentes')
+            .addSelect('SUM(CASE WHEN d.urgente = TRUE THEN 1 ELSE 0 END)', 'urgentes')
             .addSelect("AVG(CASE WHEN d.status = 'CONCLUIDO' THEN EXTRACT(EPOCH FROM (d.dataAtendimento - d.createdAt)) ELSE NULL END)", 'tempoMedioAtendimentoSegundos')
             .addSelect("SUM(CASE WHEN d.prazoAtendimento BETWEEN NOW() AND NOW() + INTERVAL '7 days' THEN 1 ELSE 0 END)", 'registrosVencendoEm7Dias')
             .getRawOne();
-        const porTipo = await qb.select('d.tipoSolicitacao', 'tipo').addSelect('COUNT(d.id)', 'count').groupBy('d.tipoSolicitacao').getRawMany();
-        const porMes = await qb.select("TO_CHAR(d.createdAt, 'YYYY-MM')", 'mes').addSelect('COUNT(d.id)', 'count').groupBy("TO_CHAR(d.createdAt, 'YYYY-MM')").orderBy("TO_CHAR(d.createdAt, 'YYYY-MM')").getRawMany();
+        const createFilteredQuery = () => {
+            const queryBuilder = this.repository.createQueryBuilder('d');
+            if (dateRange) {
+                queryBuilder.where('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
+            }
+            if (userId && userRoles && !userRoles.includes('ADMIN')) {
+                queryBuilder.andWhere('d.criadoPorId = :userId', { userId });
+            }
+            return queryBuilder;
+        };
+        const porTipo = await createFilteredQuery()
+            .select('d.tipoSolicitacao', 'tipo')
+            .addSelect('COUNT(d.id)', 'count')
+            .groupBy('d.tipoSolicitacao')
+            .getRawMany();
+        const porMes = await createFilteredQuery()
+            .select("TO_CHAR(d.createdAt, 'YYYY-MM')", 'mes')
+            .addSelect('COUNT(d.id)', 'count')
+            .groupBy("TO_CHAR(d.createdAt, 'YYYY-MM')")
+            .orderBy("TO_CHAR(d.createdAt, 'YYYY-MM')")
+            .getRawMany();
         let eficienciaPorResponsavel;
         if (userRoles?.includes('ADMIN')) {
-            eficienciaPorResponsavel = await this.repository.createQueryBuilder('d')
+            eficienciaPorResponsavel = await this.repository
+                .createQueryBuilder('d')
                 .select('d.responsavelId', 'responsavelId')
                 .addSelect('u.nome', 'responsavelNome')
                 .addSelect('COUNT(d.id)', 'total')
@@ -153,7 +183,8 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
                 [item.responsavelNome || `ID: ${item.responsavelId}`]: {
                     total: Number(item.total),
                     concluidos: Number(item.concluidos),
-                    tempoMedio: Math.round((Number(item.tempoMedio) / (24 * 60 * 60)) * 100) / 100,
+                    tempoMedio: Math.round((Number(item.tempoMedio) / (24 * 60 * 60)) * 100) /
+                        100,
                 },
             }), {}),
         };
@@ -165,29 +196,30 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
         return this.repository.count({ where: { tipoSolicitacao: tipo } });
     }
     async existsByCodigoBarras(codigoBarras) {
-        return this.repository.exist({ where: { codigoBarras } });
+        return this.repository.exist({ where: { codigoBarras: codigoBarras } });
     }
     async getNextSequenceNumber() {
-        const result = await this.repository.createQueryBuilder("d")
-            .select("MAX(d.id)", "maxId")
+        const result = await this.repository
+            .createQueryBuilder('d')
+            .select('MAX(d.id)', 'maxId')
             .withDeleted()
             .getRawOne();
         return (result.maxId || 0) + 1;
     }
     async createMany(desarquivamentos) {
-        const entities = desarquivamentos.map((d) => this.mapper.toTypeOrm(d));
+        const entities = desarquivamentos.map(d => this.mapper.toTypeOrm(d));
         const saved = await this.repository.save(entities);
-        return saved.map((e) => this.mapper.toDomain(e));
+        return saved.map(e => this.mapper.toDomain(e));
     }
     async updateMany(desarquivamentos) {
-        const entities = desarquivamentos.map((d) => this.mapper.toTypeOrm(d));
+        const entities = desarquivamentos.map(d => this.mapper.toTypeOrm(d));
         const saved = await this.repository.save(entities);
-        return saved.map((e) => this.mapper.toDomain(e));
+        return saved.map(e => this.mapper.toDomain(e));
     }
     applyFilters(qb, filters) {
         if (!filters)
             return;
-        const { status, tipoSolicitacao, nomeSolicitante, numeroRegistro, codigoBarras, criadoPorId, responsavelId, urgente, dataInicio, dataFim, incluirExcluidos, } = filters;
+        const { status, tipoSolicitacao, search, criadoPorId, responsavelId, urgente, dataInicio, dataFim, incluirExcluidos, } = filters;
         if (status)
             qb.andWhere('d.status = :status', { status });
         if (tipoSolicitacao)
@@ -199,13 +231,12 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
         if (urgente !== undefined)
             qb.andWhere('d.urgente = :urgente', { urgente });
         if (dataInicio && dataFim)
-            qb.andWhere('d.createdAt BETWEEN :dataInicio AND :dataFim', { dataInicio, dataFim });
-        if (numeroRegistro)
-            qb.andWhere('d.numeroRegistro = :numeroRegistro', { numeroRegistro });
-        if (codigoBarras)
-            qb.andWhere('d.codigoBarras = :codigoBarras', { codigoBarras });
-        if (nomeSolicitante) {
-            qb.andWhere('(d.nomeSolicitante ILIKE :search OR d.nomeVitima ILIKE :search)', { search: `%${nomeSolicitante}%` });
+            qb.andWhere('d.createdAt BETWEEN :dataInicio AND :dataFim', {
+                dataInicio,
+                dataFim,
+            });
+        if (search) {
+            qb.andWhere('(d.nomeSolicitante ILIKE :search OR d.nomeVitima ILIKE :search OR d.numeroRegistro ILIKE :search OR d.codigoBarras ILIKE :search)', { search: `%${search}%` });
         }
         if (!incluirExcluidos) {
             qb.andWhere('d.deletedAt IS NULL');

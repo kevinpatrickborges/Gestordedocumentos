@@ -1,7 +1,24 @@
 // src/modules/registros/registros.controller.ts
-import { Controller, Post, UseInterceptors, UploadedFile, UseGuards, ParseFilePipe, FileTypeValidator, MaxFileSizeValidator, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  UseGuards,
+  ParseFilePipe,
+  FileTypeValidator,
+  MaxFileSizeValidator,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiConsumes, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiConsumes,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -34,14 +51,20 @@ export class RegistrosController {
     },
   })
   @ApiResponse({ status: 201, description: 'Relatório da importação.' })
-  @ApiResponse({ status: 400, description: 'Arquivo inválido ou erro de validação.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Arquivo inválido ou erro de validação.',
+  })
   @ApiResponse({ status: 403, description: 'Acesso negado.' })
   async importRegistros(
     @UploadedFile(
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }), // 5 MB
-          new FileTypeValidator({ fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+          new FileTypeValidator({
+            fileType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          }),
         ],
       }),
     )

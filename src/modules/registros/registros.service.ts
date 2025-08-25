@@ -18,7 +18,10 @@ export class RegistrosService {
   ) {}
 
   async importFromXlsx(file: Express.Multer.File) {
-    const workbook = XLSX.read(file.buffer, { type: 'buffer', cellDates: true });
+    const workbook = XLSX.read(file.buffer, {
+      type: 'buffer',
+      cellDates: true,
+    });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
@@ -42,13 +45,13 @@ export class RegistrosService {
       const validationErrors = await validate(registroDto);
 
       if (validationErrors.length > 0) {
-        errors.push({ 
+        errors.push({
           row: i + 2, // +2 para corresponder à linha da planilha (cabeçalho + 1-based index)
-          data: row, 
-          errors: validationErrors.map(err => ({ 
-            property: err.property, 
-            constraints: err.constraints 
-          })) 
+          data: row,
+          errors: validationErrors.map(err => ({
+            property: err.property,
+            constraints: err.constraints,
+          })),
         });
       } else {
         try {
@@ -56,18 +59,30 @@ export class RegistrosService {
           await this.registroRepository.save(newRegistro);
           successCount++;
         } catch (dbError) {
-          this.logger.error(`Erro ao salvar no banco de dados na linha ${i + 2}:`, dbError);
-          errors.push({ 
-            row: i + 2, 
-            data: row, 
-            errors: [{ property: 'database', constraints: { save: 'Falha ao inserir o registro no banco de dados.' } }] 
+          this.logger.error(
+            `Erro ao salvar no banco de dados na linha ${i + 2}:`,
+            dbError,
+          );
+          errors.push({
+            row: i + 2,
+            data: row,
+            errors: [
+              {
+                property: 'database',
+                constraints: {
+                  save: 'Falha ao inserir o registro no banco de dados.',
+                },
+              },
+            ],
           });
         }
       }
     }
 
     if (errors.length > 0) {
-      this.logger.warn(`${errors.length} linhas continham erros e não foram importadas.`);
+      this.logger.warn(
+        `${errors.length} linhas continham erros e não foram importadas.`,
+      );
     }
 
     return {

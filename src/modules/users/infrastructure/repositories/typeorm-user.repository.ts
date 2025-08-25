@@ -4,7 +4,11 @@ import { Repository } from 'typeorm';
 import { User as DomainUser } from '../../domain/entities/user';
 import { UserId } from '../../domain/value-objects/user-id';
 import { Usuario } from '../../domain/value-objects/usuario';
-import { IUserRepository, UserFilters, UserStatistics } from '../../domain/repositories/user.repository.interface';
+import {
+  IUserRepository,
+  UserFilters,
+  UserStatistics,
+} from '../../domain/repositories/user.repository.interface';
 import { User as UserEntity } from '../../entities/user.entity';
 import { UserMapper } from '../mappers/user.mapper';
 
@@ -26,7 +30,7 @@ export class TypeOrmUserRepository implements IUserRepository {
       where: { id: id.value },
       relations: ['role'],
     });
-    
+
     return entity ? UserMapper.toDomain(entity) : null;
   }
 
@@ -35,21 +39,26 @@ export class TypeOrmUserRepository implements IUserRepository {
       where: { usuario: usuario.value },
       relations: ['role'],
     });
-    
+
     return entity ? UserMapper.toDomain(entity) : null;
   }
 
   async findAll(filters?: UserFilters): Promise<DomainUser[]> {
-    const queryBuilder = this.userRepository.createQueryBuilder('user')
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role');
 
     if (filters) {
       if (filters.nome) {
-        queryBuilder.andWhere('user.nome ILIKE :nome', { nome: `%${filters.nome}%` });
+        queryBuilder.andWhere('user.nome ILIKE :nome', {
+          nome: `%${filters.nome}%`,
+        });
       }
 
       if (filters.usuario) {
-        queryBuilder.andWhere('user.usuario ILIKE :usuario', { usuario: `%${filters.usuario}%` });
+        queryBuilder.andWhere('user.usuario ILIKE :usuario', {
+          usuario: `%${filters.usuario}%`,
+        });
       }
 
       if (filters.ativo !== undefined) {
@@ -57,7 +66,9 @@ export class TypeOrmUserRepository implements IUserRepository {
       }
 
       if (filters.roleId) {
-        queryBuilder.andWhere('user.roleId = :roleId', { roleId: filters.roleId });
+        queryBuilder.andWhere('user.roleId = :roleId', {
+          roleId: filters.roleId,
+        });
       }
 
       if (!filters.includeDeleted) {
@@ -80,16 +91,21 @@ export class TypeOrmUserRepository implements IUserRepository {
     total: number;
     totalPages: number;
   }> {
-    const queryBuilder = this.userRepository.createQueryBuilder('user')
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role');
 
     if (filters) {
       if (filters.nome) {
-        queryBuilder.andWhere('user.nome ILIKE :nome', { nome: `%${filters.nome}%` });
+        queryBuilder.andWhere('user.nome ILIKE :nome', {
+          nome: `%${filters.nome}%`,
+        });
       }
 
       if (filters.usuario) {
-        queryBuilder.andWhere('user.usuario ILIKE :usuario', { usuario: `%${filters.usuario}%` });
+        queryBuilder.andWhere('user.usuario ILIKE :usuario', {
+          usuario: `%${filters.usuario}%`,
+        });
       }
 
       if (filters.ativo !== undefined) {
@@ -97,7 +113,9 @@ export class TypeOrmUserRepository implements IUserRepository {
       }
 
       if (filters.roleId) {
-        queryBuilder.andWhere('user.roleId = :roleId', { roleId: filters.roleId });
+        queryBuilder.andWhere('user.roleId = :roleId', {
+          roleId: filters.roleId,
+        });
       }
 
       if (!filters.includeDeleted) {
@@ -147,7 +165,9 @@ export class TypeOrmUserRepository implements IUserRepository {
   async getStatistics(): Promise<UserStatistics> {
     const total = await this.userRepository.count();
     const ativos = await this.userRepository.count({ where: { ativo: true } });
-    const inativos = await this.userRepository.count({ where: { ativo: false } });
+    const inativos = await this.userRepository.count({
+      where: { ativo: false },
+    });
     const deletados = await this.userRepository
       .createQueryBuilder('user')
       .withDeleted()

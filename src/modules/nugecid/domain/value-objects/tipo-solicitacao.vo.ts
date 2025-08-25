@@ -101,8 +101,10 @@ export class TipoSolicitacao {
 
   // Verifica se requer localização física do documento
   requiresPhysicalLocation(): boolean {
-    return this._value === TipoSolicitacaoEnum.DESARQUIVAMENTO || 
-           this._value === TipoSolicitacaoEnum.VISTA;
+    return (
+      this._value === TipoSolicitacaoEnum.DESARQUIVAMENTO ||
+      this._value === TipoSolicitacaoEnum.VISTA
+    );
   }
 
   // Verifica se permite urgência

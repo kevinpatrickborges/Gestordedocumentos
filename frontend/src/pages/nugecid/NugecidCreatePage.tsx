@@ -4,7 +4,8 @@ import { ArrowLeft, Plus } from 'lucide-react'
 import { CreateDesarquivamentoDto } from '@/types'
 import { useDesarquivamentos } from '@/hooks/useDesarquivamentos'
 import { Button } from '@/components/ui/Button'
-import { NugecidForm } from '@/components/nugecid'
+// Componente NugecidForm removido - implementação temporária abaixo
+// import { NugecidForm } from '@/components/nugecid'
 import { toast } from 'sonner'
 import { cn } from '@/utils/cn'
 
@@ -98,15 +99,32 @@ const NugecidCreatePage: React.FC<NugecidCreatePageProps> = ({ className }) => {
         </ol>
       </nav>
 
-      {/* Form */}
+      {/* Form - Temporariamente desabilitado */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6">
-          <NugecidForm
-            mode="create"
-            onSubmit={handleSubmit}
-            onCancel={handleCancel}
-            loading={createDesarquivamento.isPending}
-          />
+          <div className="text-center text-gray-500 py-12">
+            <Plus className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Formulário temporariamente indisponível
+            </h3>
+            <p className="text-gray-600 mb-6">
+              O componente NugecidForm será reimplementado em breve
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+              >
+                Voltar à Lista
+              </Button>
+              <Button
+                onClick={() => toast.info('Funcionalidade em desenvolvimento')}
+                disabled
+              >
+                Criar Registro
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 

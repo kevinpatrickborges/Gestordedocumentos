@@ -80,8 +80,8 @@ class TipoSolicitacao {
         }
     }
     requiresPhysicalLocation() {
-        return this._value === TipoSolicitacaoEnum.DESARQUIVAMENTO ||
-            this._value === TipoSolicitacaoEnum.VISTA;
+        return (this._value === TipoSolicitacaoEnum.DESARQUIVAMENTO ||
+            this._value === TipoSolicitacaoEnum.VISTA);
     }
     allowsUrgency() {
         return true;

@@ -175,7 +175,9 @@ let UsersService = UsersService_1 = class UsersService {
     async getStats() {
         const total = await this.userRepository.count();
         const ativos = await this.userRepository.count({ where: { ativo: true } });
-        const inativos = await this.userRepository.count({ where: { ativo: false } });
+        const inativos = await this.userRepository.count({
+            where: { ativo: false },
+        });
         const bloqueados = await this.userRepository
             .createQueryBuilder('user')
             .where('user.bloqueadoAte > :now', { now: new Date() })

@@ -9,7 +9,8 @@ exports.default = (0, config_1.registerAs)('auth', () => ({
         refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
     },
     session: {
-        secret: process.env.SESSION_SECRET || 'sgc-itep-session-secret-change-in-production',
+        secret: process.env.SESSION_SECRET ||
+            'sgc-itep-session-secret-change-in-production',
         maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000'),
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,

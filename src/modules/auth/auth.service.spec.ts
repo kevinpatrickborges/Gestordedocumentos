@@ -79,7 +79,9 @@ describe('AuthService', () => {
     jest.spyOn(service['logger'], 'warn').mockImplementation(() => {});
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     roleRepository = module.get<Repository<Role>>(getRepositoryToken(Role));
-    auditoriaRepository = module.get<Repository<Auditoria>>(getRepositoryToken(Auditoria));
+    auditoriaRepository = module.get<Repository<Auditoria>>(
+      getRepositoryToken(Auditoria),
+    );
     jwtService = module.get<JwtService>(JwtService);
   });
 
@@ -111,7 +113,7 @@ describe('AuthService', () => {
           usuario: mockUser.usuario,
           role: mockUser.role.name,
         },
-        { expiresIn: '50m' }
+        { expiresIn: '50m' },
       );
     });
 
@@ -121,7 +123,7 @@ describe('AuthService', () => {
       mockAuditoriaRepository.save.mockResolvedValue({});
 
       await expect(
-        service.login(loginDto, '127.0.0.1', 'test-agent')
+        service.login(loginDto, '127.0.0.1', 'test-agent'),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
@@ -156,11 +158,9 @@ describe('AuthService', () => {
           usuario: mockUser.usuario,
           role: mockUser.role.name,
         },
-        { expiresIn: '50m' }
+        { expiresIn: '50m' },
       );
     });
-
-
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
@@ -197,7 +197,10 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.save.mockResolvedValue(mockUser);
 
-      const result = await service.validateUser('test@itep.rn.gov.br', 'password123');
+      const result = await service.validateUser(
+        'test@itep.rn.gov.br',
+        'password123',
+      );
 
       expect(result).toEqual(mockUser);
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
@@ -227,7 +230,11 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for blocked user', async () => {
-      const blockedUser = { ...mockUser, isBlocked: jest.fn().mockReturnValue(true), bloqueadoAte: new Date() };
+      const blockedUser = {
+        ...mockUser,
+        isBlocked: jest.fn().mockReturnValue(true),
+        bloqueadoAte: new Date(),
+      };
       mockUserRepository.findOne.mockResolvedValue(blockedUser);
 
       await expect(
@@ -240,7 +247,10 @@ describe('AuthService', () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.save.mockResolvedValue(mockUser);
 
-      const result = await service.validateUser('test@itep.rn.gov.br', 'wrongpassword');
+      const result = await service.validateUser(
+        'test@itep.rn.gov.br',
+        'wrongpassword',
+      );
 
       expect(result).toBeNull();
     });

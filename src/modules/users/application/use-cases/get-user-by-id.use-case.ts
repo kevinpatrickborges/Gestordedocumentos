@@ -5,7 +5,9 @@ import { IUserRepository } from '../../domain/repositories/user.repository.inter
 
 @Injectable()
 export class GetUserByIdUseCase {
-  constructor(@Inject('IUserRepository') private readonly userRepository: IUserRepository) {}
+  constructor(
+    @Inject('IUserRepository') private readonly userRepository: IUserRepository,
+  ) {}
 
   async execute(id: number): Promise<User | null> {
     const userId = new UserId(id);

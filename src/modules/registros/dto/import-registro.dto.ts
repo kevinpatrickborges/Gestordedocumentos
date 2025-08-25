@@ -1,5 +1,11 @@
 // src/modules/registros/dto/import-registro.dto.ts
-import { IsString, IsNotEmpty, IsDateString, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
 
 export class ImportRegistroDto {
   @IsString()

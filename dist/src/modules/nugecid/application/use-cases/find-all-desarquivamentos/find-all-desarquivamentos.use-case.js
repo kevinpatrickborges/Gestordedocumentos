@@ -51,16 +51,30 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         if (request.page && (request.page < 1 || !Number.isInteger(request.page))) {
             throw new Error('Página deve ser um número inteiro positivo');
         }
-        if (request.limit && (request.limit < 1 || request.limit > 100 || !Number.isInteger(request.limit))) {
+        if (request.limit &&
+            (request.limit < 1 ||
+                request.limit > 100 ||
+                !Number.isInteger(request.limit))) {
             throw new Error('Limite deve ser um número inteiro entre 1 e 100');
         }
         if (request.sortOrder && !['ASC', 'DESC'].includes(request.sortOrder)) {
             throw new Error('Ordem de classificação deve ser ASC ou DESC');
         }
         const allowedSortFields = [
-            'id', 'codigoBarras', 'tipoSolicitacao', 'status', 'nomeSolicitante',
-            'numeroRegistro', 'dataFato', 'prazoAtendimento', 'dataAtendimento',
-            'urgente', 'criadoPorId', 'responsavelId', 'createdAt', 'updatedAt'
+            'id',
+            'codigoBarras',
+            'tipoSolicitacao',
+            'status',
+            'nomeSolicitante',
+            'numeroRegistro',
+            'dataFato',
+            'prazoAtendimento',
+            'dataAtendimento',
+            'urgente',
+            'criadoPorId',
+            'responsavelId',
+            'createdAt',
+            'updatedAt',
         ];
         if (request.sortBy && !allowedSortFields.includes(request.sortBy)) {
             throw new Error(`Campo de classificação inválido. Campos permitidos: ${allowedSortFields.join(', ')}`);
@@ -71,7 +85,12 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
             }
         }
         if (request.filters?.status) {
-            const validStatuses = ['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'];
+            const validStatuses = [
+                'PENDENTE',
+                'EM_ANDAMENTO',
+                'CONCLUIDO',
+                'CANCELADO',
+            ];
             if (!validStatuses.includes(request.filters.status)) {
                 throw new Error(`Status inválido. Status válidos: ${validStatuses.join(', ')}`);
             }
@@ -93,7 +112,8 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         if (userRoles.includes('ADMIN')) {
             return filters;
         }
-        if (userRoles.includes('NUGECID_VIEWER') || userRoles.includes('NUGECID_OPERATOR')) {
+        if (userRoles.includes('NUGECID_VIEWER') ||
+            userRoles.includes('NUGECID_OPERATOR')) {
             return filters;
         }
         return {

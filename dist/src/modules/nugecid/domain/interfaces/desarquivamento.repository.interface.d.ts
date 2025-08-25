@@ -7,6 +7,7 @@ export interface FindAllOptions {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     filters?: {
+        search?: string;
         status?: string;
         tipoSolicitacao?: string;
         nomeSolicitante?: string;

@@ -14,14 +14,30 @@ export declare class UsersController {
     private readonly getUserStatisticsUseCase;
     private readonly getRolesUseCase;
     constructor(createUserUseCase: CreateUserUseCase, updateUserUseCase: UpdateUserUseCase, deleteUserUseCase: DeleteUserUseCase, getUserByIdUseCase: GetUserByIdUseCase, getUsersUseCase: GetUsersUseCase, restoreUserUseCase: RestoreUserUseCase, getUserStatisticsUseCase: GetUserStatisticsUseCase, getRolesUseCase: GetRolesUseCase);
-    listPage(query: QueryUsersDto, req: ExpressRequest): Promise<User[] | {
-        title: string;
-        users: User[];
-        roles: import("./entities/role.entity").Role[];
-        stats: import("./domain/repositories").UserStatistics;
-        query: QueryUsersDto;
+    findAll(query: QueryUsersDto): Promise<{
+        success: boolean;
+        data: any;
+        meta: {
+            total: any;
+            page: any;
+            limit: any;
+            totalPages: any;
+            hasNext: boolean;
+            hasPrev: boolean;
+        };
     }>;
-    findAll(query: QueryUsersDto): Promise<User[]>;
+    findAllApi(query: QueryUsersDto): Promise<{
+        success: boolean;
+        data: any;
+        meta: {
+            total: any;
+            page: any;
+            limit: any;
+            totalPages: any;
+            hasNext: boolean;
+            hasPrev: boolean;
+        };
+    }>;
     createPage(): Promise<{
         title: string;
         roles: import("./entities/role.entity").Role[];

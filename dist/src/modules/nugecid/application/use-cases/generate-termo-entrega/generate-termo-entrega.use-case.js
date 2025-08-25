@@ -98,8 +98,12 @@ let GenerateTermoEntregaUseCase = class GenerateTermoEntregaUseCase {
                 nomeVitima: plainObject.nomeVitima,
                 dataFato: plainObject.dataFato,
                 finalidade: plainObject.finalidade,
-                observacoes: request.templateOptions?.incluirObservacoes ? plainObject.observacoes : undefined,
-                localizacaoFisica: request.templateOptions?.incluirLocalizacao ? plainObject.localizacaoFisica : undefined,
+                observacoes: request.templateOptions?.incluirObservacoes
+                    ? plainObject.observacoes
+                    : undefined,
+                localizacaoFisica: request.templateOptions?.incluirLocalizacao
+                    ? plainObject.localizacaoFisica
+                    : undefined,
                 urgente: plainObject.urgente,
             },
             entrega: {
@@ -173,12 +177,14 @@ let GenerateTermoEntregaUseCase = class GenerateTermoEntregaUseCase {
           ${termoData.desarquivamento.urgente ? '<div class="field"><strong>URGENTE</strong></div>' : ''}
         </div>
         
-        ${termoData.desarquivamento.observacoes ? `
+        ${termoData.desarquivamento.observacoes
+            ? `
           <div class="field">
             <strong>Observações:</strong><br>
             ${termoData.desarquivamento.observacoes}
           </div>
-        ` : ''}
+        `
+            : ''}
         
         <div class="signature-area">
           <div>

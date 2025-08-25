@@ -95,8 +95,21 @@ class StatusDesarquivamento {
 }
 exports.StatusDesarquivamento = StatusDesarquivamento;
 StatusDesarquivamento.VALID_TRANSITIONS = new Map([
-    [StatusDesarquivamentoEnum.PENDENTE, [StatusDesarquivamentoEnum.EM_ANDAMENTO, StatusDesarquivamentoEnum.CANCELADO]],
-    [StatusDesarquivamentoEnum.EM_ANDAMENTO, [StatusDesarquivamentoEnum.CONCLUIDO, StatusDesarquivamentoEnum.CANCELADO, StatusDesarquivamentoEnum.PENDENTE]],
+    [
+        StatusDesarquivamentoEnum.PENDENTE,
+        [
+            StatusDesarquivamentoEnum.EM_ANDAMENTO,
+            StatusDesarquivamentoEnum.CANCELADO,
+        ],
+    ],
+    [
+        StatusDesarquivamentoEnum.EM_ANDAMENTO,
+        [
+            StatusDesarquivamentoEnum.CONCLUIDO,
+            StatusDesarquivamentoEnum.CANCELADO,
+            StatusDesarquivamentoEnum.PENDENTE,
+        ],
+    ],
     [StatusDesarquivamentoEnum.CONCLUIDO, []],
     [StatusDesarquivamentoEnum.CANCELADO, [StatusDesarquivamentoEnum.PENDENTE]],
 ]);

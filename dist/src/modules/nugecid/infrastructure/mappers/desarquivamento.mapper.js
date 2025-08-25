@@ -159,7 +159,9 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
             updates.resultadoAtendimento = dto.resultadoAtendimento;
         }
         if (dto.dataAtendimento !== undefined) {
-            updates.dataAtendimento = dto.dataAtendimento ? new Date(dto.dataAtendimento) : undefined;
+            updates.dataAtendimento = dto.dataAtendimento
+                ? new Date(dto.dataAtendimento)
+                : undefined;
         }
         Object.keys(updates).forEach(key => {
             domain[key] = updates[key];

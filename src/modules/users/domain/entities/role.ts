@@ -19,7 +19,7 @@ export class Role {
 
   constructor(props: RoleProps) {
     this.validateProps(props);
-    
+
     this._id = props.id;
     this._nome = props.nome;
     this._descricao = props.descricao;

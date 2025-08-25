@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, MinLength, MaxLength, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  MinLength,
+  MaxLength,
+  Matches,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
@@ -20,7 +28,10 @@ export class UpdateUserDto {
   @IsString({ message: 'Usuário deve ser uma string' })
   @MinLength(3, { message: 'Usuário deve ter pelo menos 3 caracteres' })
   @MaxLength(50, { message: 'Usuário deve ter no máximo 50 caracteres' })
-  @Matches(/^[a-zA-Z0-9._-]+$/, { message: 'Usuário deve conter apenas letras, números, pontos, hífens e underscores' })
+  @Matches(/^[a-zA-Z0-9._-]+$/, {
+    message:
+      'Usuário deve conter apenas letras, números, pontos, hífens e underscores',
+  })
   usuario?: string;
 
   @ApiProperty({

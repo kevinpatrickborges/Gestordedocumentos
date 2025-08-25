@@ -9,13 +9,17 @@ export class NumeroRegistro {
     }
 
     const trimmedValue = value.trim();
-    
+
     if (trimmedValue.length < NumeroRegistro.MIN_LENGTH) {
-      throw new Error(`Número de registro deve ter pelo menos ${NumeroRegistro.MIN_LENGTH} caracteres`);
+      throw new Error(
+        `Número de registro deve ter pelo menos ${NumeroRegistro.MIN_LENGTH} caracteres`,
+      );
     }
 
     if (trimmedValue.length > NumeroRegistro.MAX_LENGTH) {
-      throw new Error(`Número de registro deve ter no máximo ${NumeroRegistro.MAX_LENGTH} caracteres`);
+      throw new Error(
+        `Número de registro deve ter no máximo ${NumeroRegistro.MAX_LENGTH} caracteres`,
+      );
     }
 
     // Validação básica de formato (pode conter letras, números, pontos, hífens e barras)

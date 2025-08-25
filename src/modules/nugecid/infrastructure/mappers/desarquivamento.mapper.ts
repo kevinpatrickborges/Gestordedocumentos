@@ -17,18 +17,18 @@ export class DesarquivamentoMapper {
    */
   toTypeOrm(domain: DesarquivamentoDomain): DesarquivamentoTypeOrmEntity {
     const entity = new DesarquivamentoTypeOrmEntity();
-    
+
     // ID (apenas se existir)
     if (domain.id) {
       entity.id = domain.id.value;
     }
-    
+
     // Value Objects
     entity.codigoBarras = domain.codigoBarras.value;
     entity.tipoSolicitacao = domain.tipoSolicitacao.value;
     entity.status = domain.status.value;
     entity.numeroRegistro = domain.numeroRegistro.value;
-    
+
     // Propriedades simples
     entity.nomeSolicitante = domain.nomeSolicitante;
     entity.nomeVitima = domain.nomeVitima;
@@ -43,12 +43,12 @@ export class DesarquivamentoMapper {
     entity.localizacaoFisica = domain.localizacaoFisica;
     entity.criadoPorId = domain.criadoPorId;
     entity.responsavelId = domain.responsavelId;
-    
+
     // Timestamps
     entity.createdAt = domain.createdAt;
     entity.updatedAt = domain.updatedAt;
     entity.deletedAt = domain.deletedAt;
-    
+
     return entity;
   }
 
@@ -61,7 +61,9 @@ export class DesarquivamentoMapper {
     const codigoBarras = CodigoBarras.create(entity.codigoBarras);
     const numeroRegistro = NumeroRegistro.create(entity.numeroRegistro);
     const status = StatusDesarquivamento.create(entity.status as any);
-    const tipoSolicitacao = TipoSolicitacao.create(entity.tipoSolicitacao as any);
+    const tipoSolicitacao = TipoSolicitacao.create(
+      entity.tipoSolicitacao as any,
+    );
 
     // Reconstruir entidade de domínio
     return DesarquivamentoDomain.reconstruct({
@@ -92,14 +94,18 @@ export class DesarquivamentoMapper {
   /**
    * Converte uma lista de entidades TypeORM para entidades de domínio
    */
-  toDomainList(entities: DesarquivamentoTypeOrmEntity[]): DesarquivamentoDomain[] {
+  toDomainList(
+    entities: DesarquivamentoTypeOrmEntity[],
+  ): DesarquivamentoDomain[] {
     return entities.map(entity => this.toDomain(entity));
   }
 
   /**
    * Converte uma lista de entidades de domínio para entidades TypeORM
    */
-  toTypeOrmList(domains: DesarquivamentoDomain[]): DesarquivamentoTypeOrmEntity[] {
+  toTypeOrmList(
+    domains: DesarquivamentoDomain[],
+  ): DesarquivamentoTypeOrmEntity[] {
     return domains.map(domain => this.toTypeOrm(domain));
   }
 
@@ -148,7 +154,9 @@ export class DesarquivamentoMapper {
   fromCreateDto(dto: any): DesarquivamentoDomain {
     const codigoBarras = CodigoBarras.generateNew();
     const numeroRegistro = NumeroRegistro.create(dto.numeroRegistro);
-    const status = StatusDesarquivamento.create(StatusDesarquivamentoEnum.PENDENTE);
+    const status = StatusDesarquivamento.create(
+      StatusDesarquivamentoEnum.PENDENTE,
+    );
     const tipoSolicitacao = TipoSolicitacao.create(dto.tipoSolicitacao);
 
     return DesarquivamentoDomain.create({
@@ -170,7 +178,10 @@ export class DesarquivamentoMapper {
   /**
    * Aplica atualizações de um DTO para uma entidade de domínio existente
    */
-  applyUpdateDto(domain: DesarquivamentoDomain, dto: any): DesarquivamentoDomain {
+  applyUpdateDto(
+    domain: DesarquivamentoDomain,
+    dto: any,
+  ): DesarquivamentoDomain {
     const updates: any = {};
 
     // Campos que podem ser atualizados
@@ -205,7 +216,9 @@ export class DesarquivamentoMapper {
       updates.resultadoAtendimento = dto.resultadoAtendimento;
     }
     if (dto.dataAtendimento !== undefined) {
-      updates.dataAtendimento = dto.dataAtendimento ? new Date(dto.dataAtendimento) : undefined;
+      updates.dataAtendimento = dto.dataAtendimento
+        ? new Date(dto.dataAtendimento)
+        : undefined;
     }
 
     // Aplicar atualizações

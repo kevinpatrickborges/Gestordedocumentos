@@ -1,12 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import * as fs from 'fs';
 import * as XLSX from 'xlsx';
 
 import { NugecidService } from './nugecid.service';
-import { Desarquivamento, StatusDesarquivamento } from './entities/desarquivamento.entity';
+import {
+  Desarquivamento,
+  StatusDesarquivamento,
+} from './entities/desarquivamento.entity';
 import { TipoSolicitacaoEnum } from './domain/value-objects/tipo-solicitacao.vo';
 import { User } from '../users/entities/user.entity';
 import { Auditoria } from '../audit/entities/auditoria.entity';
@@ -122,8 +129,8 @@ describe('NugecidService', () => {
 
   describe('create', () => {
     const createDto: CreateDesarquivamentoDto = {
-        tipoSolicitacao: TipoSolicitacaoEnum.COPIA,
-        nomeSolicitante: 'João Silva',
+      tipoSolicitacao: TipoSolicitacaoEnum.COPIA,
+      nomeSolicitante: 'João Silva',
       numeroRegistro: '2024001',
       finalidade: 'Processo judicial',
       urgente: false,
@@ -131,9 +138,15 @@ describe('NugecidService', () => {
 
     it('deve criar um desarquivamento com sucesso', async () => {
       const savedDesarquivamento = { ...mockDesarquivamento, ...createDto };
-      mockDesarquivamentoRepository.create.mockReturnValue(savedDesarquivamento);
-      mockDesarquivamentoRepository.save.mockResolvedValue(savedDesarquivamento);
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(savedDesarquivamento);
+      mockDesarquivamentoRepository.create.mockReturnValue(
+        savedDesarquivamento,
+      );
+      mockDesarquivamentoRepository.save.mockResolvedValue(
+        savedDesarquivamento,
+      );
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        savedDesarquivamento,
+      );
       mockAuditoriaRepository.create.mockReturnValue({});
       mockAuditoriaRepository.save.mockResolvedValue({});
 
@@ -150,9 +163,15 @@ describe('NugecidService', () => {
 
     it('deve registrar auditoria ao criar', async () => {
       const savedDesarquivamento = { ...mockDesarquivamento, ...createDto };
-      mockDesarquivamentoRepository.create.mockReturnValue(savedDesarquivamento);
-      mockDesarquivamentoRepository.save.mockResolvedValue(savedDesarquivamento);
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(savedDesarquivamento);
+      mockDesarquivamentoRepository.create.mockReturnValue(
+        savedDesarquivamento,
+      );
+      mockDesarquivamentoRepository.save.mockResolvedValue(
+        savedDesarquivamento,
+      );
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        savedDesarquivamento,
+      );
       mockAuditoriaRepository.create.mockReturnValue({});
       mockAuditoriaRepository.save.mockResolvedValue({});
 
@@ -188,9 +207,13 @@ describe('NugecidService', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockDesarquivamento], 1]),
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([[mockDesarquivamento], 1]),
       };
-      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
 
       const result = await service.findAll(queryDto);
 
@@ -210,9 +233,13 @@ describe('NugecidService', () => {
         orderBy: jest.fn().mockReturnThis(),
         skip: jest.fn().mockReturnThis(),
         take: jest.fn().mockReturnThis(),
-        getManyAndCount: jest.fn().mockResolvedValue([[mockDesarquivamento], 1]),
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([[mockDesarquivamento], 1]),
       };
-      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
 
       const result = await service.findAll(queryDto);
 
@@ -234,7 +261,9 @@ describe('NugecidService', () => {
         take: jest.fn().mockReturnThis(),
         getManyAndCount: jest.fn().mockResolvedValue([[], 0]),
       };
-      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
 
       await service.findAll(queryWithSearch);
 
@@ -251,7 +280,9 @@ describe('NugecidService', () => {
         ...mockDesarquivamento,
         canBeAccessedBy: jest.fn().mockReturnValue(true),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoFound);
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoFound,
+      );
 
       const result = await service.findOne(1);
 
@@ -273,7 +304,9 @@ describe('NugecidService', () => {
         ...mockDesarquivamento,
         canBeAccessedBy: jest.fn().mockReturnValue(false),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoWithoutAccess);
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoWithoutAccess,
+      );
 
       const result = await service.findOne(1);
       expect(result).toEqual(mockDesarquivamentoWithoutAccess);
@@ -291,7 +324,9 @@ describe('NugecidService', () => {
         ...mockDesarquivamento,
         canBeEditedBy: jest.fn().mockReturnValue(true),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoToUpdate);
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoToUpdate,
+      );
       mockDesarquivamentoRepository.save.mockResolvedValue({
         ...mockDesarquivamentoToUpdate,
         ...updateDto,
@@ -301,7 +336,9 @@ describe('NugecidService', () => {
 
       const result = await service.update(1, updateDto, mockEditorUser);
 
-      expect(mockDesarquivamentoToUpdate.canBeEditedBy).toHaveBeenCalledWith(mockEditorUser);
+      expect(mockDesarquivamentoToUpdate.canBeEditedBy).toHaveBeenCalledWith(
+        mockEditorUser,
+      );
       expect(mockDesarquivamentoRepository.save).toHaveBeenCalled();
       expect(result.status).toBe(StatusDesarquivamento.EM_ANDAMENTO);
     });
@@ -311,11 +348,13 @@ describe('NugecidService', () => {
         ...mockDesarquivamento,
         canBeEditedBy: jest.fn().mockReturnValue(false),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoNoEdit);
-
-      await expect(service.update(1, updateDto, mockEditorUser)).rejects.toThrow(
-        ForbiddenException,
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoNoEdit,
       );
+
+      await expect(
+        service.update(1, updateDto, mockEditorUser),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -325,14 +364,20 @@ describe('NugecidService', () => {
         ...mockDesarquivamento,
         canBeDeletedBy: jest.fn().mockReturnValue(true),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoToDelete);
-      mockDesarquivamentoRepository.softDelete.mockResolvedValue({ affected: 1 });
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoToDelete,
+      );
+      mockDesarquivamentoRepository.softDelete.mockResolvedValue({
+        affected: 1,
+      });
       mockAuditoriaRepository.create.mockReturnValue({});
       mockAuditoriaRepository.save.mockResolvedValue({});
 
       await service.remove(1, mockEditorUser);
 
-      expect(mockDesarquivamentoToDelete.canBeDeletedBy).toHaveBeenCalledWith(mockEditorUser);
+      expect(mockDesarquivamentoToDelete.canBeDeletedBy).toHaveBeenCalledWith(
+        mockEditorUser,
+      );
       expect(mockDesarquivamentoRepository.softDelete).toHaveBeenCalledWith(1);
     });
 
@@ -341,9 +386,13 @@ describe('NugecidService', () => {
         ...mockDesarquivamento,
         canBeDeletedBy: jest.fn().mockReturnValue(false),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoNoDelete);
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoNoDelete,
+      );
 
-      await expect(service.remove(1, mockEditorUser)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove(1, mockEditorUser)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -354,7 +403,9 @@ describe('NugecidService', () => {
         codigoBarras: 'DES202400001',
         canBeAccessedBy: jest.fn().mockReturnValue(true),
       };
-      mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoWithBarcode);
+      mockDesarquivamentoRepository.findOne.mockResolvedValue(
+        mockDesarquivamentoWithBarcode,
+      );
 
       const result = await service.findByBarcode('DES202400001');
 
@@ -387,11 +438,13 @@ describe('NugecidService', () => {
       // Mock dos métodos do repository
       mockDesarquivamentoRepository.count
         .mockResolvedValueOnce(100) // total
-        .mockResolvedValueOnce(25)  // pendentes
-        .mockResolvedValueOnce(30)  // em andamento
+        .mockResolvedValueOnce(25) // pendentes
+        .mockResolvedValueOnce(30) // em andamento
         .mockResolvedValueOnce(45); // concluídos
-      
-      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+
+      mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder,
+      );
       mockDesarquivamentoRepository.find.mockResolvedValue([]);
 
       const result = await service.getDashboardStats();

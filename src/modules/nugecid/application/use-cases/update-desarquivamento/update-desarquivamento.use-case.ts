@@ -53,13 +53,16 @@ export class UpdateDesarquivamentoUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: UpdateDesarquivamentoRequest): Promise<UpdateDesarquivamentoResponse> {
+  async execute(
+    request: UpdateDesarquivamentoRequest,
+  ): Promise<UpdateDesarquivamentoResponse> {
     // Validar entrada
     this.validateRequest(request);
 
     // Buscar desarquivamento existente
     const desarquivamentoId = DesarquivamentoId.create(request.id);
-    const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
+    const desarquivamento =
+      await this.desarquivamentoRepository.findById(desarquivamentoId);
 
     if (!desarquivamento) {
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
@@ -67,14 +70,17 @@ export class UpdateDesarquivamentoUseCase {
 
     // Verificar permissões de edição
     if (!desarquivamento.canBeEditedBy(request.userId, request.userRoles)) {
-      throw new Error('Acesso negado: você não tem permissão para editar este desarquivamento');
+      throw new Error(
+        'Acesso negado: você não tem permissão para editar este desarquivamento',
+      );
     }
 
     // Aplicar atualizações
     await this.applyUpdates(desarquivamento, request);
 
     // Salvar no repositório
-    const updatedDesarquivamento = await this.desarquivamentoRepository.update(desarquivamento);
+    const updatedDesarquivamento =
+      await this.desarquivamentoRepository.update(desarquivamento);
 
     // Retornar resposta
     return this.mapToResponse(updatedDesarquivamento);
@@ -100,11 +106,17 @@ export class UpdateDesarquivamentoUseCase {
       throw new Error('Nome da vítima deve ter no máximo 255 caracteres');
     }
 
-    if (request.tipoDocumento !== undefined && request.tipoDocumento.length > 100) {
+    if (
+      request.tipoDocumento !== undefined &&
+      request.tipoDocumento.length > 100
+    ) {
       throw new Error('Tipo do documento deve ter no máximo 100 caracteres');
     }
 
-    if (request.localizacaoFisica !== undefined && request.localizacaoFisica.length > 255) {
+    if (
+      request.localizacaoFisica !== undefined &&
+      request.localizacaoFisica.length > 255
+    ) {
       throw new Error('Localização física deve ter no máximo 255 caracteres');
     }
 
@@ -117,21 +129,37 @@ export class UpdateDesarquivamentoUseCase {
       throw new Error('Data do fato não pode ser futura');
     }
 
-    if (request.prazoAtendimento !== undefined && request.prazoAtendimento <= new Date()) {
+    if (
+      request.prazoAtendimento !== undefined &&
+      request.prazoAtendimento <= new Date()
+    ) {
       throw new Error('Prazo de atendimento deve ser futuro');
     }
 
     // Validar status
     if (request.status !== undefined) {
-      const validStatuses = ['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'];
+      const validStatuses = [
+        'PENDENTE',
+        'EM_ANDAMENTO',
+        'CONCLUIDO',
+        'CANCELADO',
+      ];
       if (!validStatuses.includes(request.status)) {
-        throw new Error(`Status inválido. Status válidos: ${validStatuses.join(', ')}`);
+        throw new Error(
+          `Status inválido. Status válidos: ${validStatuses.join(', ')}`,
+        );
       }
     }
 
     // Validar resultado de atendimento se status for CONCLUIDO
-    if (request.status === 'CONCLUIDO' && (!request.resultadoAtendimento || request.resultadoAtendimento.trim().length === 0)) {
-      throw new Error('Resultado do atendimento é obrigatório quando o status é CONCLUIDO');
+    if (
+      request.status === 'CONCLUIDO' &&
+      (!request.resultadoAtendimento ||
+        request.resultadoAtendimento.trim().length === 0)
+    ) {
+      throw new Error(
+        'Resultado do atendimento é obrigatório quando o status é CONCLUIDO',
+      );
     }
   }
 
@@ -151,7 +179,11 @@ export class UpdateDesarquivamentoUseCase {
 
     // Atualizar status
     if (request.status !== undefined) {
-      await this.updateStatus(desarquivamento, request.status, request.resultadoAtendimento);
+      await this.updateStatus(
+        desarquivamento,
+        request.status,
+        request.resultadoAtendimento,
+      );
     }
 
     // Outras atualizações que requerem reconstrução da entidade
@@ -160,16 +192,20 @@ export class UpdateDesarquivamentoUseCase {
       // seria necessário reconstruir a entidade com os novos valores
       // Isso pode ser implementado criando um método de atualização na entidade
       // ou reconstruindo a entidade com os novos valores
-      
+
       // Por enquanto, vamos lançar um erro indicando que essas atualizações
       // precisam ser implementadas de forma diferente
-      if (request.nomeVitima !== undefined ||
-          request.tipoDocumento !== undefined ||
-          request.dataFato !== undefined ||
-          request.prazoAtendimento !== undefined ||
-          request.finalidade !== undefined ||
-          request.observacoes !== undefined) {
-        throw new Error('Atualização de campos específicos ainda não implementada. Use a reconstrução da entidade.');
+      if (
+        request.nomeVitima !== undefined ||
+        request.tipoDocumento !== undefined ||
+        request.dataFato !== undefined ||
+        request.prazoAtendimento !== undefined ||
+        request.finalidade !== undefined ||
+        request.observacoes !== undefined
+      ) {
+        throw new Error(
+          'Atualização de campos específicos ainda não implementada. Use a reconstrução da entidade.',
+        );
       }
     }
   }
@@ -188,7 +224,9 @@ export class UpdateDesarquivamentoUseCase {
         break;
       case 'CONCLUIDO':
         if (!resultadoAtendimento) {
-          throw new Error('Resultado do atendimento é obrigatório para conclusão');
+          throw new Error(
+            'Resultado do atendimento é obrigatório para conclusão',
+          );
         }
         desarquivamento.complete(resultadoAtendimento);
         break;
@@ -200,7 +238,9 @@ export class UpdateDesarquivamentoUseCase {
     }
   }
 
-  private requiresReconstruction(request: UpdateDesarquivamentoRequest): boolean {
+  private requiresReconstruction(
+    request: UpdateDesarquivamentoRequest,
+  ): boolean {
     return (
       request.nomeVitima !== undefined ||
       request.tipoDocumento !== undefined ||
@@ -211,9 +251,11 @@ export class UpdateDesarquivamentoUseCase {
     );
   }
 
-  private mapToResponse(desarquivamento: DesarquivamentoDomain): UpdateDesarquivamentoResponse {
+  private mapToResponse(
+    desarquivamento: DesarquivamentoDomain,
+  ): UpdateDesarquivamentoResponse {
     const plainObject = desarquivamento.toPlainObject();
-    
+
     return {
       id: plainObject.id,
       codigoBarras: plainObject.codigoBarras,

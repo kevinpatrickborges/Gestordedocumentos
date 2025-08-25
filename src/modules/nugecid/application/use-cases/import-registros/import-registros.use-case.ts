@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { validate } from 'class-validator';
 import * as XLSX from 'xlsx';
-import { ImportRegistroDto, TipoDesarquivamento, StatusDesarquivamento } from '../../../dto/import-registro.dto';
+import {
+  ImportRegistroDto,
+  TipoDesarquivamento,
+  StatusDesarquivamento,
+} from '../../../dto/import-registro.dto';
 
 export interface ImportRegistrosRequest {
   file: Express.Multer.File;
@@ -30,14 +34,21 @@ export interface ImportRegistrosResponse {
 export class ImportRegistrosUseCase {
   private readonly logger = new Logger(ImportRegistrosUseCase.name);
 
-  async execute(request: ImportRegistrosRequest): Promise<ImportRegistrosResponse> {
-    this.logger.log(`Iniciando importação de registros pelo usuário ${request.userId}`);
+  async execute(
+    request: ImportRegistrosRequest,
+  ): Promise<ImportRegistrosResponse> {
+    this.logger.log(
+      `Iniciando importação de registros pelo usuário ${request.userId}`,
+    );
 
     // Validar arquivo
     await this.validateFile(request.file);
 
     // Processar planilha
-    const workbook = XLSX.read(request.file.buffer, { type: 'buffer', cellDates: true });
+    const workbook = XLSX.read(request.file.buffer, {
+      type: 'buffer',
+      cellDates: true,
+    });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(sheet);
@@ -66,8 +77,8 @@ export class ImportRegistrosUseCase {
             data: row,
             errors: validationErrors.map(err => ({
               property: err.property,
-              constraints: err.constraints || {}
-            }))
+              constraints: err.constraints || {},
+            })),
           });
         } else {
           // Simular salvamento (aqui você integraria com o repositório)
@@ -79,10 +90,14 @@ export class ImportRegistrosUseCase {
         errors.push({
           row: rowNumber,
           data: row,
-          errors: [{
-            property: 'processing',
-            constraints: { error: error.message || 'Erro desconhecido ao processar linha' }
-          }]
+          errors: [
+            {
+              property: 'processing',
+              constraints: {
+                error: error.message || 'Erro desconhecido ao processar linha',
+              },
+            },
+          ],
         });
       }
     }
@@ -93,12 +108,22 @@ export class ImportRegistrosUseCase {
       errorCount: errors.length,
       errors,
       summary: {
-        message: this.generateSummaryMessage(totalRows, successCount, errors.length),
-        details: this.generateSummaryDetails(totalRows, successCount, errors.length)
-      }
+        message: this.generateSummaryMessage(
+          totalRows,
+          successCount,
+          errors.length,
+        ),
+        details: this.generateSummaryDetails(
+          totalRows,
+          successCount,
+          errors.length,
+        ),
+      },
     };
 
-    this.logger.log(`Importação concluída: ${successCount}/${totalRows} registros importados com sucesso`);
+    this.logger.log(
+      `Importação concluída: ${successCount}/${totalRows} registros importados com sucesso`,
+    );
     return response;
   }
 
@@ -110,11 +135,13 @@ export class ImportRegistrosUseCase {
     const allowedMimeTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/vnd.ms-excel', // .xls
-      'text/csv' // .csv
+      'text/csv', // .csv
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new Error('Formato de arquivo não suportado. Use .xlsx, .xls ou .csv');
+      throw new Error(
+        'Formato de arquivo não suportado. Use .xlsx, .xls ou .csv',
+      );
     }
 
     // Validar tamanho do arquivo (máximo 10MB)
@@ -128,20 +155,42 @@ export class ImportRegistrosUseCase {
     const dto = new ImportRegistroDto();
 
     // Mapear campos obrigatórios
-    dto.desarquivamentoTipo = this.mapTipoDesarquivamento(row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamentoTipo']);
+    dto.desarquivamentoTipo = this.mapTipoDesarquivamento(
+      row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamentoTipo'],
+    );
     dto.status = this.mapStatusDesarquivamento(row['Status'] || row['status']);
-    dto.nomeCompleto = this.sanitizeString(row['Nome Completo'] || row['nomeCompleto']);
-    dto.numDocumento = this.sanitizeString(row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['numDocumento']);
-    dto.dataSolicitacao = this.formatDate(row['Data de solicitação'] || row['dataSolicitacao']);
+    dto.nomeCompleto = this.sanitizeString(
+      row['Nome Completo'] || row['nomeCompleto'],
+    );
+    dto.numDocumento = this.sanitizeString(
+      row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['numDocumento'],
+    );
+    dto.dataSolicitacao = this.formatDate(
+      row['Data de solicitação'] || row['dataSolicitacao'],
+    );
 
     // Mapear campos opcionais
-    dto.numProcesso = this.sanitizeString(row['Nº do Processo'] || row['numProcesso']);
-    dto.tipoDocumento = this.sanitizeString(row['Tipo do Documento'] || row['tipoDocumento']);
-    dto.dataDesarquivamento = this.formatDate(row['Data do desarquivamento - SAG'] || row['dataDesarquivamento']);
-    dto.dataDevolucao = this.formatDate(row['Data da devolução pelo setor'] || row['dataDevolucao']);
-    dto.setorDemandante = this.sanitizeString(row['Setor Demandante'] || row['setorDemandante']);
-    dto.servidorResponsavel = this.sanitizeString(row['Servidor Responsável'] || row['servidorResponsavel']);
-    dto.finalidade = this.sanitizeString(row['Finalidade'] || row['finalidade']);
+    dto.numProcesso = this.sanitizeString(
+      row['Nº do Processo'] || row['numProcesso'],
+    );
+    dto.tipoDocumento = this.sanitizeString(
+      row['Tipo do Documento'] || row['tipoDocumento'],
+    );
+    dto.dataDesarquivamento = this.formatDate(
+      row['Data do desarquivamento - SAG'] || row['dataDesarquivamento'],
+    );
+    dto.dataDevolucao = this.formatDate(
+      row['Data da devolução pelo setor'] || row['dataDevolucao'],
+    );
+    dto.setorDemandante = this.sanitizeString(
+      row['Setor Demandante'] || row['setorDemandante'],
+    );
+    dto.servidorResponsavel = this.sanitizeString(
+      row['Servidor Responsável'] || row['servidorResponsavel'],
+    );
+    dto.finalidade = this.sanitizeString(
+      row['Finalidade'] || row['finalidade'],
+    );
     dto.prorrogacao = this.mapBoolean(row['Prorrogação'] || row['prorrogacao']);
 
     return dto;
@@ -149,9 +198,9 @@ export class ImportRegistrosUseCase {
 
   private mapTipoDesarquivamento(value: any): TipoDesarquivamento {
     if (!value) return null;
-    
+
     const normalizedValue = String(value).trim();
-    
+
     switch (normalizedValue.toLowerCase()) {
       case 'físico':
       case 'fisico':
@@ -168,9 +217,9 @@ export class ImportRegistrosUseCase {
 
   private mapStatusDesarquivamento(value: any): StatusDesarquivamento {
     if (!value) return null;
-    
+
     const normalizedValue = String(value).trim();
-    
+
     switch (normalizedValue.toLowerCase()) {
       case 'finalizado':
         return StatusDesarquivamento.FINALIZADO;
@@ -189,7 +238,9 @@ export class ImportRegistrosUseCase {
       case 'nao localizado':
         return StatusDesarquivamento.NAO_LOCALIZADO;
       default:
-        throw new Error(`Status de desarquivamento inválido: ${normalizedValue}`);
+        throw new Error(
+          `Status de desarquivamento inválido: ${normalizedValue}`,
+        );
     }
   }
 
@@ -200,10 +251,10 @@ export class ImportRegistrosUseCase {
 
   private formatDate(value: any): string {
     if (!value) return undefined;
-    
+
     try {
       let date: Date;
-      
+
       if (value instanceof Date) {
         date = value;
       } else if (typeof value === 'string') {
@@ -214,11 +265,11 @@ export class ImportRegistrosUseCase {
       } else {
         throw new Error('Formato de data não reconhecido');
       }
-      
+
       if (isNaN(date.getTime())) {
         throw new Error('Data inválida');
       }
-      
+
       return date.toISOString().split('T')[0]; // YYYY-MM-DD
     } catch (error) {
       throw new Error(`Erro ao formatar data: ${error.message}`);
@@ -227,23 +278,32 @@ export class ImportRegistrosUseCase {
 
   private mapBoolean(value: any): boolean {
     if (value === undefined || value === null) return false;
-    
+
     if (typeof value === 'boolean') return value;
-    
+
     const normalizedValue = String(value).toLowerCase().trim();
     return ['sim', 'yes', 'true', '1', 'verdadeiro'].includes(normalizedValue);
   }
 
-  private async saveRegistro(dto: ImportRegistroDto, userId: number): Promise<void> {
+  private async saveRegistro(
+    dto: ImportRegistroDto,
+    userId: number,
+  ): Promise<void> {
     // Aqui você integraria com o repositório para salvar o registro
     // Por enquanto, apenas simula o salvamento
-    this.logger.debug(`Salvando registro: ${dto.nomeCompleto} - ${dto.numDocumento}`);
-    
+    this.logger.debug(
+      `Salvando registro: ${dto.nomeCompleto} - ${dto.numDocumento}`,
+    );
+
     // Simular delay de salvamento
     await new Promise(resolve => setTimeout(resolve, 10));
   }
 
-  private generateSummaryMessage(total: number, success: number, errors: number): string {
+  private generateSummaryMessage(
+    total: number,
+    success: number,
+    errors: number,
+  ): string {
     if (errors === 0) {
       return `Importação concluída com sucesso! Todos os ${total} registros foram importados.`;
     } else if (success === 0) {
@@ -253,17 +313,23 @@ export class ImportRegistrosUseCase {
     }
   }
 
-  private generateSummaryDetails(total: number, success: number, errors: number): string {
+  private generateSummaryDetails(
+    total: number,
+    success: number,
+    errors: number,
+  ): string {
     const details = [];
-    
+
     details.push(`Total de linhas processadas: ${total}`);
     details.push(`Registros importados com sucesso: ${success}`);
-    
+
     if (errors > 0) {
       details.push(`Registros com erro: ${errors}`);
-      details.push('Verifique os detalhes dos erros abaixo para corrigir os dados e tentar novamente.');
+      details.push(
+        'Verifique os detalhes dos erros abaixo para corrigir os dados e tentar novamente.',
+      );
     }
-    
+
     return details.join('\n');
   }
 }

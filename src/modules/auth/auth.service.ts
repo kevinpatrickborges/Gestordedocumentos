@@ -57,7 +57,9 @@ export class AuthService {
    * Valida as credenciais do usuário
    */
   async validateUser(usuario: string, password: string): Promise<User | null> {
-    this.logger.debug(`[AuthService] Iniciando validação para o usuário: "${usuario}"`);
+    this.logger.debug(
+      `[AuthService] Iniciando validação para o usuário: "${usuario}"`,
+    );
     try {
       // Busca por usuario
       const user = await this.userRepository.findOne({
@@ -66,39 +68,60 @@ export class AuthService {
       });
 
       if (!user) {
-        this.logger.warn(`[AuthService] Tentativa de login com usuário inexistente: "${usuario}"`);
+        this.logger.warn(
+          `[AuthService] Tentativa de login com usuário inexistente: "${usuario}"`,
+        );
         return null;
       }
-      this.logger.debug(`[AuthService] Usuário encontrado: ${user.usuario} (ID: ${user.id})`);
+      this.logger.debug(
+        `[AuthService] Usuário encontrado: ${user.usuario} (ID: ${user.id})`,
+      );
 
+      // DEBUG: log full user object to inspect 'ativo' value
+      this.logger.debug(
+        `[AuthService] Usuário object: ${JSON.stringify({ id: user.id, usuario: user.usuario, ativo: user.ativo, role: user.role ? user.role.name : null })}`,
+      );
 
       if (!user.ativo) {
-        this.logger.warn(`[AuthService] Tentativa de login com usuário inativo: "${usuario}"`);
+        this.logger.warn(
+          `[AuthService] Tentativa de login com usuário inativo: "${usuario}"`,
+        );
         throw new UnauthorizedException('Usuário inativo');
       }
 
       if (user.isBlocked()) {
-        this.logger.warn(`[AuthService] Tentativa de login com usuário bloqueado: "${usuario}"`);
+        this.logger.warn(
+          `[AuthService] Tentativa de login com usuário bloqueado: "${usuario}"`,
+        );
         throw new UnauthorizedException(
           `Usuário bloqueado até ${user.bloqueadoAte.toLocaleString()}`,
         );
       }
 
-      this.logger.debug(`[AuthService] Verificando a senha para o usuário: "${usuario}"`);
+      this.logger.debug(
+        `[AuthService] Verificando a senha para o usuário: "${usuario}"`,
+      );
       const isPasswordValid = await user.validatePassword(password);
-      
+
       if (!isPasswordValid) {
-        this.logger.warn(`[AuthService] Senha inválida para o usuário: "${usuario}"`);
+        this.logger.warn(
+          `[AuthService] Senha inválida para o usuário: "${usuario}"`,
+        );
         await this.handleFailedLogin(user);
         return null;
       }
 
-      this.logger.debug(`[AuthService] Senha válida para o usuário: "${usuario}".`);
+      this.logger.debug(
+        `[AuthService] Senha válida para o usuário: "${usuario}".`,
+      );
       // Reset tentativas de login em caso de sucesso
       await this.handleSuccessfulLogin(user);
       return user;
     } catch (error) {
-      this.logger.error(`[AuthService] Erro na validação do usuário "${usuario}": ${error.message}`, error.stack);
+      this.logger.error(
+        `[AuthService] Erro na validação do usuário "${usuario}": ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -106,9 +129,13 @@ export class AuthService {
   /**
    * Realiza o login do usuário
    */
-  async login(loginDto: LoginDto, ipAddress: string, userAgent: string): Promise<LoginResponse> {
+  async login(
+    loginDto: LoginDto,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<LoginResponse> {
     const user = await this.validateUser(loginDto.usuario, loginDto.senha);
-    
+
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
@@ -121,7 +148,7 @@ export class AuthService {
 
     // Força expiração de 50 minutos
     const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
-    
+
     // Salva auditoria de login bem-sucedido
     await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
 
@@ -136,12 +163,22 @@ export class AuthService {
   /**
    * Realiza o login do usuário para API v2
    */
-  async loginV2(loginDto: LoginDto, ipAddress: string, userAgent: string): Promise<LoginV2Response> {
+  async loginV2(
+    loginDto: LoginDto,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<LoginV2Response> {
     const user = await this.validateUser(loginDto.usuario, loginDto.senha);
-    
+
     if (!user) {
       // Salva auditoria de tentativa de login falhada
-      await this.saveLoginAudit(null, ipAddress, userAgent, false, 'Credenciais inválidas');
+      await this.saveLoginAudit(
+        null,
+        ipAddress,
+        userAgent,
+        false,
+        'Credenciais inválidas',
+      );
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
@@ -153,7 +190,7 @@ export class AuthService {
 
     // Força expiração de 50 minutos para API v2
     const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
-    
+
     // Salva auditoria de login bem-sucedido
     await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
 
@@ -188,7 +225,9 @@ export class AuthService {
 
   async register(registerDto: RegisterDto, currentUser: User): Promise<User> {
     if (!currentUser.isAdmin()) {
-      throw new UnauthorizedException('Apenas administradores podem criar usuários');
+      throw new UnauthorizedException(
+        'Apenas administradores podem criar usuários',
+      );
     }
 
     const existingUser = await this.userRepository.findOne({
@@ -215,30 +254,46 @@ export class AuthService {
     });
 
     const savedUser = await this.userRepository.save(user);
-    
-    this.logger.log(`Novo usuário criado: ${savedUser.usuario} por ${currentUser.usuario}`);
-    
+
+    this.logger.log(
+      `Novo usuário criado: ${savedUser.usuario} por ${currentUser.usuario}`,
+    );
+
     return this.sanitizeUser(savedUser);
   }
 
   /**
    * Logout do usuário
    */
-  async logout(userId: number, ipAddress: string, userAgent: string): Promise<void> {
+  async logout(
+    userId: number,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<void> {
     await this.saveLogoutAudit(userId, ipAddress, userAgent);
     this.logger.log(`Logout realizado para usuário ID: ${userId}`);
   }
-
-
 
   /**
    * Obtém usuário por ID
    */
   async findUserById(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['role'],
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .where('user.id = :id', { id })
+      .select([
+        'user.id',
+        'user.nome',
+        'user.usuario',
+        'user.ultimoLogin',
+        'user.createdAt',
+        'role.id',
+        'role.name',
+        'role.description',
+        'role.permissions',
+      ])
+      .getOne();
 
     if (!user) {
       throw new UnauthorizedException('Usuário não encontrado');
@@ -252,13 +307,15 @@ export class AuthService {
    */
   private async handleFailedLogin(user: User): Promise<void> {
     user.tentativasLogin += 1;
-    
+
     // Bloqueia usuário após 5 tentativas falhadas
     if (user.tentativasLogin >= 5) {
       user.bloqueadoAte = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos
-      this.logger.warn(`Usuário ${user.usuario} foi bloqueado por excesso de tentativas`);
+      this.logger.warn(
+        `Usuário ${user.usuario} foi bloqueado por excesso de tentativas`,
+      );
     }
-    
+
     await this.userRepository.save(user);
   }
 
@@ -283,11 +340,19 @@ export class AuthService {
     error?: string,
   ): Promise<void> {
     try {
-      const auditData = Auditoria.createLoginAudit(userId, ipAddress, userAgent, success, error);
+      const auditData = Auditoria.createLoginAudit(
+        userId,
+        ipAddress,
+        userAgent,
+        success,
+        error,
+      );
       const audit = this.auditoriaRepository.create(auditData);
       await this.auditoriaRepository.save(audit);
     } catch (auditError) {
-      this.logger.error(`Erro ao salvar auditoria de login: ${auditError.message}`);
+      this.logger.error(
+        `Erro ao salvar auditoria de login: ${auditError.message}`,
+      );
     }
   }
 
@@ -300,11 +365,17 @@ export class AuthService {
     userAgent: string,
   ): Promise<void> {
     try {
-      const auditData = Auditoria.createLogoutAudit(userId, ipAddress, userAgent);
+      const auditData = Auditoria.createLogoutAudit(
+        userId,
+        ipAddress,
+        userAgent,
+      );
       const audit = this.auditoriaRepository.create(auditData);
       await this.auditoriaRepository.save(audit);
     } catch (auditError) {
-      this.logger.error(`Erro ao salvar auditoria de logout: ${auditError.message}`);
+      this.logger.error(
+        `Erro ao salvar auditoria de logout: ${auditError.message}`,
+      );
     }
   }
 

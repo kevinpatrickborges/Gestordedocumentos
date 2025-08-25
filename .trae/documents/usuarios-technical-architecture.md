@@ -63,7 +63,6 @@ Request:
 | ----------------- | -------- | ----------- | ---------------------------------------------- |
 | page              | number   | false       | Número da página para paginação (padrão: 1)    |
 | limit             | number   | false       | Quantidade de itens por página (padrão: 25)    |
-| search            | string   | false       | Busca por nome ou email do usuário             |
 | role              | UserRole | false       | Filtro por papel (ADMIN, COORDENADOR, USUARIO) |
 | active            | boolean  | false       | Filtro por status ativo/inativo                |
 
@@ -84,7 +83,6 @@ Exemplo de Response:
     {
       "id": 1,
       "nome": "João Silva",
-      "email": "joao@itep.pe.gov.br",
       "role": "COORDENADOR",
       "ativo": true,
       "created_at": "2024-01-15T10:30:00Z"
@@ -109,8 +107,7 @@ Request:
 
 | Nome do Parâmetro | Tipo     | Obrigatório | Descrição                                      |
 | ----------------- | -------- | ----------- | ---------------------------------------------- |
-| nome              | string   | true        | Nome completo do usuário                       |
-| email             | string   | true        | Email único do usuário                         |
+| nome              | string   | true        | Nome completo do usuário                       |                     |
 | senha             | string   | true        | Senha do usuário (será hasheada no backend)    |
 | role              | UserRole | true        | Papel do usuário (ADMIN, COORDENADOR, USUARIO) |
 
@@ -127,7 +124,6 @@ Exemplo de Request:
 ```json
 {
   "nome": "Maria Santos",
-  "email": "maria@itep.pe.gov.br",
   "senha": "MinhaSenh@123",
   "role": "COORDENADOR"
 }
@@ -143,8 +139,7 @@ Request:
 
 | Nome do Parâmetro | Tipo     | Obrigatório | Descrição                            |
 | ----------------- | -------- | ----------- | ------------------------------------ |
-| nome              | string   | false       | Nome completo do usuário             |
-| email             | string   | false       | Email do usuário                     |
+| nome              | string   | false       | Nome completo do usuário             |                  |
 | senha             | string   | false       | Nova senha (opcional, será hasheada) |
 | role              | UserRole | false       | Papel do usuário                     |
 | ativo             | boolean  | false       | Status ativo do usuário              |
@@ -208,7 +203,6 @@ erDiagram
     USER {
         int id PK
         string nome
-        string email UK
         string senha_hash
         enum role
         boolean ativo
@@ -236,7 +230,6 @@ erDiagram
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'USUARIO' CHECK (role IN ('ADMIN', 'COORDENADOR', 'USUARIO')),
     ativo BOOLEAN DEFAULT true,
@@ -357,14 +350,12 @@ export interface UsersQueryParams {
 
 export interface CreateUserDto {
   nome: string;
-  email: string;
   senha: string;
   role: UserRole;
 }
 
 export interface UpdateUserDto {
   nome?: string;
-  email?: string;
   senha?: string;
   role?: UserRole;
   ativo?: boolean;
@@ -423,8 +414,6 @@ const ProtectedUserRoute = ({ children }: { children: React.ReactNode }) => {
 
 ### 9.1 Validações Frontend
 
-* Email único e formato válido
-
 * Senha forte (mínimo 8 caracteres, maiúscula, minúscula, número)
 
 * Nome obrigatório (mínimo 2 caracteres)
@@ -432,8 +421,6 @@ const ProtectedUserRoute = ({ children }: { children: React.ReactNode }) => {
 * Papel obrigatório
 
 ### 9.2 Validações Backend
-
-* Verificação de duplicidade de email
 
 * Hash seguro da senha
 

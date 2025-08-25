@@ -45,6 +45,7 @@ import {
   FindDesarquivamentoByIdUseCase,
   UpdateDesarquivamentoUseCase,
   DeleteDesarquivamentoUseCase,
+  RestoreDesarquivamentoUseCase,
   GenerateTermoEntregaUseCase,
   GetDashboardStatsUseCase,
   ImportDesarquivamentoUseCase,
@@ -83,6 +84,7 @@ export class NugecidController {
     private readonly findDesarquivamentoByIdUseCase: FindDesarquivamentoByIdUseCase,
     private readonly updateDesarquivamentoUseCase: UpdateDesarquivamentoUseCase,
     private readonly deleteDesarquivamentoUseCase: DeleteDesarquivamentoUseCase,
+    private readonly restoreDesarquivamentoUseCase: RestoreDesarquivamentoUseCase,
     private readonly generateTermoEntregaUseCase: GenerateTermoEntregaUseCase,
     private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
     private readonly importDesarquivamentoUseCase: ImportDesarquivamentoUseCase,
@@ -156,7 +158,8 @@ export class NugecidController {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `file-${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
@@ -169,7 +172,12 @@ export class NugecidController {
         if (allowedTypes.includes(file.mimetype)) {
           cb(null, true);
         } else {
-          cb(new BadRequestException('Apenas arquivos Excel (.xlsx, .xls) ou .csv são permitidos'), false);
+          cb(
+            new BadRequestException(
+              'Apenas arquivos Excel (.xlsx, .xls) ou .csv são permitidos',
+            ),
+            false,
+          );
         }
       },
       limits: {
@@ -187,7 +195,10 @@ export class NugecidController {
     }
 
     const startTime = Date.now();
-    const result = await this.importDesarquivamentoUseCase.execute(file.buffer, currentUser.id);
+    const result = await this.importDesarquivamentoUseCase.execute(
+      file.buffer,
+      currentUser.id,
+    );
     const processingTime = Date.now() - startTime;
 
     const enhancedResult = {
@@ -214,7 +225,8 @@ export class NugecidController {
   @ApiOperation({ summary: 'Importar registros de um arquivo .xlsx ou .csv' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Arquivo (.xlsx ou .csv) contendo os registros para importação',
+    description:
+      'Arquivo (.xlsx ou .csv) contendo os registros para importação',
     schema: {
       type: 'object',
       properties: {
@@ -226,7 +238,10 @@ export class NugecidController {
     },
   })
   @ApiResponse({ status: 201, description: 'Importação concluída' })
-  @ApiResponse({ status: 400, description: 'Arquivo inválido ou dados incorretos' })
+  @ApiResponse({
+    status: 400,
+    description: 'Arquivo inválido ou dados incorretos',
+  })
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleType.ADMIN)
@@ -273,7 +288,11 @@ export class NugecidController {
 
   @Get(':id/termo')
   @ApiOperation({ summary: 'Gerar termo de entrega de desarquivamento em PDF' })
-  @ApiParam({ name: 'id', description: 'ID do desarquivamento', type: 'number' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do desarquivamento',
+    type: 'number',
+  })
   @ApiResponse({ status: 200, description: 'PDF do termo gerado com sucesso' })
   @ApiResponse({ status: 404, description: 'Desarquivamento não encontrado' })
   @ApiResponse({ status: 500, description: 'Erro ao gerar o PDF' })
@@ -292,27 +311,38 @@ export class NugecidController {
         userRoles: [currentUser.role?.name || 'USER'],
       });
 
-      this.logger.debug(`[PDF Generation] Termo gerado para desarquivamento ${id}`);
+      this.logger.debug(
+        `[PDF Generation] Termo gerado para desarquivamento ${id}`,
+      );
 
       // Configurar headers para PDF
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${result.fileName}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${result.fileName}"`,
+      );
       res.setHeader('Content-Length', result.pdfBuffer.length);
-      
+
       res.send(result.pdfBuffer);
     } catch (error) {
-      this.logger.error(`Falha ao gerar PDF para o desarquivamento ${id}:`, error);
+      this.logger.error(
+        `Falha ao gerar PDF para o desarquivamento ${id}:`,
+        error,
+      );
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
       }
       if (error instanceof ForbiddenException) {
         throw new ForbiddenException(error.message);
       }
-      throw new InternalServerErrorException('Ocorreu um erro ao gerar o termo em PDF.');
+      throw new InternalServerErrorException(
+        'Ocorreu um erro ao gerar o termo em PDF.',
+      );
     }
   }
 
   @Get()
+  @Roles(RoleType.ADMIN, RoleType.GESTOR, RoleType.NUGECID_OPERATOR)
   @ApiOperation({ summary: 'Listar desarquivamentos com filtros e paginação' })
   @ApiResponse({
     status: 200,
@@ -381,20 +411,11 @@ export class NugecidController {
       userRoles: [currentUser.role?.name || 'USER'],
     });
 
-    if (req.headers.accept?.includes('application/json')) {
-      return res.json({
-        success: true,
-        data: stats,
-      });
-    } else {
-      return res.render('nugecid/dashboard', {
-        title: 'Dashboard - NUGECID',
-        stats,
-      });
-    }
+    return res.json({
+      success: true,
+      data: stats,
+    });
   }
-
-
 
   @Get('export')
   @ApiOperation({ summary: 'Exportar desarquivamentos para Excel' })
@@ -427,25 +448,31 @@ export class NugecidController {
     // Cria planilha Excel
     const workbook = XLSX.utils.book_new();
     const worksheetData = result.data.map(item => ({
-      'ID': item.id,
+      ID: item.id,
       'Código de Barras': item.codigoBarras,
-      'Tipo': item.tipoSolicitacao,
-      'Status': item.status,
+      Tipo: item.tipoSolicitacao,
+      Status: item.status,
       'Nome Requerente': item.nomeSolicitante,
       'Nome Vítima': item.nomeVitima || '',
       'Número Registro': item.numeroRegistro,
       'Tipo Documento': item.tipoDocumento || '',
-      'Data Fato': item.dataFato ? item.dataFato.toISOString().split('T')[0] : '',
-      'Finalidade': item.finalidade || '',
-      'Urgente': item.urgente ? 'Sim' : 'Não',
+      'Data Fato': item.dataFato
+        ? item.dataFato.toISOString().split('T')[0]
+        : '',
+      Finalidade: item.finalidade || '',
+      Urgente: item.urgente ? 'Sim' : 'Não',
       'Localização Física': item.localizacaoFisica || '',
-      'Prazo Atendimento': item.prazoAtendimento ? item.prazoAtendimento.toISOString() : '',
-      'Data Atendimento': item.dataAtendimento ? item.dataAtendimento.toISOString() : '',
-      'Resultado': item.resultadoAtendimento || '',
+      'Prazo Atendimento': item.prazoAtendimento
+        ? item.prazoAtendimento.toISOString()
+        : '',
+      'Data Atendimento': item.dataAtendimento
+        ? item.dataAtendimento.toISOString()
+        : '',
+      Resultado: item.resultadoAtendimento || '',
       'Criado Por ID': item.criadoPorId || '',
       'Responsável ID': item.responsavelId || '',
       'Criado em': item.createdAt.toISOString(),
-      'Observações': item.observacoes || '',
+      Observações: item.observacoes || '',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -454,19 +481,27 @@ export class NugecidController {
     const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
     const fileName = `desarquivamentos_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader('Content-Length', buffer.length);
 
-    this.logger.log(`Exportação realizada por ${currentUser.usuario}: ${result.total} registros`);
+    this.logger.log(
+      `Exportação realizada por ${currentUser.usuario}: ${result.total} registros`,
+    );
 
     return res.send(buffer);
   }
 
-
   @Get(':id')
   @ApiOperation({ summary: 'Obter desarquivamento por ID' })
-  @ApiParam({ name: 'id', description: 'ID do desarquivamento', type: 'integer' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do desarquivamento',
+    type: 'integer',
+  })
   @ApiResponse({
     status: 200,
     description: 'Desarquivamento encontrado',
@@ -510,7 +545,7 @@ export class NugecidController {
           return res.redirect('/nugecid?error=not-found');
         }
       }
-      
+
       if (error.message.includes('permissão')) {
         if (req.headers.accept?.includes('application/json')) {
           return res.status(HttpStatus.FORBIDDEN).json({
@@ -521,14 +556,17 @@ export class NugecidController {
           return res.redirect('/nugecid?error=forbidden');
         }
       }
-      
+
       throw error;
     }
   }
 
   @Get('barcode/:codigo')
   @ApiOperation({ summary: 'Obter desarquivamento por código de barras' })
-  @ApiParam({ name: 'codigo', description: 'Código de barras do desarquivamento' })
+  @ApiParam({
+    name: 'codigo',
+    description: 'Código de barras do desarquivamento',
+  })
   @ApiResponse({
     status: 200,
     description: 'Desarquivamento encontrado',
@@ -586,7 +624,11 @@ export class NugecidController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar desarquivamento' })
-  @ApiParam({ name: 'id', description: 'ID do desarquivamento', type: 'integer' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do desarquivamento',
+    type: 'integer',
+  })
   @ApiResponse({
     status: 200,
     description: 'Desarquivamento atualizado com sucesso',
@@ -626,8 +668,15 @@ export class NugecidController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remover desarquivamento' })
-  @ApiParam({ name: 'id', description: 'ID do desarquivamento', type: 'integer' })
-  @ApiResponse({ status: 200, description: 'Desarquivamento removido com sucesso' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do desarquivamento',
+    type: 'integer',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Desarquivamento removido com sucesso',
+  })
   @ApiResponse({ status: 404, description: 'Desarquivamento não encontrado' })
   @ApiResponse({ status: 403, description: 'Sem permissão para remover' })
   @ApiBearerAuth()
@@ -645,7 +694,9 @@ export class NugecidController {
       permanent: false, // Por padrão, usar soft delete
     });
 
-    this.logger.log(`Desarquivamento removido: ${id} por ${currentUser.usuario}`);
+    this.logger.log(
+      `Desarquivamento removido: ${id} por ${currentUser.usuario}`,
+    );
 
     if (req.headers.accept?.includes('application/json')) {
       return res.json({
@@ -654,6 +705,92 @@ export class NugecidController {
       });
     } else {
       return res.redirect('/nugecid?deleted=true');
+    }
+  }
+
+  @Post(':id/restore')
+  @ApiOperation({ summary: 'Restaurar desarquivamento excluído' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID do desarquivamento',
+    type: 'integer',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Desarquivamento restaurado com sucesso',
+  })
+  @ApiResponse({ status: 404, description: 'Desarquivamento não encontrado' })
+  @ApiResponse({ status: 403, description: 'Sem permissão para restaurar' })
+  @ApiResponse({
+    status: 400,
+    description: 'Desarquivamento não está excluído',
+  })
+  @Roles(RoleType.ADMIN, RoleType.NUGECID_OPERATOR)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  async restore(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: User,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const result = await this.restoreDesarquivamentoUseCase.execute({
+        id,
+        userId: currentUser.id,
+        userRoles: [currentUser.role?.name || 'USER'],
+      });
+
+      this.logger.log(
+        `Desarquivamento restaurado: ${id} por ${currentUser.usuario}`,
+      );
+
+      if (req.headers.accept?.includes('application/json')) {
+        return res.json({
+          success: true,
+          message: result.message,
+        });
+      } else {
+        return res.redirect('/nugecid/excluidos?restored=true');
+      }
+    } catch (error) {
+      if (error.message.includes('não encontrado')) {
+        if (req.headers.accept?.includes('application/json')) {
+          return res.status(HttpStatus.NOT_FOUND).json({
+            success: false,
+            message: error.message,
+          });
+        } else {
+          return res.redirect('/nugecid/excluidos?error=not-found');
+        }
+      }
+
+      if (
+        error.message.includes('permissão') ||
+        error.message.includes('Acesso negado')
+      ) {
+        if (req.headers.accept?.includes('application/json')) {
+          return res.status(HttpStatus.FORBIDDEN).json({
+            success: false,
+            message: error.message,
+          });
+        } else {
+          return res.redirect('/nugecid/excluidos?error=forbidden');
+        }
+      }
+
+      if (error.message.includes('não está excluído')) {
+        if (req.headers.accept?.includes('application/json')) {
+          return res.status(HttpStatus.BAD_REQUEST).json({
+            success: false,
+            message: error.message,
+          });
+        } else {
+          return res.redirect('/nugecid/excluidos?error=not-deleted');
+        }
+      }
+
+      throw error;
     }
   }
 }

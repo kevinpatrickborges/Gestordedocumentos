@@ -23,7 +23,8 @@ import { useDesarquivamentos } from '@/hooks/useDesarquivamentos'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { StatusBadge, ActionButtons } from '@/components/nugecid'
+// Componentes StatusBadge e ActionButtons removidos - implementações temporárias abaixo
+// import { StatusBadge, ActionButtons } from '@/components/nugecid'
 import { PageLoading } from '@/components/ui'
 import { formatDate, formatDateTime } from '@/utils/date'
 import { cn } from '@/utils/cn'
@@ -184,7 +185,29 @@ const NugecidDetailPage: React.FC<NugecidDetailPageProps> = ({ className }) => {
               <Printer className="w-4 h-4 mr-2" />
               Imprimir
             </Button>
-            <ActionButtons desarquivamento={desarquivamento} variant="compact" />
+            {/* ActionButtons temporariamente desabilitado */}
+            <div className="flex items-center space-x-2">
+              {canEdit && (
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                >
+                  <Link to={`/nugecid/${desarquivamento.id}/editar`}>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </Link>
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => console.log('Ação de exclusão')}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -359,8 +382,20 @@ const NugecidDetailPage: React.FC<NugecidDetailPageProps> = ({ className }) => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* StatusBadge temporariamente substituído */}
               <div className="text-center">
-                <StatusBadge status={desarquivamento.status} size="lg" />
+                <Badge 
+                  variant={desarquivamento.status === 'CONCLUIDO' ? 'default' : 
+                          desarquivamento.status === 'PENDENTE' ? 'secondary' : 
+                          desarquivamento.status === 'CANCELADO' ? 'destructive' : 'outline'}
+                  className="px-3 py-1 text-sm"
+                >
+                  {desarquivamento.status === 'CONCLUIDO' && <CheckCircle className="w-3 h-3 mr-1" />}
+                  {desarquivamento.status === 'CANCELADO' && <XCircle className="w-3 h-3 mr-1" />}
+                  {desarquivamento.status === 'PENDENTE' && <Clock className="w-3 h-3 mr-1" />}
+                  {desarquivamento.status === 'ARQUIVADO' && <Archive className="w-3 h-3 mr-1" />}
+                  {desarquivamento.status}
+                </Badge>
               </div>
               
               <div className="space-y-3">

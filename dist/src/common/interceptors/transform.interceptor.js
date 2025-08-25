@@ -14,7 +14,7 @@ let TransformInterceptor = class TransformInterceptor {
         const ctx = context.switchToHttp();
         const response = ctx.getResponse();
         const request = ctx.getRequest();
-        return next.handle().pipe((0, operators_1.map)((data) => {
+        return next.handle().pipe((0, operators_1.map)(data => {
             if (response.headersSent) {
                 return data;
             }

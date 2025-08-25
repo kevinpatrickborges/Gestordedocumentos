@@ -42,20 +42,27 @@ let TypeOrmUserRepository = class TypeOrmUserRepository {
         return entity ? user_mapper_1.UserMapper.toDomain(entity) : null;
     }
     async findAll(filters) {
-        const queryBuilder = this.userRepository.createQueryBuilder('user')
+        const queryBuilder = this.userRepository
+            .createQueryBuilder('user')
             .leftJoinAndSelect('user.role', 'role');
         if (filters) {
             if (filters.nome) {
-                queryBuilder.andWhere('user.nome ILIKE :nome', { nome: `%${filters.nome}%` });
+                queryBuilder.andWhere('user.nome ILIKE :nome', {
+                    nome: `%${filters.nome}%`,
+                });
             }
             if (filters.usuario) {
-                queryBuilder.andWhere('user.usuario ILIKE :usuario', { usuario: `%${filters.usuario}%` });
+                queryBuilder.andWhere('user.usuario ILIKE :usuario', {
+                    usuario: `%${filters.usuario}%`,
+                });
             }
             if (filters.ativo !== undefined) {
                 queryBuilder.andWhere('user.ativo = :ativo', { ativo: filters.ativo });
             }
             if (filters.roleId) {
-                queryBuilder.andWhere('user.roleId = :roleId', { roleId: filters.roleId });
+                queryBuilder.andWhere('user.roleId = :roleId', {
+                    roleId: filters.roleId,
+                });
             }
             if (!filters.includeDeleted) {
                 queryBuilder.andWhere('user.deletedAt IS NULL');
@@ -68,20 +75,27 @@ let TypeOrmUserRepository = class TypeOrmUserRepository {
         return user_mapper_1.UserMapper.toDomainArray(entities);
     }
     async findWithPagination(page, limit, filters) {
-        const queryBuilder = this.userRepository.createQueryBuilder('user')
+        const queryBuilder = this.userRepository
+            .createQueryBuilder('user')
             .leftJoinAndSelect('user.role', 'role');
         if (filters) {
             if (filters.nome) {
-                queryBuilder.andWhere('user.nome ILIKE :nome', { nome: `%${filters.nome}%` });
+                queryBuilder.andWhere('user.nome ILIKE :nome', {
+                    nome: `%${filters.nome}%`,
+                });
             }
             if (filters.usuario) {
-                queryBuilder.andWhere('user.usuario ILIKE :usuario', { usuario: `%${filters.usuario}%` });
+                queryBuilder.andWhere('user.usuario ILIKE :usuario', {
+                    usuario: `%${filters.usuario}%`,
+                });
             }
             if (filters.ativo !== undefined) {
                 queryBuilder.andWhere('user.ativo = :ativo', { ativo: filters.ativo });
             }
             if (filters.roleId) {
-                queryBuilder.andWhere('user.roleId = :roleId', { roleId: filters.roleId });
+                queryBuilder.andWhere('user.roleId = :roleId', {
+                    roleId: filters.roleId,
+                });
             }
             if (!filters.includeDeleted) {
                 queryBuilder.andWhere('user.deletedAt IS NULL');
@@ -122,7 +136,9 @@ let TypeOrmUserRepository = class TypeOrmUserRepository {
     async getStatistics() {
         const total = await this.userRepository.count();
         const ativos = await this.userRepository.count({ where: { ativo: true } });
-        const inativos = await this.userRepository.count({ where: { ativo: false } });
+        const inativos = await this.userRepository.count({
+            where: { ativo: false },
+        });
         const deletados = await this.userRepository
             .createQueryBuilder('user')
             .withDeleted()

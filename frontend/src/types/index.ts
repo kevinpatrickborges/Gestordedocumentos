@@ -25,7 +25,8 @@ export enum TipoDesarquivamento {
 export enum UserRole {
   ADMIN = 'admin',
   COORDENADOR = 'coordenador',
-  USUARIO = 'usuario'
+  USUARIO = 'usuario',
+  NUGECID_OPERATOR = 'nugecid_operator'
 }
 
 // Interfaces
@@ -33,7 +34,12 @@ export interface User {
   id: number
   nome: string
   usuario: string
-  role: UserRole
+  role: {
+    id: number;
+    name: string;
+    description: string;
+    permissions: string[];
+  }
   ativo: boolean
   createdAt: string
   updatedAt: string
@@ -200,7 +206,7 @@ export interface CreateUserDto {
 
 export interface UpdateUserDto {
   nome?: string
-  email?: string
+  usuario?: string
   senha?: string
   role?: UserRole
   ativo?: boolean

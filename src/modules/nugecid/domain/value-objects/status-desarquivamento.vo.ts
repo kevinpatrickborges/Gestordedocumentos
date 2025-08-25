@@ -9,9 +9,25 @@ export class StatusDesarquivamento {
   private readonly _value: StatusDesarquivamentoEnum;
 
   // Mapa de transições válidas
-  private static readonly VALID_TRANSITIONS: Map<StatusDesarquivamentoEnum, StatusDesarquivamentoEnum[]> = new Map([
-    [StatusDesarquivamentoEnum.PENDENTE, [StatusDesarquivamentoEnum.EM_ANDAMENTO, StatusDesarquivamentoEnum.CANCELADO]],
-    [StatusDesarquivamentoEnum.EM_ANDAMENTO, [StatusDesarquivamentoEnum.CONCLUIDO, StatusDesarquivamentoEnum.CANCELADO, StatusDesarquivamentoEnum.PENDENTE]],
+  private static readonly VALID_TRANSITIONS: Map<
+    StatusDesarquivamentoEnum,
+    StatusDesarquivamentoEnum[]
+  > = new Map([
+    [
+      StatusDesarquivamentoEnum.PENDENTE,
+      [
+        StatusDesarquivamentoEnum.EM_ANDAMENTO,
+        StatusDesarquivamentoEnum.CANCELADO,
+      ],
+    ],
+    [
+      StatusDesarquivamentoEnum.EM_ANDAMENTO,
+      [
+        StatusDesarquivamentoEnum.CONCLUIDO,
+        StatusDesarquivamentoEnum.CANCELADO,
+        StatusDesarquivamentoEnum.PENDENTE,
+      ],
+    ],
     [StatusDesarquivamentoEnum.CONCLUIDO, []], // Status final - não pode ser alterado
     [StatusDesarquivamentoEnum.CANCELADO, [StatusDesarquivamentoEnum.PENDENTE]], // Pode ser reaberto
   ]);
@@ -57,7 +73,8 @@ export class StatusDesarquivamento {
 
   // Verifica se pode transicionar para um novo status
   canTransitionTo(newStatus: StatusDesarquivamento): boolean {
-    const allowedTransitions = StatusDesarquivamento.VALID_TRANSITIONS.get(this._value) || [];
+    const allowedTransitions =
+      StatusDesarquivamento.VALID_TRANSITIONS.get(this._value) || [];
     return allowedTransitions.includes(newStatus._value);
   }
 

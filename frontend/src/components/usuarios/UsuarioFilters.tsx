@@ -66,7 +66,7 @@ const UsuarioFilters: React.FC<UsuarioFiltersProps> = ({
             <input
               id="search"
               type="text"
-              placeholder="Nome ou email..."
+              placeholder="Nome ou login..."
               value={params.search || ''}
               onChange={handleSearchChange}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"

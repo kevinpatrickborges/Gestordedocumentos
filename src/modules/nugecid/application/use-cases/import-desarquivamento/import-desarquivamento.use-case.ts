@@ -3,7 +3,10 @@ import * as xlsx from 'xlsx';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { CreateDesarquivamentoDto } from '../../../dto/create-desarquivamento.dto';
-import { CreateDesarquivamentoUseCase, CreateDesarquivamentoRequest } from '../create-desarquivamento/create-desarquivamento.use-case';
+import {
+  CreateDesarquivamentoUseCase,
+  CreateDesarquivamentoRequest,
+} from '../create-desarquivamento/create-desarquivamento.use-case';
 
 interface ImportResult {
   totalRows: number;
@@ -18,7 +21,10 @@ export class ImportDesarquivamentoUseCase {
     private readonly createDesarquivamentoUseCase: CreateDesarquivamentoUseCase,
   ) {}
 
-  async execute(fileBuffer: Buffer, criadoPorId: number = 1): Promise<ImportResult> {
+  async execute(
+    fileBuffer: Buffer,
+    criadoPorId: number = 1,
+  ): Promise<ImportResult> {
     const workbook = xlsx.read(fileBuffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
@@ -55,9 +61,9 @@ export class ImportDesarquivamentoUseCase {
             urgente: dto.urgente || false,
             localizacaoFisica: dto.localizacaoFisica,
             criadoPorId,
-            responsavelId: dto.responsavelId
+            responsavelId: dto.responsavelId,
           };
-          
+
           // Usar o CreateDesarquivamentoUseCase
           await this.createDesarquivamentoUseCase.execute(request);
           result.successCount++;

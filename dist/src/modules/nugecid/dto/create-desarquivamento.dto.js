@@ -40,8 +40,12 @@ __decorate([
     }),
     (0, class_validator_1.IsString)({ message: 'Nome do requerente deve ser uma string' }),
     (0, class_validator_1.IsNotEmpty)({ message: 'Nome do requerente é obrigatório' }),
-    (0, class_validator_1.MinLength)(2, { message: 'Nome do solicitante deve ter pelo menos 2 caracteres' }),
-    (0, class_validator_1.MaxLength)(255, { message: 'Nome do solicitante deve ter no máximo 255 caracteres' }),
+    (0, class_validator_1.MinLength)(2, {
+        message: 'Nome do solicitante deve ter pelo menos 2 caracteres',
+    }),
+    (0, class_validator_1.MaxLength)(255, {
+        message: 'Nome do solicitante deve ter no máximo 255 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "nomeSolicitante", void 0);
@@ -53,7 +57,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Nome da vítima deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(255, { message: 'Nome da vítima deve ter no máximo 255 caracteres' }),
+    (0, class_validator_1.MaxLength)(255, {
+        message: 'Nome da vítima deve ter no máximo 255 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "nomeVitima", void 0);
@@ -66,8 +72,12 @@ __decorate([
     }),
     (0, class_validator_1.IsString)({ message: 'Número do registro deve ser uma string' }),
     (0, class_validator_1.IsNotEmpty)({ message: 'Número do registro é obrigatório' }),
-    (0, class_validator_1.MinLength)(3, { message: 'Número do registro deve ter pelo menos 3 caracteres' }),
-    (0, class_validator_1.MaxLength)(50, { message: 'Número do registro deve ter no máximo 50 caracteres' }),
+    (0, class_validator_1.MinLength)(3, {
+        message: 'Número do registro deve ter pelo menos 3 caracteres',
+    }),
+    (0, class_validator_1.MaxLength)(50, {
+        message: 'Número do registro deve ter no máximo 50 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "numeroRegistro", void 0);
@@ -79,7 +89,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Tipo do documento deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(100, { message: 'Tipo do documento deve ter no máximo 100 caracteres' }),
+    (0, class_validator_1.MaxLength)(100, {
+        message: 'Tipo do documento deve ter no máximo 100 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "tipoDocumento", void 0);
@@ -92,7 +104,7 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)({}, { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' }),
-    (0, class_transformer_1.Transform)(({ value }) => value ? new Date(value) : null),
+    (0, class_transformer_1.Transform)(({ value }) => (value ? new Date(value) : null)),
     __metadata("design:type", Date)
 ], CreateDesarquivamentoDto.prototype, "dataFato", void 0);
 __decorate([
@@ -115,7 +127,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Observações deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(1000, { message: 'Observações deve ter no máximo 1000 caracteres' }),
+    (0, class_validator_1.MaxLength)(1000, {
+        message: 'Observações deve ter no máximo 1000 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "observacoes", void 0);
@@ -143,7 +157,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Localização física deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(255, { message: 'Localização física deve ter no máximo 255 caracteres' }),
+    (0, class_validator_1.MaxLength)(255, {
+        message: 'Localização física deve ter no máximo 255 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "localizacaoFisica", void 0);

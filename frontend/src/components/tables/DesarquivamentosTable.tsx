@@ -59,9 +59,9 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
 
   const getStatusColor = (status: StatusDesarquivamento) => {
     switch (status) {
-      case StatusDesarquivamento.PENDENTE:
+      case 'PENDENTE':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case StatusDesarquivamento.EM_ANDAMENTO:
+      case 'EM_ANDAMENTO':
         return 'bg-blue-100 text-blue-800 border-blue-200'
       case StatusDesarquivamento.CONCLUIDO:
         return 'bg-green-100 text-green-800 border-green-200'
@@ -93,7 +93,7 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
 
   const getDaysUntilExpiration = (prazoAtendimento: string) => {
     const today = new Date()
-    const expiration = new Date(prazoVencimento)
+    const expiration = new Date(prazoAtendimento)
     const diffTime = expiration.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
@@ -246,7 +246,7 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
                     <TableCell>
                       <Badge 
                         variant="outline" 
-                        className={cn("text-xs", getTipoColor(item.tipo))}
+                        className={cn("text-xs", getTipoColor(item.tipo || TipoSolicitacao.DESARQUIVAMENTO))}
                       >
                         {formatTipo(item.tipo)}
                       </Badge>

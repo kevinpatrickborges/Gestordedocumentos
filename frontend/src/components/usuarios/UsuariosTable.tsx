@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   Edit, 
@@ -10,10 +10,13 @@ import {
   Loader2,
   Shield,
   User,
-  Crown
+  Crown,
+  Eye
 } from 'lucide-react'
 import { User as UserType, PaginationMeta } from '@/types'
 import { useReactivateUser } from '@/hooks/useUsers'
+import UserDetailModal from './UserDetailModal'
+import EditUserModal from './EditUserModal'
 
 interface UsuariosTableProps {
   users: UserType[]
@@ -22,6 +25,7 @@ interface UsuariosTableProps {
   canManageUsers: boolean
   onPageChange: (page: number) => void
   onDeleteUser: (userId: number) => void
+  onRefresh?: () => void
 }
 
 const UsuariosTable: React.FC<UsuariosTableProps> = ({
@@ -30,8 +34,11 @@ const UsuariosTable: React.FC<UsuariosTableProps> = ({
   isLoading,
   canManageUsers,
   onPageChange,
-  onDeleteUser
+  onDeleteUser,
+  onRefresh
 }) => {
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [editUserId, setEditUserId] = useState<number | null>(null)
   const reactivateUserMutation = useReactivateUser()
 
   const handleReactivateUser = async (userId: number) => {
@@ -111,7 +118,7 @@ const UsuariosTable: React.FC<UsuariosTableProps> = ({
                 Usuário
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
+                Login
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Papel
@@ -150,13 +157,13 @@ const UsuariosTable: React.FC<UsuariosTableProps> = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{user.email}</div>
+                  <div className="text-sm text-gray-900">{user.usuario}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
-                    {getRoleIcon(user.role)}
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
-                      {getRoleLabel(user.role)}
+                    {getRoleIcon(user.role.name)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role.name)}`}>
+                      {getRoleLabel(user.role.name)}
                     </span>
                   </div>
                 </td>
@@ -177,13 +184,20 @@ const UsuariosTable: React.FC<UsuariosTableProps> = ({
                     <div className="flex items-center justify-end gap-2">
                       {user.ativo ? (
                         <>
-                          <Link
-                            to={`/usuarios/${user.id}/editar`}
+                          <button
+                            onClick={() => setSelectedUserId(user.id)}
+                            className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50 transition-colors"
+                            title="Visualizar detalhes"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditUserId(user.id)}
                             className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
                             title="Editar usuário"
                           >
                             <Edit className="h-4 w-4" />
-                          </Link>
+                          </button>
                           <button
                             onClick={() => onDeleteUser(user.id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
@@ -293,6 +307,26 @@ const UsuariosTable: React.FC<UsuariosTableProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Detalhes */}
+      {selectedUserId && (
+        <UserDetailModal
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+        />
+      )}
+
+      {/* Modal de Edição */}
+      {editUserId && (
+        <EditUserModal
+          userId={editUserId}
+          onClose={() => setEditUserId(null)}
+          onSuccess={() => {
+             setEditUserId(null)
+             onRefresh?.()
+           }}
+        />
       )}
     </div>
   )

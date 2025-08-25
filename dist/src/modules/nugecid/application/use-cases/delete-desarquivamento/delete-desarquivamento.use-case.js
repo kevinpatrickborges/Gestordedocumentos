@@ -120,7 +120,8 @@ let RestoreDesarquivamentoUseCase = class RestoreDesarquivamentoUseCase {
         if (!desarquivamento.isDeleted()) {
             throw new Error('Desarquivamento não está excluído');
         }
-        if (!request.userRoles.includes('ADMIN') && !request.userRoles.includes('NUGECID_OPERATOR')) {
+        if (!request.userRoles.includes('ADMIN') &&
+            !request.userRoles.includes('NUGECID_OPERATOR')) {
             throw new Error('Acesso negado: você não tem permissão para restaurar desarquivamentos');
         }
         try {

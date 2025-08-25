@@ -3,14 +3,16 @@ import { test, expect } from '@playwright/test';
 const BASE_URL = 'http://localhost:3001';
 
 // Gera um número de RG aleatório para garantir a unicidade do teste
-const generateRg = () => Math.floor(1000000 + Math.random() * 9000000).toString();
-
+const generateRg = () =>
+  Math.floor(1000000 + Math.random() * 9000000).toString();
 
 test.describe('Smoke Test - Nugecid CRUD', () => {
   const newRg = generateRg();
   const newNome = 'Nome de Teste Automatizado';
 
-  test('deve realizar o login, criar, verificar e deslogar', async ({ page }) => {
+  test('deve realizar o login, criar, verificar e deslogar', async ({
+    page,
+  }) => {
     // 1. Login
     await page.goto(`${BASE_URL}/login`);
     await page.fill('input[name="usuario"]', 'admin');
@@ -33,7 +35,9 @@ test.describe('Smoke Test - Nugecid CRUD', () => {
     await page.fill('input[name="numero_processo"]', 'PROC-12345');
     await page.fill('input[name="numero_inquerito"]', 'INQ-67890');
     await page.fill('input[name="servidor_responsavel"]', 'Servidor Teste');
-    await page.selectOption('select[name="tipo_procedimento"]', { label: 'Procedimento 1' });
+    await page.selectOption('select[name="tipo_procedimento"]', {
+      label: 'Procedimento 1',
+    });
 
     // 5. Salvar o novo registro
     await page.click('button[type="submit"]');

@@ -80,11 +80,11 @@ let Auditoria = class Auditoria {
     }
     getResourceLabel() {
         const labels = {
-            'auth': 'Autenticação',
-            'users': 'Usuários',
-            'nugecid': 'Desarquivamentos',
-            'dashboard': 'Dashboard',
-            'files': 'Arquivos',
+            auth: 'Autenticação',
+            users: 'Usuários',
+            nugecid: 'Desarquivamentos',
+            dashboard: 'Dashboard',
+            files: 'Arquivos',
         };
         return labels[this.entityName] || this.entityName;
     }

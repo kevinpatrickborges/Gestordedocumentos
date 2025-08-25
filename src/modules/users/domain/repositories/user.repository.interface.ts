@@ -22,7 +22,11 @@ export interface IUserRepository {
   findById(id: UserId): Promise<User | null>;
   findByUsuario(usuario: Usuario): Promise<User | null>;
   findAll(filters?: UserFilters): Promise<User[]>;
-  findWithPagination(page: number, limit: number, filters?: UserFilters): Promise<{
+  findWithPagination(
+    page: number,
+    limit: number,
+    filters?: UserFilters,
+  ): Promise<{
     users: User[];
     total: number;
     totalPages: number;

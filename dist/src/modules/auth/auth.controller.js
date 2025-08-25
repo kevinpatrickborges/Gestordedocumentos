@@ -54,7 +54,7 @@ let AuthController = AuthController_1 = class AuthController {
             if (req.headers.accept?.includes('application/json')) {
                 return res.json({
                     success: true,
-                    data: result
+                    data: result,
                 });
             }
             return res.redirect('/dashboard');
@@ -75,7 +75,7 @@ let AuthController = AuthController_1 = class AuthController {
             if (req.session.user) {
                 await this.authService.logout(req.session.user.id, ipAddress, userAgent || 'Unknown');
             }
-            req.session.destroy((err) => {
+            req.session.destroy(err => {
                 if (err) {
                     this.logger.error(`Erro ao destruir sessão: ${err.message}`);
                 }
@@ -112,7 +112,14 @@ let AuthController = AuthController_1 = class AuthController {
                 id: user.id,
                 nome: user.nome,
                 usuario: user.usuario,
-                role: user.role ? { id: user.role.id, name: user.role.name, description: user.role.description, permissions: user.role.permissions } : null,
+                role: user.role
+                    ? {
+                        id: user.role.id,
+                        name: user.role.name,
+                        description: user.role.description,
+                        permissions: user.role.permissions,
+                    }
+                    : null,
                 ultimoLogin: user.ultimoLogin,
                 criadoEm: user.createdAt,
             };
@@ -121,10 +128,7 @@ let AuthController = AuthController_1 = class AuthController {
         }
         catch (error) {
             this.logger.error(`[AuthController] Erro no endpoint /auth/profile: ${error.message}`, error.stack);
-            if (error instanceof common_1.UnauthorizedException) {
-                throw error;
-            }
-            throw new common_1.UnauthorizedException('Erro ao obter perfil do usuário');
+            throw error;
         }
     }
     async checkAuth(user) {
@@ -252,7 +256,9 @@ __decorate([
     (0, common_1.Post)('/api/v2/auth/login'),
     (0, is_public_decorator_1.IsPublic)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Login API v2 - Retorna JWT com expiração de 50 minutos' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Login API v2 - Retorna JWT com expiração de 50 minutos',
+    }),
     (0, swagger_1.ApiResponse)({
         status: 200,
         description: 'Login realizado com sucesso',

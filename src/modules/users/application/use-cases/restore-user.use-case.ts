@@ -5,12 +5,14 @@ import { IUserRepository } from '../../domain/repositories/user.repository.inter
 
 @Injectable()
 export class RestoreUserUseCase {
-  constructor(@Inject('IUserRepository') private readonly userRepository: IUserRepository) {}
+  constructor(
+    @Inject('IUserRepository') private readonly userRepository: IUserRepository,
+  ) {}
 
   async execute(id: number): Promise<User> {
     const userId = new UserId(id);
     const user = await this.userRepository.findById(userId);
-    
+
     if (!user) {
       throw new Error('Usuário não encontrado');
     }
@@ -20,13 +22,13 @@ export class RestoreUserUseCase {
     }
 
     await this.userRepository.restore(userId);
-    
+
     // Retornar o usuário atualizado
     const restoredUser = await this.userRepository.findById(userId);
     if (!restoredUser) {
       throw new Error('Erro ao restaurar usuário');
     }
-    
+
     return restoredUser;
   }
 }

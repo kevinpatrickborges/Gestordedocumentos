@@ -18,7 +18,7 @@ export class UpdateUserUseCase {
   async execute(id: number, dto: UpdateUserDto): Promise<User> {
     const userId = new UserId(id);
     const user = await this.userRepository.findById(userId);
-    
+
     if (!user) {
       throw new Error('Usuário não encontrado');
     }

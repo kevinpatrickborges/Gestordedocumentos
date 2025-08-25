@@ -165,7 +165,10 @@ __decorate([
     (0, common_1.Get)('dashboard'),
     (0, common_1.UseGuards)(session_auth_guard_1.SessionAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: 'Dados do dashboard' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Dados do dashboard retornados com sucesso' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Dados do dashboard retornados com sucesso',
+    }),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -175,7 +178,10 @@ __decorate([
     (0, common_1.Get)('sobre'),
     (0, common_1.UseGuards)(session_auth_guard_1.SessionAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: 'Informações sobre o sistema' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Informações sobre o sistema retornadas com sucesso' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Informações sobre o sistema retornadas com sucesso',
+    }),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -184,7 +190,10 @@ __decorate([
 __decorate([
     (0, common_1.Get)('health'),
     (0, swagger_1.ApiOperation)({ summary: 'Health check da aplicação' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Aplicação funcionando corretamente' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Aplicação funcionando corretamente',
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)

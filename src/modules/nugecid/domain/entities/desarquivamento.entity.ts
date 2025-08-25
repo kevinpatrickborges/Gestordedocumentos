@@ -60,9 +60,11 @@ export class DesarquivamentoDomain {
   }
 
   // Factory method para criar nova instância
-  static create(props: Omit<DesarquivamentoDomainProps, 'id' | 'createdAt' | 'updatedAt'>): DesarquivamentoDomain {
+  static create(
+    props: Omit<DesarquivamentoDomainProps, 'id' | 'createdAt' | 'updatedAt'>,
+  ): DesarquivamentoDomain {
     const now = new Date();
-    
+
     return new DesarquivamentoDomain(
       undefined, // ID será gerado pelo repositório
       props.codigoBarras,
@@ -73,7 +75,11 @@ export class DesarquivamentoDomain {
       props.numeroRegistro,
       props.tipoDocumento,
       props.dataFato,
-      props.prazoAtendimento || DesarquivamentoDomain.calculateDefaultDeadline(props.tipoSolicitacao, props.urgente),
+      props.prazoAtendimento ||
+        DesarquivamentoDomain.calculateDefaultDeadline(
+          props.tipoSolicitacao,
+          props.urgente,
+        ),
       props.dataAtendimento,
       props.resultadoAtendimento,
       props.finalidade,
@@ -232,8 +238,13 @@ export class DesarquivamentoDomain {
   }
 
   // Calcula prazo padrão baseado no tipo e urgência
-  private static calculateDefaultDeadline(tipo: TipoSolicitacao, urgente: boolean): Date {
-    const days = urgente ? Math.ceil(tipo.getDefaultDeadlineDays() / 2) : tipo.getDefaultDeadlineDays();
+  private static calculateDefaultDeadline(
+    tipo: TipoSolicitacao,
+    urgente: boolean,
+  ): Date {
+    const days = urgente
+      ? Math.ceil(tipo.getDefaultDeadlineDays() / 2)
+      : tipo.getDefaultDeadlineDays();
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + days);
     return deadline;
@@ -257,7 +268,10 @@ export class DesarquivamentoDomain {
     }
 
     // Usuários com role específica podem acessar
-    if (userRoles.includes('NUGECID_VIEWER') || userRoles.includes('NUGECID_OPERATOR')) {
+    if (
+      userRoles.includes('NUGECID_VIEWER') ||
+      userRoles.includes('NUGECID_OPERATOR')
+    ) {
       return true;
     }
 
@@ -316,21 +330,26 @@ export class DesarquivamentoDomain {
     const now = new Date();
     const diffTime = this._prazoAtendimento.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
   // Métodos para alterar estado
   changeStatus(newStatus: StatusDesarquivamento): void {
     if (!this._status.canTransitionTo(newStatus)) {
-      throw new Error(`Não é possível alterar status de ${this._status.toString()} para ${newStatus.toString()}`);
+      throw new Error(
+        `Não é possível alterar status de ${this._status.toString()} para ${newStatus.toString()}`,
+      );
     }
 
     this._status = newStatus;
     this._updatedAt = new Date();
 
     // Se foi concluído, define data de atendimento
-    if (newStatus.value === StatusDesarquivamentoEnum.CONCLUIDO && !this._dataAtendimento) {
+    if (
+      newStatus.value === StatusDesarquivamentoEnum.CONCLUIDO &&
+      !this._dataAtendimento
+    ) {
       this._dataAtendimento = new Date();
     }
   }

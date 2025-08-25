@@ -58,7 +58,9 @@ export class CreateDesarquivamentoUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: CreateDesarquivamentoRequest): Promise<CreateDesarquivamentoResponse> {
+  async execute(
+    request: CreateDesarquivamentoRequest,
+  ): Promise<CreateDesarquivamentoResponse> {
     // Validações de entrada
     await this.validateRequest(request);
 
@@ -68,7 +70,9 @@ export class CreateDesarquivamentoUseCase {
     // Criar value objects
     const codigoBarrasVO = CodigoBarras.create(codigoBarras);
     const numeroRegistroVO = NumeroRegistro.create(request.numeroRegistro);
-    const tipoSolicitacaoVO = TipoSolicitacao.create(request.tipoSolicitacao as TipoSolicitacaoEnum);
+    const tipoSolicitacaoVO = TipoSolicitacao.create(
+      request.tipoSolicitacao as TipoSolicitacaoEnum,
+    );
     const statusVO = StatusDesarquivamento.createPendente();
 
     // Criar entidade de domínio
@@ -91,21 +95,36 @@ export class CreateDesarquivamentoUseCase {
     });
 
     // Persistir no repositório
-    const savedDesarquivamento = await this.desarquivamentoRepository.create(desarquivamento);
+    const savedDesarquivamento =
+      await this.desarquivamentoRepository.create(desarquivamento);
 
     // Retornar resposta
     return this.mapToResponse(savedDesarquivamento);
   }
 
-  private async validateRequest(request: CreateDesarquivamentoRequest): Promise<void> {
+  private async validateRequest(
+    request: CreateDesarquivamentoRequest,
+  ): Promise<void> {
     // Validar se o número de registro já existe
-    const existingByNumero = await this.desarquivamentoRepository.findByNumeroRegistro(request.numeroRegistro);
+    const existingByNumero =
+      await this.desarquivamentoRepository.findByNumeroRegistro(
+        request.numeroRegistro,
+      );
     if (existingByNumero.length > 0) {
-      throw new Error(`Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`);
+      throw new Error(
+        `Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`,
+      );
     }
 
     // Validar tipo de solicitação
-    if (!Object.values(['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO']).includes(request.tipoSolicitacao)) {
+    if (
+      !Object.values([
+        'DESARQUIVAMENTO',
+        'COPIA',
+        'VISTA',
+        'CERTIDAO',
+      ]).includes(request.tipoSolicitacao)
+    ) {
       throw new Error('Tipo de solicitação inválido');
     }
 
@@ -120,7 +139,10 @@ export class CreateDesarquivamentoUseCase {
     }
 
     // Validar campos obrigatórios
-    if (!request.nomeSolicitante || request.nomeSolicitante.trim().length === 0) {
+    if (
+      !request.nomeSolicitante ||
+      request.nomeSolicitante.trim().length === 0
+    ) {
       throw new Error('Nome do solicitante é obrigatório');
     }
 
@@ -161,21 +183,27 @@ export class CreateDesarquivamentoUseCase {
 
     while (attempts < maxAttempts) {
       const codigoBarras = CodigoBarras.generateNew();
-      const exists = await this.desarquivamentoRepository.existsByCodigoBarras(codigoBarras.value);
-      
+      const exists = await this.desarquivamentoRepository.existsByCodigoBarras(
+        codigoBarras.value,
+      );
+
       if (!exists) {
         return codigoBarras.value;
       }
-      
+
       attempts++;
     }
 
-    throw new Error('Não foi possível gerar um código de barras único após várias tentativas');
+    throw new Error(
+      'Não foi possível gerar um código de barras único após várias tentativas',
+    );
   }
 
-  private mapToResponse(desarquivamento: DesarquivamentoDomain): CreateDesarquivamentoResponse {
+  private mapToResponse(
+    desarquivamento: DesarquivamentoDomain,
+  ): CreateDesarquivamentoResponse {
     const plainObject = desarquivamento.toPlainObject();
-    
+
     return {
       id: plainObject.id,
       codigoBarras: plainObject.codigoBarras,

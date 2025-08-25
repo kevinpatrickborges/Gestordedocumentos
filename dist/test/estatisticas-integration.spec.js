@@ -57,9 +57,7 @@ describe('EstatisticasController (e2e)', () => {
         });
     });
     it('Deve retornar 401 Unauthorized se não houver token', () => {
-        return request(app.getHttpServer())
-            .get('/estatisticas/cards')
-            .expect(401);
+        return request(app.getHttpServer()).get('/estatisticas/cards').expect(401);
     });
 });
 //# sourceMappingURL=estatisticas-integration.spec.js.map

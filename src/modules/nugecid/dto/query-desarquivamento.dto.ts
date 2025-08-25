@@ -43,7 +43,8 @@ export class QueryDesarquivamentoDto {
   limit?: number = 10;
 
   @ApiPropertyOptional({
-    description: 'Termo de busca (nome requerente, vítima, número registro, código barras)',
+    description:
+      'Termo de busca (nome requerente, vítima, número registro, código barras)',
     example: 'João Silva',
   })
   @IsOptional()
@@ -55,13 +56,17 @@ export class QueryDesarquivamentoDto {
     description: 'Filtro por status (múltiplos valores permitidos)',
     enum: StatusDesarquivamento,
     isArray: true,
-    example: [StatusDesarquivamento.PENDENTE, StatusDesarquivamento.EM_ANDAMENTO],
+    example: [
+      StatusDesarquivamento.PENDENTE,
+      StatusDesarquivamento.EM_ANDAMENTO,
+    ],
   })
   @IsOptional()
   @IsArray({ message: 'Status deve ser um array' })
   @IsEnum(StatusDesarquivamento, {
     each: true,
-    message: 'Cada status deve ser um valor válido: PENDENTE, EM_ANDAMENTO, CONCLUIDO, CANCELADO',
+    message:
+      'Cada status deve ser um valor válido: PENDENTE, EM_ANDAMENTO, CONCLUIDO, CANCELADO',
   })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
@@ -72,7 +77,8 @@ export class QueryDesarquivamentoDto {
   status?: StatusDesarquivamento[];
 
   @ApiPropertyOptional({
-    description: 'Filtro por tipo de solicitação (múltiplos valores permitidos)',
+    description:
+      'Filtro por tipo de solicitação (múltiplos valores permitidos)',
     enum: TipoSolicitacaoEnum,
     isArray: true,
     example: [TipoSolicitacaoEnum.DESARQUIVAMENTO, TipoSolicitacaoEnum.COPIA],
@@ -81,7 +87,8 @@ export class QueryDesarquivamentoDto {
   @IsArray({ message: 'Tipo deve ser um array' })
   @IsEnum(TipoSolicitacaoEnum, {
     each: true,
-    message: 'Cada tipo deve ser um valor válido: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
+    message:
+      'Cada tipo deve ser um valor válido: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
   })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
@@ -120,7 +127,10 @@ export class QueryDesarquivamentoDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data inicial deve estar no formato válido (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Data inicial deve estar no formato válido (YYYY-MM-DD)' },
+  )
   dataInicio?: string;
 
   @ApiPropertyOptional({
@@ -130,7 +140,10 @@ export class QueryDesarquivamentoDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data final deve estar no formato válido (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'Data final deve estar no formato válido (YYYY-MM-DD)' },
+  )
   dataFim?: string;
 
   @ApiPropertyOptional({
@@ -227,7 +240,8 @@ export class QueryDesarquivamentoDto {
   incluirExcluidos?: boolean = false;
 
   @ApiPropertyOptional({
-    description: 'Formato de resposta (para endpoints que suportam múltiplos formatos)',
+    description:
+      'Formato de resposta (para endpoints que suportam múltiplos formatos)',
     example: 'json',
     enum: ['json', 'excel', 'pdf'],
     default: 'json',

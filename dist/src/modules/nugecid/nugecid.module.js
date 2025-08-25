@@ -41,7 +41,7 @@ exports.NugecidModule = NugecidModule = __decorate([
                             cb(null, uploadPath);
                         },
                         filename: (req, file, cb) => {
-                            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
                             cb(null, `${file.fieldname}-${uniqueSuffix}${(0, path_1.extname)(file.originalname)}`);
                         },
                     }),
@@ -72,6 +72,7 @@ exports.NugecidModule = NugecidModule = __decorate([
             use_cases_1.FindDesarquivamentoByIdUseCase,
             use_cases_1.UpdateDesarquivamentoUseCase,
             use_cases_1.DeleteDesarquivamentoUseCase,
+            use_cases_1.RestoreDesarquivamentoUseCase,
             use_cases_1.GenerateTermoEntregaUseCase,
             use_cases_1.GetDashboardStatsUseCase,
             use_cases_1.ImportDesarquivamentoUseCase,
@@ -84,6 +85,7 @@ exports.NugecidModule = NugecidModule = __decorate([
             use_cases_1.FindDesarquivamentoByIdUseCase,
             use_cases_1.UpdateDesarquivamentoUseCase,
             use_cases_1.DeleteDesarquivamentoUseCase,
+            use_cases_1.RestoreDesarquivamentoUseCase,
             use_cases_1.GenerateTermoEntregaUseCase,
             use_cases_1.GetDashboardStatsUseCase,
             use_cases_1.ImportDesarquivamentoUseCase,

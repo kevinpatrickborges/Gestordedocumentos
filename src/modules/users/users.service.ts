@@ -41,7 +41,9 @@ export class UsersService {
    */
   async create(createUserDto: CreateUserDto, currentUser: User): Promise<User> {
     if (!currentUser.isAdmin()) {
-      throw new ForbiddenException('Apenas administradores podem criar usuários');
+      throw new ForbiddenException(
+        'Apenas administradores podem criar usuários',
+      );
     }
 
     // Verifica se usuario já existe
@@ -68,7 +70,7 @@ export class UsersService {
     });
 
     const savedUser = await this.userRepository.save(user);
-    
+
     // Salva auditoria
     await this.saveAudit(
       currentUser.id,
@@ -78,8 +80,10 @@ export class UsersService {
       { userId: savedUser.id },
     );
 
-    this.logger.log(`Usuário criado: ${savedUser.usuario} por ${currentUser.usuario}`);
-    
+    this.logger.log(
+      `Usuário criado: ${savedUser.usuario} por ${currentUser.usuario}`,
+    );
+
     return this.findOne(savedUser.id);
   }
 
@@ -230,8 +234,10 @@ export class UsersService {
       { userId: updatedUser.id, changes: updateUserDto },
     );
 
-    this.logger.log(`Usuário atualizado: ${updatedUser.usuario} por ${currentUser.usuario}`);
-    
+    this.logger.log(
+      `Usuário atualizado: ${updatedUser.usuario} por ${currentUser.usuario}`,
+    );
+
     return this.findOne(updatedUser.id);
   }
 
@@ -240,7 +246,9 @@ export class UsersService {
    */
   async remove(id: number, currentUser: User): Promise<void> {
     if (!currentUser.isAdmin()) {
-      throw new ForbiddenException('Apenas administradores podem remover usuários');
+      throw new ForbiddenException(
+        'Apenas administradores podem remover usuários',
+      );
     }
 
     const user = await this.userRepository.findOne({ where: { id } });
@@ -266,7 +274,9 @@ export class UsersService {
       { userId: user.id },
     );
 
-    this.logger.log(`Usuário removido: ${user.usuario} por ${currentUser.usuario}`);
+    this.logger.log(
+      `Usuário removido: ${user.usuario} por ${currentUser.usuario}`,
+    );
   }
 
   /**
@@ -274,7 +284,9 @@ export class UsersService {
    */
   async reactivate(id: number, currentUser: User): Promise<User> {
     if (!currentUser.isAdmin()) {
-      throw new ForbiddenException('Apenas administradores podem reativar usuários');
+      throw new ForbiddenException(
+        'Apenas administradores podem reativar usuários',
+      );
     }
 
     const user = await this.userRepository.findOne({ where: { id } });
@@ -286,7 +298,7 @@ export class UsersService {
     user.ativo = true;
     user.tentativasLogin = 0;
     user.bloqueadoAte = null;
-    
+
     const reactivatedUser = await this.userRepository.save(user);
 
     // Salva auditoria
@@ -298,8 +310,10 @@ export class UsersService {
       { userId: reactivatedUser.id },
     );
 
-    this.logger.log(`Usuário reativado: ${reactivatedUser.usuario} por ${currentUser.usuario}`);
-    
+    this.logger.log(
+      `Usuário reativado: ${reactivatedUser.usuario} por ${currentUser.usuario}`,
+    );
+
     return this.findOne(reactivatedUser.id);
   }
 
@@ -324,8 +338,10 @@ export class UsersService {
   }> {
     const total = await this.userRepository.count();
     const ativos = await this.userRepository.count({ where: { ativo: true } });
-    const inativos = await this.userRepository.count({ where: { ativo: false } });
-    
+    const inativos = await this.userRepository.count({
+      where: { ativo: false },
+    });
+
     const bloqueados = await this.userRepository
       .createQueryBuilder('user')
       .where('user.bloqueadoAte > :now', { now: new Date() })

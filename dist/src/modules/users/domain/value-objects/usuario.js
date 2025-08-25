@@ -21,8 +21,10 @@ class Usuario {
         if (!validPattern.test(trimmedValue)) {
             throw new Error('Usuário pode conter apenas letras, números, underscore e hífen');
         }
-        if (trimmedValue.startsWith('_') || trimmedValue.startsWith('-') ||
-            trimmedValue.endsWith('_') || trimmedValue.endsWith('-')) {
+        if (trimmedValue.startsWith('_') ||
+            trimmedValue.startsWith('-') ||
+            trimmedValue.endsWith('_') ||
+            trimmedValue.endsWith('-')) {
             throw new Error('Usuário não pode começar ou terminar com underscore ou hífen');
         }
     }

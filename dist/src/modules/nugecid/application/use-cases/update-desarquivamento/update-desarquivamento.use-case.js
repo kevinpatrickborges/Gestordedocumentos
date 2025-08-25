@@ -47,10 +47,12 @@ let UpdateDesarquivamentoUseCase = class UpdateDesarquivamentoUseCase {
         if (request.nomeVitima !== undefined && request.nomeVitima.length > 255) {
             throw new Error('Nome da vítima deve ter no máximo 255 caracteres');
         }
-        if (request.tipoDocumento !== undefined && request.tipoDocumento.length > 100) {
+        if (request.tipoDocumento !== undefined &&
+            request.tipoDocumento.length > 100) {
             throw new Error('Tipo do documento deve ter no máximo 100 caracteres');
         }
-        if (request.localizacaoFisica !== undefined && request.localizacaoFisica.length > 255) {
+        if (request.localizacaoFisica !== undefined &&
+            request.localizacaoFisica.length > 255) {
             throw new Error('Localização física deve ter no máximo 255 caracteres');
         }
         if (request.responsavelId !== undefined && request.responsavelId <= 0) {
@@ -59,16 +61,24 @@ let UpdateDesarquivamentoUseCase = class UpdateDesarquivamentoUseCase {
         if (request.dataFato !== undefined && request.dataFato > new Date()) {
             throw new Error('Data do fato não pode ser futura');
         }
-        if (request.prazoAtendimento !== undefined && request.prazoAtendimento <= new Date()) {
+        if (request.prazoAtendimento !== undefined &&
+            request.prazoAtendimento <= new Date()) {
             throw new Error('Prazo de atendimento deve ser futuro');
         }
         if (request.status !== undefined) {
-            const validStatuses = ['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'];
+            const validStatuses = [
+                'PENDENTE',
+                'EM_ANDAMENTO',
+                'CONCLUIDO',
+                'CANCELADO',
+            ];
             if (!validStatuses.includes(request.status)) {
                 throw new Error(`Status inválido. Status válidos: ${validStatuses.join(', ')}`);
             }
         }
-        if (request.status === 'CONCLUIDO' && (!request.resultadoAtendimento || request.resultadoAtendimento.trim().length === 0)) {
+        if (request.status === 'CONCLUIDO' &&
+            (!request.resultadoAtendimento ||
+                request.resultadoAtendimento.trim().length === 0)) {
             throw new Error('Resultado do atendimento é obrigatório quando o status é CONCLUIDO');
         }
     }

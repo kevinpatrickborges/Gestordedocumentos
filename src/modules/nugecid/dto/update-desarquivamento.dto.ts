@@ -22,7 +22,8 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsEnum(TipoSolicitacaoEnum, {
-    message: 'Tipo deve ser um dos valores válidos: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
+    message:
+      'Tipo deve ser um dos valores válidos: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
   })
   tipo?: TipoSolicitacaoEnum;
 
@@ -33,7 +34,8 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsEnum(StatusDesarquivamento, {
-    message: 'Status deve ser um dos valores válidos: PENDENTE, EM_ANDAMENTO, CONCLUIDO, CANCELADO',
+    message:
+      'Status deve ser um dos valores válidos: PENDENTE, EM_ANDAMENTO, CONCLUIDO, CANCELADO',
   })
   status?: StatusDesarquivamento;
 
@@ -45,8 +47,12 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Nome do requerente deve ser uma string' })
-  @MinLength(2, { message: 'Nome do requerente deve ter pelo menos 2 caracteres' })
-  @MaxLength(255, { message: 'Nome do requerente deve ter no máximo 255 caracteres' })
+  @MinLength(2, {
+    message: 'Nome do requerente deve ter pelo menos 2 caracteres',
+  })
+  @MaxLength(255, {
+    message: 'Nome do requerente deve ter no máximo 255 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   nomeRequerente?: string;
 
@@ -57,7 +63,9 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Nome da vítima deve ser uma string' })
-  @MaxLength(255, { message: 'Nome da vítima deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Nome da vítima deve ter no máximo 255 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   nomeVitima?: string;
 
@@ -69,8 +77,12 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Número do registro deve ser uma string' })
-  @MinLength(3, { message: 'Número do registro deve ter pelo menos 3 caracteres' })
-  @MaxLength(50, { message: 'Número do registro deve ter no máximo 50 caracteres' })
+  @MinLength(3, {
+    message: 'Número do registro deve ter pelo menos 3 caracteres',
+  })
+  @MaxLength(50, {
+    message: 'Número do registro deve ter no máximo 50 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   numeroRegistro?: string;
 
@@ -81,7 +93,9 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Tipo do documento deve ser uma string' })
-  @MaxLength(100, { message: 'Tipo do documento deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'Tipo do documento deve ter no máximo 100 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   tipoDocumento?: string;
 
@@ -92,8 +106,11 @@ export class UpdateDesarquivamentoDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' })
-  @Transform(({ value }) => value ? new Date(value) : null)
+  @IsDateString(
+    {},
+    { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' },
+  )
+  @Transform(({ value }) => (value ? new Date(value) : null))
   dataFato?: Date;
 
   @ApiPropertyOptional({
@@ -114,7 +131,9 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Observações devem ser uma string' })
-  @MaxLength(1000, { message: 'Observações devem ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observações devem ter no máximo 1000 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   observacoes?: string;
 
@@ -139,7 +158,9 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Localização física deve ser uma string' })
-  @MaxLength(255, { message: 'Localização física deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Localização física deve ter no máximo 255 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   localizacaoFisica?: string;
 
@@ -150,8 +171,11 @@ export class UpdateDesarquivamentoDto {
     format: 'date-time',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Prazo de atendimento deve estar no formato válido' })
-  @Transform(({ value }) => value ? new Date(value) : null)
+  @IsDateString(
+    {},
+    { message: 'Prazo de atendimento deve estar no formato válido' },
+  )
+  @Transform(({ value }) => (value ? new Date(value) : null))
   prazoAtendimento?: Date;
 
   @ApiPropertyOptional({
@@ -172,8 +196,11 @@ export class UpdateDesarquivamentoDto {
     format: 'date-time',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data de conclusão deve estar no formato válido' })
-  @Transform(({ value }) => value ? new Date(value) : null)
+  @IsDateString(
+    {},
+    { message: 'Data de conclusão deve estar no formato válido' },
+  )
+  @Transform(({ value }) => (value ? new Date(value) : null))
   dataAtendimento?: Date;
 
   @ApiPropertyOptional({
@@ -183,7 +210,9 @@ export class UpdateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Resultado do atendimento deve ser uma string' })
-  @MaxLength(1000, { message: 'Resultado do atendimento deve ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Resultado do atendimento deve ter no máximo 1000 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   resultadoAtendimento?: string;
 }

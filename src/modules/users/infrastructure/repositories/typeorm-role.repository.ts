@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role as DomainRole } from '../../domain/entities/role';
 import { RoleId } from '../../domain/value-objects/role-id';
-import { IRoleRepository, RoleFilters } from '../../domain/repositories/role.repository.interface';
+import {
+  IRoleRepository,
+  RoleFilters,
+} from '../../domain/repositories/role.repository.interface';
 import { Role as RoleEntity } from '../../entities/role.entity';
 import { RoleMapper } from '../mappers/role.mapper';
 
@@ -24,7 +27,7 @@ export class TypeOrmRoleRepository implements IRoleRepository {
     const entity = await this.roleRepository.findOne({
       where: { id: id.value },
     });
-    
+
     return entity ? RoleMapper.toDomain(entity) : null;
   }
 
@@ -32,7 +35,7 @@ export class TypeOrmRoleRepository implements IRoleRepository {
     const entity = await this.roleRepository.findOne({
       where: { name: nome },
     });
-    
+
     return entity ? RoleMapper.toDomain(entity) : null;
   }
 
@@ -41,11 +44,15 @@ export class TypeOrmRoleRepository implements IRoleRepository {
 
     if (filters) {
       if (filters.nome) {
-        queryBuilder.andWhere('role.name ILIKE :nome', { nome: `%${filters.nome}%` });
+        queryBuilder.andWhere('role.name ILIKE :nome', {
+          nome: `%${filters.nome}%`,
+        });
       }
 
       if (filters.permissao) {
-        queryBuilder.andWhere(':permissao = ANY(role.permissions)', { permissao: filters.permissao });
+        queryBuilder.andWhere(':permissao = ANY(role.permissions)', {
+          permissao: filters.permissao,
+        });
       }
     }
 
@@ -75,7 +82,7 @@ export class TypeOrmRoleRepository implements IRoleRepository {
       .createQueryBuilder('role')
       .where(':permission = ANY(role.permissions)', { permission })
       .getMany();
-    
+
     return RoleMapper.toDomainArray(entities);
   }
 }

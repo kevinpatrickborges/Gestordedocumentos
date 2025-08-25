@@ -66,7 +66,10 @@ export class User {
   deletedAt: Date;
 
   // Relacionamentos
-  @OneToMany(() => Desarquivamento, desarquivamento => desarquivamento.criadoPor)
+  @OneToMany(
+    () => Desarquivamento,
+    desarquivamento => desarquivamento.criadoPor,
+  )
   desarquivamentos: Desarquivamento[];
 
   @OneToMany(() => Auditoria, auditoria => auditoria.user)
@@ -76,7 +79,12 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.senha && !this.senha.startsWith('$2a$') && !this.senha.startsWith('$2b$') && !this.senha.startsWith('$2y$')) {
+    if (
+      this.senha &&
+      !this.senha.startsWith('$2a$') &&
+      !this.senha.startsWith('$2b$') &&
+      !this.senha.startsWith('$2y$')
+    ) {
       this.senha = await bcrypt.hash(this.senha, 12);
     }
   }
@@ -87,11 +95,11 @@ export class User {
   }
 
   isAdmin(): boolean {
-    return this.role?.name === 'admin';
+    return this.role?.name.toLowerCase() === 'admin';
   }
 
   isEditor(): boolean {
-    return this.role?.name === 'editor';
+    return this.role?.name.toLowerCase() === 'editor';
   }
 
   canManageUser(targetUserId: number): boolean {

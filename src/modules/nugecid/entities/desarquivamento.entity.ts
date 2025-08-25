@@ -53,7 +53,11 @@ export class Desarquivamento {
     enum: TipoSolicitacaoEnum,
     example: TipoSolicitacaoEnum.DESARQUIVAMENTO,
   })
-  @Column({ name: 'tipo_solicitacao', type: 'varchar', default: TipoSolicitacaoEnum.DESARQUIVAMENTO })
+  @Column({
+    name: 'tipo_solicitacao',
+    type: 'varchar',
+    default: TipoSolicitacaoEnum.DESARQUIVAMENTO,
+  })
   tipoSolicitacao: TipoSolicitacaoEnum;
 
   @ApiProperty({
@@ -99,7 +103,7 @@ export class Desarquivamento {
     format: 'date',
   })
   @Column({ name: 'data_fato', type: 'date', nullable: true })
-  @Transform(({ value }) => value ? value.toISOString().split('T')[0] : null)
+  @Transform(({ value }) => (value ? value.toISOString().split('T')[0] : null))
   dataFato?: Date;
 
   @ApiPropertyOptional({
@@ -154,8 +158,6 @@ export class Desarquivamento {
   })
   @Column({ name: 'localizacao_fisica', length: 255, nullable: true })
   localizacaoFisica?: string;
-
-
 
   @ApiPropertyOptional({
     description: 'ID do usuário responsável pelo atendimento',
@@ -230,7 +232,7 @@ export class Desarquivamento {
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     const timestamp = now.getTime().toString().slice(-4);
-    
+
     return `DES${year}${month}${day}${timestamp}`;
   }
 
@@ -239,9 +241,11 @@ export class Desarquivamento {
    */
   isOverdue(): boolean {
     if (!this.prazoAtendimento) return false;
-    return new Date() > this.prazoAtendimento && 
-           this.status !== StatusDesarquivamento.CONCLUIDO &&
-           this.status !== StatusDesarquivamento.CANCELADO;
+    return (
+      new Date() > this.prazoAtendimento &&
+      this.status !== StatusDesarquivamento.CONCLUIDO &&
+      this.status !== StatusDesarquivamento.CANCELADO
+    );
   }
 
   /**
@@ -249,16 +253,19 @@ export class Desarquivamento {
    */
   canBeAccessedBy(user: User): boolean {
     // Administradores e coordenadores podem acessar tudo
-    if (user.role?.name === RoleType.ADMIN || user.role?.name === RoleType.COORDENADOR) {
+    if (
+      user.role?.name === RoleType.ADMIN ||
+      user.role?.name === RoleType.COORDENADOR
+    ) {
       return true;
     }
-    
+
     // Usuários podem acessar suas próprias solicitações
     if (this.criadoPor.id === user.id) return true;
-    
+
     // Responsáveis podem acessar solicitações atribuídas a eles
     if (this.responsavelId === user.id) return true;
-    
+
     return false;
   }
 
@@ -267,26 +274,37 @@ export class Desarquivamento {
    */
   canBeEditedBy(user: User): boolean {
     // Administradores e coordenadores podem editar tudo
-    if (user.role?.name === RoleType.ADMIN || user.role?.name === RoleType.COORDENADOR) {
+    if (
+      user.role?.name === RoleType.ADMIN ||
+      user.role?.name === RoleType.COORDENADOR
+    ) {
       return true;
     }
-    
+
     // Solicitações concluídas ou canceladas não podem ser editadas
-    if (this.status === StatusDesarquivamento.CONCLUIDO || 
-        this.status === StatusDesarquivamento.CANCELADO) {
+    if (
+      this.status === StatusDesarquivamento.CONCLUIDO ||
+      this.status === StatusDesarquivamento.CANCELADO
+    ) {
       return false;
     }
-    
+
     // Criador pode editar se ainda estiver pendente
-    if (this.criadoPor.id === user.id && this.status === StatusDesarquivamento.PENDENTE) {
+    if (
+      this.criadoPor.id === user.id &&
+      this.status === StatusDesarquivamento.PENDENTE
+    ) {
       return true;
     }
-    
+
     // Responsável pode editar se estiver em andamento
-    if (this.responsavelId === user.id && this.status === StatusDesarquivamento.EM_ANDAMENTO) {
+    if (
+      this.responsavelId === user.id &&
+      this.status === StatusDesarquivamento.EM_ANDAMENTO
+    ) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -304,7 +322,7 @@ export class Desarquivamento {
       [StatusDesarquivamento.CONCLUIDO]: 'Concluído',
       [StatusDesarquivamento.CANCELADO]: 'Cancelado',
     };
-    
+
     return statusMap[this.status] || this.status;
   }
 
@@ -335,16 +353,16 @@ export class Desarquivamento {
     const transitions = {
       [StatusDesarquivamento.PENDENTE]: [
         StatusDesarquivamento.EM_ANDAMENTO,
-        StatusDesarquivamento.CANCELADO
+        StatusDesarquivamento.CANCELADO,
       ],
       [StatusDesarquivamento.EM_ANDAMENTO]: [
         StatusDesarquivamento.CONCLUIDO,
-        StatusDesarquivamento.CANCELADO
+        StatusDesarquivamento.CANCELADO,
       ],
       [StatusDesarquivamento.CONCLUIDO]: [],
-      [StatusDesarquivamento.CANCELADO]: []
+      [StatusDesarquivamento.CANCELADO]: [],
     };
-    
+
     return transitions[this.status]?.includes(newStatus) || false;
   }
 
@@ -353,12 +371,12 @@ export class Desarquivamento {
    */
   getDaysUntilDeadline(): number | null {
     if (!this.prazoAtendimento) return null;
-    
+
     const now = new Date();
     const deadline = new Date(this.prazoAtendimento);
     const diffTime = deadline.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     return diffDays;
   }
 
@@ -367,13 +385,13 @@ export class Desarquivamento {
    */
   getPriority(): 'ALTA' | 'MEDIA' | 'BAIXA' {
     if (this.urgente) return 'ALTA';
-    
+
     const daysUntilDeadline = this.getDaysUntilDeadline();
     if (daysUntilDeadline === null) return 'BAIXA';
-    
+
     if (daysUntilDeadline <= 3) return 'ALTA';
     if (daysUntilDeadline <= 7) return 'MEDIA';
-    
+
     return 'BAIXA';
   }
 }

@@ -13,7 +13,7 @@ export class UserMapper {
     const usuario = new Usuario(entity.usuario);
     const password = Password.fromHash(entity.senha);
     const roleId = new RoleId(entity.roleId);
-    
+
     let role: DomainRole | undefined;
     if (entity.role) {
       role = new DomainRole({
@@ -42,11 +42,11 @@ export class UserMapper {
 
   static toEntity(domain: DomainUser): UserEntity {
     const entity = new UserEntity();
-    
+
     if (domain.id) {
       entity.id = domain.id.value;
     }
-    
+
     entity.nome = domain.nome;
     entity.usuario = domain.usuario.value;
     entity.senha = domain.password.hashedValue;
@@ -55,6 +55,17 @@ export class UserMapper {
     entity.createdAt = domain.createdAt;
     entity.updatedAt = domain.updatedAt;
     entity.deletedAt = domain.deletedAt;
+
+    if (domain.role) {
+      const roleEntity = new RoleEntity();
+      roleEntity.id = domain.role.id.value;
+      roleEntity.name = domain.role.nome;
+      roleEntity.description = domain.role.descricao;
+      roleEntity.permissions = domain.role.permissoes;
+      roleEntity.createdAt = domain.role.createdAt;
+      roleEntity.updatedAt = domain.role.updatedAt;
+      entity.role = roleEntity;
+    }
 
     return entity;
   }

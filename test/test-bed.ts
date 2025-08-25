@@ -37,7 +37,7 @@ export class TestBed {
           dropSchema: true,
           extra: {
             // Desabilita foreign key constraints para testes
-            pragma: 'PRAGMA foreign_keys = OFF;'
+            pragma: 'PRAGMA foreign_keys = OFF;',
           },
         }),
         TypeOrmModule.forFeature([User, Role, Desarquivamento, Auditoria]),
@@ -50,7 +50,9 @@ export class TestBed {
     }).compile();
 
     const app = module.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
 
     return new TestBed(module, app);
@@ -68,7 +70,9 @@ export class TestBed {
     return this._module.get<Repository<T>>(getRepositoryToken(entity));
   }
 
-  public async createAuthenticatedUser(roleName: 'admin' | 'editor' | 'user'): Promise<string> {
+  public async createAuthenticatedUser(
+    roleName: 'admin' | 'editor' | 'user',
+  ): Promise<string> {
     const roleRepository = this.getRepository(Role);
     const userRepository = this.getRepository(User);
     const jwtService = this.getService(JwtService);
@@ -80,12 +84,22 @@ export class TestBed {
     const user = userRepository.create(userData);
     await userRepository.save(user);
 
-    return jwtService.sign({ sub: user.id, usuario: user.usuario, role: user.role.name });
+    return jwtService.sign({
+      sub: user.id,
+      usuario: user.usuario,
+      role: user.role.name,
+    });
   }
 
-  public async createDesarquivamento(createdBy: User, data: Partial<Desarquivamento> = {}): Promise<Desarquivamento> {
+  public async createDesarquivamento(
+    createdBy: User,
+    data: Partial<Desarquivamento> = {},
+  ): Promise<Desarquivamento> {
     const desarquivamentoRepository = this.getRepository(Desarquivamento);
-    const factoryData = DesarquivamentoFactory.build({ ...data, criadoPor: createdBy });
+    const factoryData = DesarquivamentoFactory.build({
+      ...data,
+      criadoPor: createdBy,
+    });
     const desarquivamento = desarquivamentoRepository.create(factoryData);
     return desarquivamentoRepository.save(desarquivamento);
   }

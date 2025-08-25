@@ -1,4 +1,7 @@
-import { Desarquivamento, StatusDesarquivamento } from '../../src/modules/nugecid/entities/desarquivamento.entity';
+import {
+  Desarquivamento,
+  StatusDesarquivamento,
+} from '../../src/modules/nugecid/entities/desarquivamento.entity';
 import { TipoSolicitacaoEnum } from '../../src/modules/nugecid/domain/value-objects/tipo-solicitacao.vo';
 
 export class DesarquivamentoFactory {
@@ -9,7 +12,8 @@ export class DesarquivamentoFactory {
 
     return {
       codigoBarras: data.codigoBarras || `CB-${Date.now()}`,
-      tipoSolicitacao: data.tipoSolicitacao || TipoSolicitacaoEnum.DESARQUIVAMENTO,
+      tipoSolicitacao:
+        data.tipoSolicitacao || TipoSolicitacaoEnum.DESARQUIVAMENTO,
       nomeSolicitante: data.nomeSolicitante || 'Solicitante Teste',
       numeroRegistro: data.numeroRegistro || '123456',
       dataFato: data.dataFato || now,

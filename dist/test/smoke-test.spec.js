@@ -6,7 +6,7 @@ const generateRg = () => Math.floor(1000000 + Math.random() * 9000000).toString(
 test_1.test.describe('Smoke Test - Nugecid CRUD', () => {
     const newRg = generateRg();
     const newNome = 'Nome de Teste Automatizado';
-    (0, test_1.test)('deve realizar o login, criar, verificar e deslogar', async ({ page }) => {
+    (0, test_1.test)('deve realizar o login, criar, verificar e deslogar', async ({ page, }) => {
         await page.goto(`${BASE_URL}/login`);
         await page.fill('input[name="usuario"]', 'admin');
         await page.fill('input[name="password"]', '123456');
@@ -22,7 +22,9 @@ test_1.test.describe('Smoke Test - Nugecid CRUD', () => {
         await page.fill('input[name="numero_processo"]', 'PROC-12345');
         await page.fill('input[name="numero_inquerito"]', 'INQ-67890');
         await page.fill('input[name="servidor_responsavel"]', 'Servidor Teste');
-        await page.selectOption('select[name="tipo_procedimento"]', { label: 'Procedimento 1' });
+        await page.selectOption('select[name="tipo_procedimento"]', {
+            label: 'Procedimento 1',
+        });
         await page.click('button[type="submit"]');
         await (0, test_1.expect)(page.locator('h1')).toContainText('Solicitações Nugecid');
         const table = page.locator('table');

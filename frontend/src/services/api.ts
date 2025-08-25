@@ -117,8 +117,30 @@ export class ApiService {
 
   // Users endpoints
   async getUsers(params?: UsersQueryParams): Promise<UsersResponse> {
-    const response: AxiosResponse<UsersResponse> = await this.api.get('/users', { params })
-    return response.data
+    try {
+      const response: AxiosResponse<UsersResponse> = await this.api.get('/users', { params })
+      return response.data
+    } catch (error: any) {
+      // Log for debugging and return a safe fallback so UI can render gracefully
+      // without showing the generic error screen when transient caching/network
+      // issues occur (304/Not Modified handled by proxy/browser can surface
+      // as errors in some setups).
+      // eslint-disable-next-line no-console
+      console.error('[ApiService] getUsers error:', error?.message || error)
+
+      return {
+        success: false,
+        data: [],
+        meta: {
+          total: 0,
+          page: params?.page || 1,
+          limit: params?.limit || 10,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        },
+      } as UsersResponse
+    }
   }
 
   async getUser(id: number): Promise<UserResponse> {
@@ -142,7 +164,7 @@ export class ApiService {
   }
 
   async reactivateUser(id: number): Promise<UserResponse> {
-    const response: AxiosResponse<UserResponse> = await this.api.patch(`/users/${id}/reactivate`)
+    const response: AxiosResponse<UserResponse> = await this.api.patch(`/users/${id}/reativar`)
     return response.data
   }
 }

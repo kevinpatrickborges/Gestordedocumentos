@@ -122,18 +122,21 @@ export class AppController {
     </body>
     </html>
     `;
-    
+
     return res.send(html);
   }
 
   @Get('dashboard')
   @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Dados do dashboard' })
-  @ApiResponse({ status: 200, description: 'Dados do dashboard retornados com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dados do dashboard retornados com sucesso',
+  })
   async getDashboard(@Req() req: Request) {
     const user = req.user;
     const dashboardData = await this.appService.getDashboardData(user);
-    
+
     return {
       title: 'Dashboard - SGC-ITEP',
       user,
@@ -144,7 +147,10 @@ export class AppController {
   @Get('sobre')
   @UseGuards(SessionAuthGuard)
   @ApiOperation({ summary: 'Informações sobre o sistema' })
-  @ApiResponse({ status: 200, description: 'Informações sobre o sistema retornadas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Informações sobre o sistema retornadas com sucesso',
+  })
   getSobre(@Req() req: Request) {
     return {
       title: 'Sobre - SGC-ITEP',
@@ -156,7 +162,10 @@ export class AppController {
 
   @Get('health')
   @ApiOperation({ summary: 'Health check da aplicação' })
-  @ApiResponse({ status: 200, description: 'Aplicação funcionando corretamente' })
+  @ApiResponse({
+    status: 200,
+    description: 'Aplicação funcionando corretamente',
+  })
   getHealth() {
     return this.appService.getHealth();
   }

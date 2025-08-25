@@ -51,7 +51,8 @@ let JwtStrategy = JwtStrategy_1 = class JwtStrategy extends (0, passport_1.Passp
                 },
             ]),
             ignoreExpiration: false,
-            secretOrKey: configService.get('JWT_SECRET'),
+            secretOrKey: configService.get('auth.jwt.secret') ||
+                configService.get('JWT_SECRET'),
         });
         this.authService = authService;
         this.configService = configService;

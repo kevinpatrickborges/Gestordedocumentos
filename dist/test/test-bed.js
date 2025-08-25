@@ -29,7 +29,7 @@ class TestBed {
                     logging: false,
                     dropSchema: true,
                     extra: {
-                        pragma: 'PRAGMA foreign_keys = OFF;'
+                        pragma: 'PRAGMA foreign_keys = OFF;',
                     },
                 }),
                 typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, role_entity_1.Role, desarquivamento_entity_1.Desarquivamento, auditoria_entity_1.Auditoria]),
@@ -63,11 +63,18 @@ class TestBed {
         const userData = user_factory_1.UserFactory.build({ usuario: roleName, role: role });
         const user = userRepository.create(userData);
         await userRepository.save(user);
-        return jwtService.sign({ sub: user.id, usuario: user.usuario, role: user.role.name });
+        return jwtService.sign({
+            sub: user.id,
+            usuario: user.usuario,
+            role: user.role.name,
+        });
     }
     async createDesarquivamento(createdBy, data = {}) {
         const desarquivamentoRepository = this.getRepository(desarquivamento_entity_1.Desarquivamento);
-        const factoryData = desarquivamento_factory_1.DesarquivamentoFactory.build({ ...data, criadoPor: createdBy });
+        const factoryData = desarquivamento_factory_1.DesarquivamentoFactory.build({
+            ...data,
+            criadoPor: createdBy,
+        });
         const desarquivamento = desarquivamentoRepository.create(factoryData);
         return desarquivamentoRepository.save(desarquivamento);
     }

@@ -54,7 +54,7 @@ let ImportDesarquivamentoUseCase = class ImportDesarquivamentoUseCase {
                         urgente: dto.urgente || false,
                         localizacaoFisica: dto.localizacaoFisica,
                         criadoPorId,
-                        responsavelId: dto.responsavelId
+                        responsavelId: dto.responsavelId,
                     };
                     await this.createDesarquivamentoUseCase.execute(request);
                     result.successCount++;

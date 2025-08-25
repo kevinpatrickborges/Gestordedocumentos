@@ -64,7 +64,13 @@ export class Auditoria {
   user: User;
 
   // Métodos
-  static createLoginAudit(userId: number, ipAddress: string, userAgent: string, success: boolean, error?: string): Partial<Auditoria> {
+  static createLoginAudit(
+    userId: number,
+    ipAddress: string,
+    userAgent: string,
+    success: boolean,
+    error?: string,
+  ): Partial<Auditoria> {
     return {
       userId,
       action: AuditAction.LOGIN,
@@ -80,7 +86,11 @@ export class Auditoria {
     };
   }
 
-  static createLogoutAudit(userId: number, ipAddress: string, userAgent: string): Partial<Auditoria> {
+  static createLogoutAudit(
+    userId: number,
+    ipAddress: string,
+    userAgent: string,
+  ): Partial<Auditoria> {
     return {
       userId,
       action: AuditAction.LOGOUT,
@@ -132,11 +142,11 @@ export class Auditoria {
 
   getResourceLabel(): string {
     const labels = {
-      'auth': 'Autenticação',
-      'users': 'Usuários',
-      'nugecid': 'Desarquivamentos',
-      'dashboard': 'Dashboard',
-      'files': 'Arquivos',
+      auth: 'Autenticação',
+      users: 'Usuários',
+      nugecid: 'Desarquivamentos',
+      dashboard: 'Dashboard',
+      files: 'Arquivos',
     };
     return labels[this.entityName] || this.entityName;
   }

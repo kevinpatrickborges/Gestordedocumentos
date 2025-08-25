@@ -8,10 +8,7 @@ import { RegistrosService } from './registros.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Registro]),
-    AuthModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Registro]), AuthModule],
   controllers: [RegistrosController],
   providers: [RegistrosService],
 })

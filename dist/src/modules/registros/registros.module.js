@@ -18,10 +18,7 @@ let RegistrosModule = class RegistrosModule {
 exports.RegistrosModule = RegistrosModule;
 exports.RegistrosModule = RegistrosModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            typeorm_1.TypeOrmModule.forFeature([registro_entity_1.Registro]),
-            auth_module_1.AuthModule,
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([registro_entity_1.Registro]), auth_module_1.AuthModule],
         controllers: [registros_controller_1.RegistrosController],
         providers: [registros_service_1.RegistrosService],
     })

@@ -43,10 +43,14 @@ let TypeOrmRoleRepository = class TypeOrmRoleRepository {
         const queryBuilder = this.roleRepository.createQueryBuilder('role');
         if (filters) {
             if (filters.nome) {
-                queryBuilder.andWhere('role.name ILIKE :nome', { nome: `%${filters.nome}%` });
+                queryBuilder.andWhere('role.name ILIKE :nome', {
+                    nome: `%${filters.nome}%`,
+                });
             }
             if (filters.permissao) {
-                queryBuilder.andWhere(':permissao = ANY(role.permissions)', { permissao: filters.permissao });
+                queryBuilder.andWhere(':permissao = ANY(role.permissions)', {
+                    permissao: filters.permissao,
+                });
             }
         }
         const entities = await queryBuilder.getMany();

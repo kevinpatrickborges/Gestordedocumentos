@@ -40,18 +40,7 @@ let RolesGuard = class RolesGuard {
         if (!user.role) {
             throw new common_1.ForbiddenException('Usuário sem role definida');
         }
-        const hasRole = requiredRoles.some((role) => {
-            switch (role) {
-                case 'admin':
-                    return user.isAdmin();
-                case 'editor':
-                    return user.isEditor() || user.isAdmin();
-                case 'user':
-                    return true;
-                default:
-                    return user.role.name === role;
-            }
-        });
+        const hasRole = requiredRoles.some(role => user.role && user.role.name.toLowerCase() === role.toLowerCase());
         if (!hasRole) {
             throw new common_1.ForbiddenException(`Acesso negado. Roles necessárias: ${requiredRoles.join(', ')}`);
         }

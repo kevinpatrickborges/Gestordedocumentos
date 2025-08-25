@@ -3,5 +3,6 @@ export declare enum RoleType {
     COORDENADOR = "coordenador",
     GESTOR = "gestor",
     USUARIO = "usuario",
-    EDITOR = "editor"
+    EDITOR = "editor",
+    NUGECID_OPERATOR = "nugecid_operator"
 }

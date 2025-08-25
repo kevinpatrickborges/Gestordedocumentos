@@ -67,7 +67,9 @@ export class FindAllDesarquivamentosUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: FindAllDesarquivamentosRequest): Promise<FindAllDesarquivamentosResponse> {
+  async execute(
+    request: FindAllDesarquivamentosRequest,
+  ): Promise<FindAllDesarquivamentosResponse> {
     // Validar parâmetros de entrada
     this.validateRequest(request);
 
@@ -93,17 +95,24 @@ export class FindAllDesarquivamentosUseCase {
     }
 
     // Buscar registros no repositório
-    const result: FindAllResult = await this.desarquivamentoRepository.findAll(options);
+    const result: FindAllResult =
+      await this.desarquivamentoRepository.findAll(options);
 
     // Filtrar registros baseado em permissões de acesso
-    const filteredData = request.userId && request.userRoles
-      ? result.data.filter(desarquivamento => 
-          desarquivamento.canBeAccessedBy(request.userId!, request.userRoles!)
-        )
-      : result.data;
+    const filteredData =
+      request.userId && request.userRoles
+        ? result.data.filter(desarquivamento =>
+            desarquivamento.canBeAccessedBy(
+              request.userId!,
+              request.userRoles!,
+            ),
+          )
+        : result.data;
 
     // Mapear para resposta
-    const mappedData = filteredData.map(desarquivamento => this.mapToResponse(desarquivamento));
+    const mappedData = filteredData.map(desarquivamento =>
+      this.mapToResponse(desarquivamento),
+    );
 
     return {
       data: mappedData,
@@ -121,7 +130,12 @@ export class FindAllDesarquivamentosUseCase {
     }
 
     // Validar limite
-    if (request.limit && (request.limit < 1 || request.limit > 100 || !Number.isInteger(request.limit))) {
+    if (
+      request.limit &&
+      (request.limit < 1 ||
+        request.limit > 100 ||
+        !Number.isInteger(request.limit))
+    ) {
       throw new Error('Limite deve ser um número inteiro entre 1 e 100');
     }
 
@@ -132,13 +146,26 @@ export class FindAllDesarquivamentosUseCase {
 
     // Validar campos de classificação permitidos
     const allowedSortFields = [
-      'id', 'codigoBarras', 'tipoSolicitacao', 'status', 'nomeSolicitante',
-      'numeroRegistro', 'dataFato', 'prazoAtendimento', 'dataAtendimento',
-      'urgente', 'criadoPorId', 'responsavelId', 'createdAt', 'updatedAt'
+      'id',
+      'codigoBarras',
+      'tipoSolicitacao',
+      'status',
+      'nomeSolicitante',
+      'numeroRegistro',
+      'dataFato',
+      'prazoAtendimento',
+      'dataAtendimento',
+      'urgente',
+      'criadoPorId',
+      'responsavelId',
+      'createdAt',
+      'updatedAt',
     ];
 
     if (request.sortBy && !allowedSortFields.includes(request.sortBy)) {
-      throw new Error(`Campo de classificação inválido. Campos permitidos: ${allowedSortFields.join(', ')}`);
+      throw new Error(
+        `Campo de classificação inválido. Campos permitidos: ${allowedSortFields.join(', ')}`,
+      );
     }
 
     // Validar filtros de data
@@ -150,9 +177,16 @@ export class FindAllDesarquivamentosUseCase {
 
     // Validar status
     if (request.filters?.status) {
-      const validStatuses = ['PENDENTE', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO'];
+      const validStatuses = [
+        'PENDENTE',
+        'EM_ANDAMENTO',
+        'CONCLUIDO',
+        'CANCELADO',
+      ];
       if (!validStatuses.includes(request.filters.status)) {
-        throw new Error(`Status inválido. Status válidos: ${validStatuses.join(', ')}`);
+        throw new Error(
+          `Status inválido. Status válidos: ${validStatuses.join(', ')}`,
+        );
       }
     }
 
@@ -160,7 +194,9 @@ export class FindAllDesarquivamentosUseCase {
     if (request.filters?.tipoSolicitacao) {
       const validTypes = ['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO'];
       if (!validTypes.includes(request.filters.tipoSolicitacao)) {
-        throw new Error(`Tipo de solicitação inválido. Tipos válidos: ${validTypes.join(', ')}`);
+        throw new Error(
+          `Tipo de solicitação inválido. Tipos válidos: ${validTypes.join(', ')}`,
+        );
       }
     }
 
@@ -185,7 +221,10 @@ export class FindAllDesarquivamentosUseCase {
     }
 
     // Usuários com role NUGECID_VIEWER podem ver todos os registros
-    if (userRoles.includes('NUGECID_VIEWER') || userRoles.includes('NUGECID_OPERATOR')) {
+    if (
+      userRoles.includes('NUGECID_VIEWER') ||
+      userRoles.includes('NUGECID_OPERATOR')
+    ) {
       return filters;
     }
 
@@ -197,9 +236,11 @@ export class FindAllDesarquivamentosUseCase {
     };
   }
 
-  private mapToResponse(desarquivamento: DesarquivamentoDomain): FindAllDesarquivamentosResponse['data'][0] {
+  private mapToResponse(
+    desarquivamento: DesarquivamentoDomain,
+  ): FindAllDesarquivamentosResponse['data'][0] {
     const plainObject = desarquivamento.toPlainObject();
-    
+
     return {
       id: plainObject.id,
       codigoBarras: plainObject.codigoBarras,

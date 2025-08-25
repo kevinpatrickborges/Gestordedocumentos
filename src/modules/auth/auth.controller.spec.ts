@@ -91,7 +91,9 @@ describe('AuthController', () => {
     jest.spyOn(controller['logger'], 'error').mockImplementation(() => {});
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     roleRepository = module.get<Repository<Role>>(getRepositoryToken(Role));
-    auditoriaRepository = module.get<Repository<Auditoria>>(getRepositoryToken(Auditoria));
+    auditoriaRepository = module.get<Repository<Auditoria>>(
+      getRepositoryToken(Auditoria),
+    );
     jwtService = module.get<JwtService>(JwtService);
   });
 
@@ -119,14 +121,18 @@ describe('AuthController', () => {
       mockAuthService.loginV2.mockResolvedValue(mockResponse);
 
       // Act
-      const result = await controller.loginV2(loginDto, '127.0.0.1', 'test-agent');
+      const result = await controller.loginV2(
+        loginDto,
+        '127.0.0.1',
+        'test-agent',
+      );
 
       // Assert
       expect(result).toEqual(mockResponse);
       expect(mockAuthService.loginV2).toHaveBeenCalledWith(
         loginDto,
         '127.0.0.1',
-        'test-agent'
+        'test-agent',
       );
     });
 
@@ -179,24 +185,28 @@ describe('AuthController', () => {
       };
 
       const mockResponse: LoginV2Response = {
-         user: {
-           userId: 1,
-           usuario: 'testuser',
-           role: 'USER',
-         },
-         accessToken: 'jwt-token',
-         expiresIn: '50m',
-       };
+        user: {
+          userId: 1,
+          usuario: 'testuser',
+          role: 'USER',
+        },
+        accessToken: 'jwt-token',
+        expiresIn: '50m',
+      };
 
       mockAuthService.loginV2.mockResolvedValue(mockResponse);
 
-      const result = await controller.loginV2(loginDto, '127.0.0.1', 'test-agent');
+      const result = await controller.loginV2(
+        loginDto,
+        '127.0.0.1',
+        'test-agent',
+      );
 
       expect(result).toEqual(mockResponse);
       expect(mockAuthService.loginV2).toHaveBeenCalledWith(
         loginDto,
         '127.0.0.1',
-        'test-agent'
+        'test-agent',
       );
     });
 
@@ -206,16 +216,18 @@ describe('AuthController', () => {
         senha: 'wrongpassword',
       };
 
-      mockAuthService.loginV2.mockRejectedValue(new UnauthorizedException('Credenciais inválidas'));
+      mockAuthService.loginV2.mockRejectedValue(
+        new UnauthorizedException('Credenciais inválidas'),
+      );
 
       await expect(
-        controller.loginV2(loginDto, '127.0.0.1', 'test-agent')
+        controller.loginV2(loginDto, '127.0.0.1', 'test-agent'),
       ).rejects.toThrow(UnauthorizedException);
 
       expect(mockAuthService.loginV2).toHaveBeenCalledWith(
         loginDto,
         '127.0.0.1',
-        'test-agent'
+        'test-agent',
       );
     });
   });

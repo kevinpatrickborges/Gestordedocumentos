@@ -7,13 +7,16 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   server: {
     port: 3001,
+    headers: {
+      // Esta política é para desenvolvimento. Em produção, deve ser mais restritiva.
+      'Content-Security-Policy': "script-src 'self' 'unsafe-inline' 'unsafe-eval';"
+    },
     proxy: {
-
       '/api': {
         target: 'http://127.0.0.1:3000',
         changeOrigin: true,
         secure: false,
-
+        rewrite: (path) => path,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
             console.log('proxy error', err);

@@ -134,9 +134,7 @@ describe('Authentication Integration Tests', () => {
   describe('Global JWT Protection', () => {
     it('should allow access to public login endpoint without token', async () => {
       // Act & Assert
-      await request(app.getHttpServer())
-        .get('/auth/login')
-        .expect(200);
+      await request(app.getHttpServer()).get('/auth/login').expect(200);
     });
 
     it('should allow access to public API v2 login endpoint without token', async () => {
@@ -160,13 +158,9 @@ describe('Authentication Integration Tests', () => {
 
     it('should deny access to protected routes without token', async () => {
       // Act & Assert
-      await request(app.getHttpServer())
-        .get('/auth/profile')
-        .expect(401);
+      await request(app.getHttpServer()).get('/auth/profile').expect(401);
 
-      await request(app.getHttpServer())
-        .get('/auth/check')
-        .expect(401);
+      await request(app.getHttpServer()).get('/auth/check').expect(401);
     });
 
     it('should allow access to protected routes with valid token', async () => {
@@ -177,7 +171,7 @@ describe('Authentication Integration Tests', () => {
         role: 'user',
       };
       const token = jwtService.sign(payload);
-      
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
 
       // Act & Assert

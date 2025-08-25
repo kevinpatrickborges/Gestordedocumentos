@@ -31,12 +31,18 @@ class ImportRegistroDto {
 }
 exports.ImportRegistroDto = ImportRegistroDto;
 __decorate([
-    (0, class_validator_1.IsEnum)(TipoDesarquivamento, { message: 'O valor para a coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é inválido.' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'A coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é obrigatória.' }),
+    (0, class_validator_1.IsEnum)(TipoDesarquivamento, {
+        message: 'O valor para a coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é inválido.',
+    }),
+    (0, class_validator_1.IsNotEmpty)({
+        message: 'A coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é obrigatória.',
+    }),
     __metadata("design:type", String)
 ], ImportRegistroDto.prototype, "desarquivamentoTipo", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(StatusDesarquivamento, { message: 'O valor para a coluna "Status" é inválido.' }),
+    (0, class_validator_1.IsEnum)(StatusDesarquivamento, {
+        message: 'O valor para a coluna "Status" é inválido.',
+    }),
     (0, class_validator_1.IsNotEmpty)({ message: 'A coluna "Status" é obrigatória.' }),
     __metadata("design:type", String)
 ], ImportRegistroDto.prototype, "status", void 0);
@@ -47,7 +53,9 @@ __decorate([
 ], ImportRegistroDto.prototype, "nomeCompleto", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)({ message: 'A coluna "Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA" é obrigatória.' }),
+    (0, class_validator_1.IsNotEmpty)({
+        message: 'A coluna "Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA" é obrigatória.',
+    }),
     __metadata("design:type", String)
 ], ImportRegistroDto.prototype, "numDocumento", void 0);
 __decorate([
@@ -91,7 +99,9 @@ __decorate([
     __metadata("design:type", String)
 ], ImportRegistroDto.prototype, "finalidade", void 0);
 __decorate([
-    (0, class_validator_1.IsBoolean)({ message: 'A coluna de "Prorrogação" deve ser um valor booleano (sim/não ou true/false).' }),
+    (0, class_validator_1.IsBoolean)({
+        message: 'A coluna de "Prorrogação" deve ser um valor booleano (sim/não ou true/false).',
+    }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], ImportRegistroDto.prototype, "prorrogacao", void 0);

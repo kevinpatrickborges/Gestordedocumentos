@@ -19,7 +19,8 @@ export class CreateDesarquivamentoDto {
     example: TipoSolicitacaoEnum.DESARQUIVAMENTO,
   })
   @IsEnum(TipoSolicitacaoEnum, {
-    message: 'Tipo deve ser um dos valores válidos: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
+    message:
+      'Tipo deve ser um dos valores válidos: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
   })
   tipoSolicitacao: TipoSolicitacaoEnum;
 
@@ -31,8 +32,12 @@ export class CreateDesarquivamentoDto {
   })
   @IsString({ message: 'Nome do requerente deve ser uma string' })
   @IsNotEmpty({ message: 'Nome do requerente é obrigatório' })
-  @MinLength(2, { message: 'Nome do solicitante deve ter pelo menos 2 caracteres' })
-  @MaxLength(255, { message: 'Nome do solicitante deve ter no máximo 255 caracteres' })
+  @MinLength(2, {
+    message: 'Nome do solicitante deve ter pelo menos 2 caracteres',
+  })
+  @MaxLength(255, {
+    message: 'Nome do solicitante deve ter no máximo 255 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   nomeSolicitante: string;
 
@@ -43,7 +48,9 @@ export class CreateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Nome da vítima deve ser uma string' })
-  @MaxLength(255, { message: 'Nome da vítima deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Nome da vítima deve ter no máximo 255 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   nomeVitima?: string;
 
@@ -55,8 +62,12 @@ export class CreateDesarquivamentoDto {
   })
   @IsString({ message: 'Número do registro deve ser uma string' })
   @IsNotEmpty({ message: 'Número do registro é obrigatório' })
-  @MinLength(3, { message: 'Número do registro deve ter pelo menos 3 caracteres' })
-  @MaxLength(50, { message: 'Número do registro deve ter no máximo 50 caracteres' })
+  @MinLength(3, {
+    message: 'Número do registro deve ter pelo menos 3 caracteres',
+  })
+  @MaxLength(50, {
+    message: 'Número do registro deve ter no máximo 50 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   numeroRegistro: string;
 
@@ -67,7 +78,9 @@ export class CreateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Tipo do documento deve ser uma string' })
-  @MaxLength(100, { message: 'Tipo do documento deve ter no máximo 100 caracteres' })
+  @MaxLength(100, {
+    message: 'Tipo do documento deve ter no máximo 100 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   tipoDocumento?: string;
 
@@ -78,8 +91,11 @@ export class CreateDesarquivamentoDto {
     format: 'date',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' })
-  @Transform(({ value }) => value ? new Date(value) : null)
+  @IsDateString(
+    {},
+    { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' },
+  )
+  @Transform(({ value }) => (value ? new Date(value) : null))
   dataFato?: Date;
 
   @ApiPropertyOptional({
@@ -100,7 +116,9 @@ export class CreateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Observações deve ser uma string' })
-  @MaxLength(1000, { message: 'Observações deve ter no máximo 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'Observações deve ter no máximo 1000 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   observacoes?: string;
 
@@ -126,7 +144,9 @@ export class CreateDesarquivamentoDto {
   })
   @IsOptional()
   @IsString({ message: 'Localização física deve ser uma string' })
-  @MaxLength(255, { message: 'Localização física deve ter no máximo 255 caracteres' })
+  @MaxLength(255, {
+    message: 'Localização física deve ter no máximo 255 caracteres',
+  })
   @Transform(({ value }) => value?.trim())
   localizacaoFisica?: string;
 
@@ -137,7 +157,10 @@ export class CreateDesarquivamentoDto {
     format: 'date-time',
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Prazo de atendimento deve estar no formato válido' })
+  @IsDateString(
+    {},
+    { message: 'Prazo de atendimento deve estar no formato válido' },
+  )
   @Transform(({ value }) => (value ? new Date(value) : null))
   prazoAtendimento?: Date;
 

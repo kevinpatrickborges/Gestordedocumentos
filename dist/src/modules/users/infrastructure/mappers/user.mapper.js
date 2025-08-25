@@ -8,6 +8,7 @@ const usuario_1 = require("../../domain/value-objects/usuario");
 const password_1 = require("../../domain/value-objects/password");
 const role_id_1 = require("../../domain/value-objects/role-id");
 const user_entity_1 = require("../../entities/user.entity");
+const role_entity_1 = require("../../entities/role.entity");
 class UserMapper {
     static toDomain(entity) {
         const userId = entity.id ? new user_id_1.UserId(entity.id) : undefined;
@@ -51,6 +52,16 @@ class UserMapper {
         entity.createdAt = domain.createdAt;
         entity.updatedAt = domain.updatedAt;
         entity.deletedAt = domain.deletedAt;
+        if (domain.role) {
+            const roleEntity = new role_entity_1.Role();
+            roleEntity.id = domain.role.id.value;
+            roleEntity.name = domain.role.nome;
+            roleEntity.description = domain.role.descricao;
+            roleEntity.permissions = domain.role.permissoes;
+            roleEntity.createdAt = domain.role.createdAt;
+            roleEntity.updatedAt = domain.role.updatedAt;
+            entity.role = roleEntity;
+        }
         return entity;
     }
     static toDomainArray(entities) {

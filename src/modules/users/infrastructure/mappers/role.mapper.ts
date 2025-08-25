@@ -18,11 +18,11 @@ export class RoleMapper {
 
   static toEntity(domain: DomainRole): RoleEntity {
     const entity = new RoleEntity();
-    
+
     if (domain.id) {
       entity.id = domain.id.value;
     }
-    
+
     entity.name = domain.nome;
     entity.description = domain.descricao;
     entity.permissions = domain.permissoes;

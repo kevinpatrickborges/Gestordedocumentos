@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Users } from 'lucide-react'
+import { Users, Plus } from 'lucide-react'
 import { useUsers, useUserPermissions } from '@/hooks/useUsers'
 import { UsersQueryParams } from '@/types'
 import UsuarioFilters from '@/components/usuarios/UsuarioFilters'
 import UsuariosTable from '@/components/usuarios/UsuariosTable'
 import DeleteUserModal from '@/components/usuarios/DeleteUserModal'
+import CreateUserModal from '@/components/usuarios/CreateUserModal'
 
 const UsuariosPage: React.FC = () => {
   const [queryParams, setQueryParams] = useState<UsersQueryParams>({
@@ -14,9 +14,11 @@ const UsuariosPage: React.FC = () => {
     active: true
   })
   const [userToDelete, setUserToDelete] = useState<number | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   
   const { canManageUsers, canViewUsers } = useUserPermissions()
-  const { data: usersResponse, isLoading, error } = useUsers(queryParams)
+  const { data: usersResponse, isLoading, error, refetch } = useUsers(queryParams)
+
 
   // Redirecionar se não tiver permissão
   if (!canViewUsers) {
@@ -55,7 +57,8 @@ const UsuariosPage: React.FC = () => {
     setUserToDelete(null)
   }
 
-  if (error) {
+  // Mostra tela de erro somente se houve erro E não há dados de usuários disponíveis.
+  if (error && (!usersResponse || !usersResponse.data || usersResponse.data.length === 0)) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -83,24 +86,23 @@ const UsuariosPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            Gerenciamento de Usuários
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Gerencie os usuários do sistema SGC-ITEP
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+            <Users className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Usuários</h1>
+            <p className="text-gray-600">Gerencie usuários do sistema</p>
+          </div>
         </div>
-        
         {canManageUsers && (
-          <Link
-            to="/usuarios/novo"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Novo Usuário
-          </Link>
+          </button>
         )}
       </div>
 
@@ -122,6 +124,7 @@ const UsuariosPage: React.FC = () => {
           canManageUsers={canManageUsers}
           onPageChange={handlePageChange}
           onDeleteUser={handleDeleteUser}
+          onRefresh={refetch}
         />
       </div>
 
@@ -130,6 +133,20 @@ const UsuariosPage: React.FC = () => {
         <DeleteUserModal
           userId={userToDelete}
           onClose={handleCloseDeleteModal}
+          onSuccess={() => {
+            refetch()
+          }}
+        />
+      )}
+
+      {/* Modal de Criação */}
+      {showCreateModal && (
+        <CreateUserModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false)
+            refetch()
+          }}
         />
       )}
     </div>

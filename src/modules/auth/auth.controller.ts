@@ -15,8 +15,16 @@ import {
   Headers,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from 'express';
 
 import { AuthService, LoginResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -47,7 +55,7 @@ export class AuthController {
     if (req.user) {
       return { redirect: '/dashboard' };
     }
-    
+
     return {
       title: 'Login - SGC ITEP',
       error: req.query.error || null,
@@ -106,9 +114,9 @@ export class AuthController {
 
       // Se for requisição AJAX/API, retorna JSON
       if (req.headers.accept?.includes('application/json')) {
-        return res.json({ 
-          success: true, 
-          data: result 
+        return res.json({
+          success: true,
+          data: result,
         });
       }
 
@@ -116,12 +124,14 @@ export class AuthController {
       return res.redirect('/dashboard');
     } catch (error) {
       this.logger.error(`Erro no login: ${error.message}`);
-      
+
       if (req.headers.accept?.includes('application/json')) {
         return res.status(401).json({ message: error.message });
       }
-      
-      return res.redirect(`/auth/login?error=${encodeURIComponent(error.message)}`);
+
+      return res.redirect(
+        `/auth/login?error=${encodeURIComponent(error.message)}`,
+      );
     }
   }
 
@@ -162,7 +172,7 @@ export class AuthController {
       }
 
       // Destroi a sessão
-      req.session.destroy((err) => {
+      req.session.destroy(err => {
         if (err) {
           this.logger.error(`Erro ao destruir sessão: ${err.message}`);
         }
@@ -177,11 +187,11 @@ export class AuthController {
       return res.redirect('/auth/login?message=Logout realizado com sucesso');
     } catch (error) {
       this.logger.error(`Erro no logout: ${error.message}`);
-      
+
       if (req.headers.accept?.includes('application/json')) {
         return res.status(500).json({ message: 'Erro interno do servidor' });
       }
-      
+
       return res.redirect('/auth/login?error=Erro ao realizar logout');
     }
   }
@@ -194,44 +204,67 @@ export class AuthController {
   async getProfile(@CurrentUser() currentUser: User) {
     try {
       this.logger.debug(`[AuthController] Endpoint /auth/profile chamado`);
-      this.logger.debug(`[AuthController] CurrentUser recebido: ${JSON.stringify(currentUser ? { id: currentUser.id, usuario: currentUser.usuario } : 'null')}`);
-      
+      this.logger.debug(
+        `[AuthController] CurrentUser recebido: ${JSON.stringify(currentUser ? { id: currentUser.id, usuario: currentUser.usuario } : 'null')}`,
+      );
+
       if (!currentUser) {
-        this.logger.error(`[AuthController] CurrentUser é null/undefined no endpoint /auth/profile`);
-        throw new UnauthorizedException('Usuário não encontrado no contexto da requisição');
+        this.logger.error(
+          `[AuthController] CurrentUser é null/undefined no endpoint /auth/profile`,
+        );
+        throw new UnauthorizedException(
+          'Usuário não encontrado no contexto da requisição',
+        );
       }
 
       if (!currentUser.id) {
-        this.logger.error(`[AuthController] CurrentUser não possui ID: ${JSON.stringify(currentUser)}`);
+        this.logger.error(
+          `[AuthController] CurrentUser não possui ID: ${JSON.stringify(currentUser)}`,
+        );
         throw new UnauthorizedException('ID do usuário não encontrado');
       }
 
-      this.logger.debug(`[AuthController] Buscando dados completos do usuário ID: ${currentUser.id}`);
-      
+      this.logger.debug(
+        `[AuthController] Buscando dados completos do usuário ID: ${currentUser.id}`,
+      );
+
       // Busca uma instância completa do usuário para garantir que todas as relações estejam carregadas
       const user = await this.authService.findUserById(currentUser.id);
-      
-      this.logger.debug(`[AuthController] Usuário encontrado: ${JSON.stringify({ id: user.id, usuario: user.usuario, role: user.role?.name })}`);
-      
+
+      this.logger.debug(
+        `[AuthController] Usuário encontrado: ${JSON.stringify({ id: user.id, usuario: user.usuario, role: user.role?.name })}`,
+      );
+
       const response = {
         id: user.id,
         nome: user.nome,
         usuario: user.usuario,
-        role: user.role ? { id: user.role.id, name: user.role.name, description: user.role.description, permissions: user.role.permissions } : null,
+        role: user.role
+          ? {
+              id: user.role.id,
+              name: user.role.name,
+              description: user.role.description,
+              permissions: user.role.permissions,
+            }
+          : null,
         ultimoLogin: user.ultimoLogin,
         criadoEm: user.createdAt,
       };
-      
-      this.logger.debug(`[AuthController] Retornando perfil do usuário: ${user.usuario}`);
+
+      this.logger.debug(
+        `[AuthController] Retornando perfil do usuário: ${user.usuario}`,
+      );
       return response;
     } catch (error) {
-      this.logger.error(`[AuthController] Erro no endpoint /auth/profile: ${error.message}`, error.stack);
-      
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      
-      throw new UnauthorizedException('Erro ao obter perfil do usuário');
+      this.logger.error(
+        `[AuthController] Erro no endpoint /auth/profile: ${error.message}`,
+        error.stack,
+      );
+
+      // Re-throw the original error so the real stack trace/status is visible
+      // during debugging. This is temporary and can be adjusted after
+      // the root cause is identified.
+      throw error;
     }
   }
 
@@ -255,7 +288,9 @@ export class AuthController {
   @Post('/api/v2/auth/login')
   @IsPublic()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login API v2 - Retorna JWT com expiração de 50 minutos' })
+  @ApiOperation({
+    summary: 'Login API v2 - Retorna JWT com expiração de 50 minutos',
+  })
   @ApiResponse({
     status: 200,
     description: 'Login realizado com sucesso',
@@ -288,7 +323,9 @@ export class AuthController {
         userAgent || 'Unknown',
       );
 
-      this.logger.log(`Login API v2 bem-sucedido para usuário: ${loginDto.usuario}`);
+      this.logger.log(
+        `Login API v2 bem-sucedido para usuário: ${loginDto.usuario}`,
+      );
       return result;
     } catch (error) {
       this.logger.error(`Erro no login API v2: ${error.message}`);

@@ -26,13 +26,16 @@ export class DeleteDesarquivamentoUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: DeleteDesarquivamentoRequest): Promise<DeleteDesarquivamentoResponse> {
+  async execute(
+    request: DeleteDesarquivamentoRequest,
+  ): Promise<DeleteDesarquivamentoResponse> {
     // Validar entrada
     this.validateRequest(request);
 
     // Buscar desarquivamento existente
     const desarquivamentoId = DesarquivamentoId.create(request.id);
-    const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
+    const desarquivamento =
+      await this.desarquivamentoRepository.findById(desarquivamentoId);
 
     if (!desarquivamento) {
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
@@ -44,7 +47,12 @@ export class DeleteDesarquivamentoUseCase {
     }
 
     // Verificar permissões
-    this.checkPermissions(desarquivamento, request.userId, request.userRoles, request.permanent);
+    this.checkPermissions(
+      desarquivamento,
+      request.userId,
+      request.userRoles,
+      request.permanent,
+    );
 
     // Executar exclusão
     if (request.permanent) {
@@ -78,12 +86,16 @@ export class DeleteDesarquivamentoUseCase {
   ): void {
     // Verificar se pode ser editado (necessário para exclusão)
     if (!desarquivamento.canBeEditedBy(userId, userRoles)) {
-      throw new Error('Acesso negado: você não tem permissão para excluir este desarquivamento');
+      throw new Error(
+        'Acesso negado: você não tem permissão para excluir este desarquivamento',
+      );
     }
 
     // Hard delete só para administradores
     if (permanent && !userRoles.includes('ADMIN')) {
-      throw new Error('Acesso negado: apenas administradores podem realizar exclusão permanente');
+      throw new Error(
+        'Acesso negado: apenas administradores podem realizar exclusão permanente',
+      );
     }
 
     // Não permitir exclusão de registros em andamento
@@ -95,12 +107,16 @@ export class DeleteDesarquivamentoUseCase {
     if (desarquivamento.status.value === 'CONCLUIDO') {
       // Apenas admins podem excluir registros concluídos
       if (!userRoles.includes('ADMIN')) {
-        throw new Error('Apenas administradores podem excluir desarquivamentos concluídos');
+        throw new Error(
+          'Apenas administradores podem excluir desarquivamentos concluídos',
+        );
       }
     }
   }
 
-  private async performSoftDelete(desarquivamento: DesarquivamentoDomain): Promise<DeleteDesarquivamentoResponse> {
+  private async performSoftDelete(
+    desarquivamento: DesarquivamentoDomain,
+  ): Promise<DeleteDesarquivamentoResponse> {
     try {
       // Executar soft delete na entidade
       desarquivamento.delete();
@@ -118,7 +134,9 @@ export class DeleteDesarquivamentoUseCase {
     }
   }
 
-  private async performHardDelete(desarquivamentoId: DesarquivamentoId): Promise<DeleteDesarquivamentoResponse> {
+  private async performHardDelete(
+    desarquivamentoId: DesarquivamentoId,
+  ): Promise<DeleteDesarquivamentoResponse> {
     try {
       // Executar hard delete no repositório
       await this.desarquivamentoRepository.delete(desarquivamentoId);
@@ -128,7 +146,9 @@ export class DeleteDesarquivamentoUseCase {
         message: 'Desarquivamento excluído permanentemente',
       };
     } catch (error) {
-      throw new Error(`Erro ao excluir permanentemente o desarquivamento: ${error.message}`);
+      throw new Error(
+        `Erro ao excluir permanentemente o desarquivamento: ${error.message}`,
+      );
     }
   }
 }
@@ -141,7 +161,11 @@ export class RestoreDesarquivamentoUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: { id: number; userId: number; userRoles: string[] }): Promise<{ success: boolean; message: string }> {
+  async execute(request: {
+    id: number;
+    userId: number;
+    userRoles: string[];
+  }): Promise<{ success: boolean; message: string }> {
     // Validar entrada
     if (!request.id || request.id <= 0) {
       throw new Error('ID deve ser um número inteiro positivo');
@@ -157,7 +181,8 @@ export class RestoreDesarquivamentoUseCase {
 
     // Buscar desarquivamento
     const desarquivamentoId = DesarquivamentoId.create(request.id);
-    const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
+    const desarquivamento =
+      await this.desarquivamentoRepository.findById(desarquivamentoId);
 
     if (!desarquivamento) {
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
@@ -169,8 +194,13 @@ export class RestoreDesarquivamentoUseCase {
     }
 
     // Verificar permissões (apenas admins e operadores podem restaurar)
-    if (!request.userRoles.includes('ADMIN') && !request.userRoles.includes('NUGECID_OPERATOR')) {
-      throw new Error('Acesso negado: você não tem permissão para restaurar desarquivamentos');
+    if (
+      !request.userRoles.includes('ADMIN') &&
+      !request.userRoles.includes('NUGECID_OPERATOR')
+    ) {
+      throw new Error(
+        'Acesso negado: você não tem permissão para restaurar desarquivamentos',
+      );
     }
 
     try {

@@ -69,7 +69,10 @@ __decorate([
         description: 'Filtro por status (múltiplos valores permitidos)',
         enum: desarquivamento_entity_1.StatusDesarquivamento,
         isArray: true,
-        example: [desarquivamento_entity_1.StatusDesarquivamento.PENDENTE, desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO],
+        example: [
+            desarquivamento_entity_1.StatusDesarquivamento.PENDENTE,
+            desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO,
+        ],
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)({ message: 'Status deve ser um array' }),

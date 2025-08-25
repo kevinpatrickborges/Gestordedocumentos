@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, LoginDto } from '@/types'
+import { User, LoginDto, UserRole } from '@/types'
 import { apiService } from '@/services/api'
 
 interface AuthContextType {
@@ -87,37 +87,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }
 
-  const checkPermission = (action: string, resource?: any): boolean => {
-    if (!user) return false
+  const checkPermission = (action: string, resource: string): boolean => {
+    console.log('🔍 Verificando permissão:', { user: user?.nome, role: user?.role?.name, action, resource })
+    
+    if (!user) {
+      console.log('❌ Usuário não autenticado')
+      return false
+    }
 
-    // Admins têm acesso total
-    if (user.role === 'admin') return true
-
-    // Coordenadores têm acesso a quase tudo
-    if (user.role === 'coordenador') {
-      if (action === 'delete' && resource) {
-        // Coordenadores só podem excluir seus próprios registros
-        return resource.usuarioId === user.id
-      }
+    // Admin tem acesso total
+    if (user.role?.name === 'admin') {
+      console.log('✅ Admin - acesso total concedido')
       return true
     }
 
-    // Usuários comuns têm acesso limitado
-    if (user.role === 'usuario') {
-      switch (action) {
-        case 'create':
-          return true
-        case 'read':
-          return true
-        case 'update':
-          return resource ? resource.usuarioId === user.id : false
-        case 'delete':
-          return resource ? resource.usuarioId === user.id : false
-        default:
-          return false
+    // Coordenador tem permissões específicas
+    if (user.role?.name === 'coordenador') {
+      console.log('🔧 Verificando permissões de coordenador')
+      // Pode gerenciar desarquivamentos
+      if (resource === 'desarquivamentos') {
+        const hasPermission = ['create', 'read', 'update', 'delete'].includes(action)
+        console.log(`${hasPermission ? '✅' : '❌'} Coordenador - desarquivamentos:${action}`)
+        return hasPermission
+      }
+      // Pode visualizar usuários mas não gerenciar
+      if (resource === 'users') {
+        const hasPermission = action === 'read'
+        console.log(`${hasPermission ? '✅' : '❌'} Coordenador - users:${action}`)
+        return hasPermission
+      }
+      // Pode acessar relatórios
+      if (resource === 'reports') {
+        const hasPermission = action === 'read'
+        console.log(`${hasPermission ? '✅' : '❌'} Coordenador - reports:${action}`)
+        return hasPermission
       }
     }
 
+    // Usuário comum tem permissões limitadas
+    if (user.role?.name === 'usuario') {
+      console.log('👤 Verificando permissões de usuário comum')
+      // Pode apenas visualizar desarquivamentos
+      if (resource === 'desarquivamentos') {
+        const hasPermission = action === 'read'
+        console.log(`${hasPermission ? '✅' : '❌'} Usuario - desarquivamentos:${action}`)
+        return hasPermission
+      }
+    }
+
+    console.log('❌ Permissão negada - nenhuma regra aplicável')
     return false
   }
 

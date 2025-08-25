@@ -14,7 +14,10 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { User } from './modules/users/entities/user.entity';
 import { Role } from './modules/users/entities/role.entity';
 import { Desarquivamento } from './modules/nugecid/entities/desarquivamento.entity';
-import { Auditoria, AuditAction } from './modules/audit/entities/auditoria.entity';
+import {
+  Auditoria,
+  AuditAction,
+} from './modules/audit/entities/auditoria.entity';
 
 describe('Auth Integration Tests', () => {
   let app: INestApplication;
@@ -48,9 +51,15 @@ describe('Auth Integration Tests', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
-    roleRepository = moduleFixture.get<Repository<Role>>(getRepositoryToken(Role));
-    auditoriaRepository = moduleFixture.get<Repository<Auditoria>>(getRepositoryToken(Auditoria));
+    userRepository = moduleFixture.get<Repository<User>>(
+      getRepositoryToken(User),
+    );
+    roleRepository = moduleFixture.get<Repository<Role>>(
+      getRepositoryToken(Role),
+    );
+    auditoriaRepository = moduleFixture.get<Repository<Auditoria>>(
+      getRepositoryToken(Auditoria),
+    );
 
     // Criar role de teste
     testRole = roleRepository.create({
@@ -148,7 +157,11 @@ describe('Auth Integration Tests', () => {
         .expect(200);
 
       const auditLogs = await auditoriaRepository.find({
-        where: { userId: testUser.id, action: AuditAction.LOGIN, success: true },
+        where: {
+          userId: testUser.id,
+          action: AuditAction.LOGIN,
+          success: true,
+        },
       });
 
       expect(auditLogs.length).toBeGreaterThan(0);
@@ -217,7 +230,9 @@ describe('Auth Integration Tests', () => {
       expect(token).toBeDefined();
 
       // Decodificar o token para verificar a expiração
-      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      const payload = JSON.parse(
+        Buffer.from(token.split('.')[1], 'base64').toString(),
+      );
       const expirationTime = payload.exp;
       const issuedTime = payload.iat;
       const tokenDuration = expirationTime - issuedTime;
@@ -271,6 +286,4 @@ describe('Auth Integration Tests', () => {
         .expect(401);
     });
   });
-
-
 });

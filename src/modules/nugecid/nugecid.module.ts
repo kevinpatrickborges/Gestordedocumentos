@@ -15,6 +15,7 @@ import {
   FindDesarquivamentoByIdUseCase,
   UpdateDesarquivamentoUseCase,
   DeleteDesarquivamentoUseCase,
+  RestoreDesarquivamentoUseCase,
   GenerateTermoEntregaUseCase,
   GetDashboardStatsUseCase,
   ImportDesarquivamentoUseCase,
@@ -24,7 +25,6 @@ import {
 // Infrastructure
 import { DesarquivamentoRepositoryModule } from './infrastructure/desarquivamento-repository.module';
 import { DesarquivamentoTypeOrmEntity } from './infrastructure/entities/desarquivamento.typeorm-entity';
-
 
 // Domain Interface
 import { IDesarquivamentoRepository } from './domain/interfaces/desarquivamento.repository.interface';
@@ -39,7 +39,6 @@ import { Auditoria } from '../audit/entities/auditoria.entity';
 
 // Legacy service (for gradual migration)
 import { NugecidService } from './nugecid.service';
-
 
 @Module({
   imports: [
@@ -56,12 +55,19 @@ import { NugecidService } from './nugecid.service';
       useFactory: async (configService: ConfigService) => ({
         storage: diskStorage({
           destination: (req, file, cb) => {
-            const uploadPath = configService.get<string>('UPLOAD_PATH', './uploads');
+            const uploadPath = configService.get<string>(
+              'UPLOAD_PATH',
+              './uploads',
+            );
             cb(null, uploadPath);
           },
           filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            cb(null, `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`);
+            const uniqueSuffix =
+              Date.now() + '-' + Math.round(Math.random() * 1e9);
+            cb(
+              null,
+              `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`,
+            );
           },
         }),
         fileFilter: (req, file, cb) => {
@@ -74,7 +80,10 @@ import { NugecidService } from './nugecid.service';
           if (allowedMimes.includes(file.mimetype)) {
             cb(null, true);
           } else {
-            cb(new Error('Apenas arquivos .xls, .xlsx e .csv são permitidos.'), false);
+            cb(
+              new Error('Apenas arquivos .xls, .xlsx e .csv são permitidos.'),
+              false,
+            );
           }
         },
         limits: {
@@ -83,7 +92,6 @@ import { NugecidService } from './nugecid.service';
       }),
       inject: [ConfigService],
     }),
-
   ],
   controllers: [NugecidController],
   providers: [
@@ -93,11 +101,12 @@ import { NugecidService } from './nugecid.service';
     FindDesarquivamentoByIdUseCase,
     UpdateDesarquivamentoUseCase,
     DeleteDesarquivamentoUseCase,
+    RestoreDesarquivamentoUseCase,
     GenerateTermoEntregaUseCase,
     GetDashboardStatsUseCase,
     ImportDesarquivamentoUseCase,
     ImportRegistrosUseCase,
-    
+
     // Legacy service (para compatibilidade durante a migração)
     NugecidService,
   ],
@@ -108,17 +117,18 @@ import { NugecidService } from './nugecid.service';
     FindDesarquivamentoByIdUseCase,
     UpdateDesarquivamentoUseCase,
     DeleteDesarquivamentoUseCase,
+    RestoreDesarquivamentoUseCase,
     GenerateTermoEntregaUseCase,
     GetDashboardStatsUseCase,
     ImportDesarquivamentoUseCase,
     ImportRegistrosUseCase,
-    
+
     // Repository module
     DesarquivamentoRepositoryModule,
-    
+
     // TypeORM module
     TypeOrmModule,
-    
+
     // Legacy service (para compatibilidade)
     NugecidService,
   ],

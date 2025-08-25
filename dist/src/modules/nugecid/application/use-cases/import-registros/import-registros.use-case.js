@@ -19,7 +19,10 @@ let ImportRegistrosUseCase = ImportRegistrosUseCase_1 = class ImportRegistrosUse
     async execute(request) {
         this.logger.log(`Iniciando importação de registros pelo usuário ${request.userId}`);
         await this.validateFile(request.file);
-        const workbook = XLSX.read(request.file.buffer, { type: 'buffer', cellDates: true });
+        const workbook = XLSX.read(request.file.buffer, {
+            type: 'buffer',
+            cellDates: true,
+        });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(sheet);
@@ -39,8 +42,8 @@ let ImportRegistrosUseCase = ImportRegistrosUseCase_1 = class ImportRegistrosUse
                         data: row,
                         errors: validationErrors.map(err => ({
                             property: err.property,
-                            constraints: err.constraints || {}
-                        }))
+                            constraints: err.constraints || {},
+                        })),
                     });
                 }
                 else {
@@ -53,10 +56,14 @@ let ImportRegistrosUseCase = ImportRegistrosUseCase_1 = class ImportRegistrosUse
                 errors.push({
                     row: rowNumber,
                     data: row,
-                    errors: [{
+                    errors: [
+                        {
                             property: 'processing',
-                            constraints: { error: error.message || 'Erro desconhecido ao processar linha' }
-                        }]
+                            constraints: {
+                                error: error.message || 'Erro desconhecido ao processar linha',
+                            },
+                        },
+                    ],
                 });
             }
         }
@@ -67,8 +74,8 @@ let ImportRegistrosUseCase = ImportRegistrosUseCase_1 = class ImportRegistrosUse
             errors,
             summary: {
                 message: this.generateSummaryMessage(totalRows, successCount, errors.length),
-                details: this.generateSummaryDetails(totalRows, successCount, errors.length)
-            }
+                details: this.generateSummaryDetails(totalRows, successCount, errors.length),
+            },
         };
         this.logger.log(`Importação concluída: ${successCount}/${totalRows} registros importados com sucesso`);
         return response;
@@ -80,7 +87,7 @@ let ImportRegistrosUseCase = ImportRegistrosUseCase_1 = class ImportRegistrosUse
         const allowedMimeTypes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-excel',
-            'text/csv'
+            'text/csv',
         ];
         if (!allowedMimeTypes.includes(file.mimetype)) {
             throw new Error('Formato de arquivo não suportado. Use .xlsx, .xls ou .csv');

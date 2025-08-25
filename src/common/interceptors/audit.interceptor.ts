@@ -23,11 +23,12 @@ export class AuditInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest<Request>();
     const { method, url, body, params, query, ip } = request;
     const user = request.user as any;
-    
+
     // Só audita operações importantes (POST, PUT, DELETE)
-    const shouldAudit = ['POST', 'PUT', 'DELETE'].includes(method) && 
-                       !url.includes('/auth/') && 
-                       !url.includes('/health');
+    const shouldAudit =
+      ['POST', 'PUT', 'DELETE'].includes(method) &&
+      !url.includes('/auth/') &&
+      !url.includes('/health');
 
     if (!shouldAudit || !user) {
       return next.handle();
@@ -51,7 +52,7 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap({
-        next: (response) => {
+        next: response => {
           // Sucesso - salva auditoria
           this.saveAudit({
             ...auditData,
@@ -59,7 +60,7 @@ export class AuditInterceptor implements NestInterceptor {
             response: this.sanitizeResponse(response),
           });
         },
-        error: (error) => {
+        error: error => {
           // Erro - salva auditoria com erro
           this.saveAudit({
             ...auditData,
@@ -101,29 +102,29 @@ export class AuditInterceptor implements NestInterceptor {
 
   private sanitizeBody(body: any): any {
     if (!body) return null;
-    
+
     // Remove campos sensíveis
     const sanitized = { ...body };
     const sensitiveFields = ['password', 'senha', 'token', 'secret'];
-    
+
     sensitiveFields.forEach(field => {
       if (sanitized[field]) {
         sanitized[field] = '[REDACTED]';
       }
     });
-    
+
     return sanitized;
   }
 
   private sanitizeResponse(response: any): any {
     if (!response) return null;
-    
+
     // Limita o tamanho da resposta para não sobrecarregar o banco
     const responseStr = JSON.stringify(response);
     if (responseStr.length > 1000) {
       return { message: 'Response too large to store' };
     }
-    
+
     return response;
   }
 }

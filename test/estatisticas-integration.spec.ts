@@ -4,7 +4,6 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { TestUtils } from './test-utils'; // Supondo um utilitário de teste para login
 
-
 describe('EstatisticasController (e2e)', () => {
   let app: INestApplication;
   let jwtToken: string;
@@ -18,7 +17,11 @@ describe('EstatisticasController (e2e)', () => {
     await app.init();
 
     // Obter token JWT para um usuário autenticado
-    jwtToken = await TestUtils.getJwtToken(app, 'admin@example.com', 'adminpass');
+    jwtToken = await TestUtils.getJwtToken(
+      app,
+      'admin@example.com',
+      'adminpass',
+    );
   });
 
   afterAll(async () => {
@@ -59,16 +62,14 @@ describe('EstatisticasController (e2e)', () => {
       .expect(200)
       .expect(res => {
         expect(Array.isArray(res.body)).toBe(true);
-         if (res.body.length > 0) {
+        if (res.body.length > 0) {
           expect(res.body[0]).toHaveProperty('name'); // ex: 'Pendente'
           expect(res.body[0]).toHaveProperty('value');
         }
       });
   });
 
-   it('Deve retornar 401 Unauthorized se não houver token', () => {
-    return request(app.getHttpServer())
-      .get('/estatisticas/cards')
-      .expect(401);
+  it('Deve retornar 401 Unauthorized se não houver token', () => {
+    return request(app.getHttpServer()).get('/estatisticas/cards').expect(401);
   });
 });

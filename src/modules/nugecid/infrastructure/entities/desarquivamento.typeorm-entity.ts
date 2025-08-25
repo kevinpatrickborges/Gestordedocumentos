@@ -26,7 +26,11 @@ export class DesarquivamentoTypeOrmEntity {
   @Column({ name: 'codigo_barras', unique: true, length: 20 })
   codigoBarras: string;
 
-  @Column({ name: 'tipo_solicitacao', type: 'varchar', default: 'DESARQUIVAMENTO' })
+  @Column({
+    name: 'tipo_solicitacao',
+    type: 'varchar',
+    default: 'DESARQUIVAMENTO',
+  })
   tipoSolicitacao: string;
 
   @Column({ type: 'varchar', default: 'PENDENTE' })
@@ -104,11 +108,11 @@ export class DesarquivamentoTypeOrmEntity {
   // Métodos auxiliares para conversão
   static fromDomain(domain: any): DesarquivamentoTypeOrmEntity {
     const entity = new DesarquivamentoTypeOrmEntity();
-    
+
     if (domain.id) {
       entity.id = domain.id.value;
     }
-    
+
     entity.codigoBarras = domain.codigoBarras.value;
     entity.tipoSolicitacao = domain.tipoSolicitacao.value;
     entity.status = domain.status.value;
@@ -129,7 +133,7 @@ export class DesarquivamentoTypeOrmEntity {
     entity.createdAt = domain.createdAt;
     entity.updatedAt = domain.updatedAt;
     entity.deletedAt = domain.deletedAt;
-    
+
     return entity;
   }
 

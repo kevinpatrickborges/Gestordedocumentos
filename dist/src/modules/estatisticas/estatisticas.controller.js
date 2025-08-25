@@ -13,43 +13,68 @@ exports.EstatisticasController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const estatisticas_service_1 = require("./estatisticas.service");
 let EstatisticasController = class EstatisticasController {
-    getCardData() {
+    constructor(estatisticasService) {
+        this.estatisticasService = estatisticasService;
     }
-    getAtendimentosPorMes() {
+    async getCardData() {
+        const data = await this.estatisticasService.getCardData();
+        return { success: true, data };
     }
-    getStatusDistribuicao() {
+    async getAtendimentosPorMes() {
+        const data = await this.estatisticasService.getAtendimentosPorMes();
+        return { success: true, data };
+    }
+    async getStatusDistribuicao() {
+        const data = await this.estatisticasService.getStatusDistribuicao();
+        return { success: true, data };
     }
 };
 exports.EstatisticasController = EstatisticasController;
 __decorate([
     (0, common_1.Get)('cards'),
     (0, swagger_1.ApiOperation)({ summary: 'Obtém dados para os cards de estatísticas' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Dados dos cards retornados com sucesso.' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Dados dos cards retornados com sucesso.',
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], EstatisticasController.prototype, "getCardData", null);
 __decorate([
     (0, common_1.Get)('atendimentos-por-mes'),
-    (0, swagger_1.ApiOperation)({ summary: 'Obtém o número de atendimentos por mês no último ano' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Dados do gráfico de barras retornados com sucesso.' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Obtém o número de atendimentos por mês no último ano',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Dados do gráfico de barras retornados com sucesso.',
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], EstatisticasController.prototype, "getAtendimentosPorMes", null);
 __decorate([
     (0, common_1.Get)('status-distribuicao'),
     (0, swagger_1.ApiOperation)({ summary: 'Obtém a distribuição de atendimentos por status' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Dados do gráfico de pizza retornados com sucesso.' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Dados do gráfico de pizza retornados com sucesso.',
+    }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], EstatisticasController.prototype, "getStatusDistribuicao", null);
 exports.EstatisticasController = EstatisticasController = __decorate([
     (0, swagger_1.ApiTags)('Estatísticas'),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, common_1.Controller)('estatisticas')
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Controller)('estatisticas'),
+    __metadata("design:paramtypes", [estatisticas_service_1.EstatisticasService])
 ], EstatisticasController);
 //# sourceMappingURL=estatisticas.controller.js.map

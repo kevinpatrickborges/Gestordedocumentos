@@ -129,7 +129,11 @@ describe('Auth Integration Tests', () => {
             })
                 .expect(200);
             const auditLogs = await auditoriaRepository.find({
-                where: { userId: testUser.id, action: auditoria_entity_1.AuditAction.LOGIN, success: true },
+                where: {
+                    userId: testUser.id,
+                    action: auditoria_entity_1.AuditAction.LOGIN,
+                    success: true,
+                },
             });
             expect(auditLogs.length).toBeGreaterThan(0);
         });

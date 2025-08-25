@@ -41,26 +41,32 @@ export class TestSetup {
    * Cria roles de teste padrão
    */
   static async createTestRoles(roleRepository: Repository<Role>) {
-    const adminRole = await roleRepository.save(roleRepository.create({
-      name: 'admin',
-      description: 'Administrator Role',
-      permissions: ['*'],
-      ativo: true,
-    }));
+    const adminRole = await roleRepository.save(
+      roleRepository.create({
+        name: 'admin',
+        description: 'Administrator Role',
+        permissions: ['*'],
+        ativo: true,
+      }),
+    );
 
-    const editorRole = await roleRepository.save(roleRepository.create({
-      name: 'editor',
-      description: 'Editor Role',
-      permissions: ['read', 'write', 'update'],
-      ativo: true,
-    }));
+    const editorRole = await roleRepository.save(
+      roleRepository.create({
+        name: 'editor',
+        description: 'Editor Role',
+        permissions: ['read', 'write', 'update'],
+        ativo: true,
+      }),
+    );
 
-    const userRole = await roleRepository.save(roleRepository.create({
-      name: 'user',
-      description: 'User Role',
-      permissions: ['read'],
-      ativo: true,
-    }));
+    const userRole = await roleRepository.save(
+      roleRepository.create({
+        name: 'user',
+        description: 'User Role',
+        permissions: ['read'],
+        ativo: true,
+      }),
+    );
 
     return { adminRole, editorRole, userRole };
   }
@@ -156,7 +162,7 @@ export class ACLTestHelpers {
     const response = await app
       .get(endpoint)
       .set('Authorization', `Bearer ${token}`);
-    
+
     expect(response.status).toBe(expectedStatus);
     return response;
   }
@@ -175,7 +181,7 @@ export class ACLTestHelpers {
       .patch(endpoint)
       .set('Authorization', `Bearer ${token}`)
       .send(data);
-    
+
     expect(response.status).toBe(expectedStatus);
     return response;
   }
@@ -192,7 +198,7 @@ export class ACLTestHelpers {
     const response = await app
       .delete(endpoint)
       .set('Authorization', `Bearer ${token}`);
-    
+
     expect(response.status).toBe(expectedStatus);
     return response;
   }
@@ -211,7 +217,7 @@ export class ACLTestHelpers {
       .post(endpoint)
       .set('Authorization', `Bearer ${token}`)
       .send(data);
-    
+
     expect(response.status).toBe(expectedStatus);
     return response;
   }
@@ -272,7 +278,8 @@ export class TestMocks {
         ativo: true,
         isAdmin: () => false,
         isEditor: () => true,
-        hasPermission: (permission: string) => ['read', 'write'].includes(permission),
+        hasPermission: (permission: string) =>
+          ['read', 'write'].includes(permission),
       } as Role,
       hashPassword: jest.fn(),
       validatePassword: jest.fn(() => Promise.resolve(true)),
@@ -290,7 +297,10 @@ export class TestMocks {
     return { ...defaultUser, ...overrides } as User;
   }
 
-  static createMockAdminUser(roles: { adminRole: Role }, overrides: Partial<User> = {}): User {
+  static createMockAdminUser(
+    roles: { adminRole: Role },
+    overrides: Partial<User> = {},
+  ): User {
     return TestMocks.createMockUser({
       role: roles.adminRole,
       isAdmin: () => true,
@@ -300,7 +310,9 @@ export class TestMocks {
     });
   }
 
-  static createMockDesarquivamento(overrides: Partial<Desarquivamento> = {}): Desarquivamento {
+  static createMockDesarquivamento(
+    overrides: Partial<Desarquivamento> = {},
+  ): Desarquivamento {
     const defaultDesarquivamento = {
       id: 1,
       codigoBarras: 'TEST123456789',
@@ -325,7 +337,7 @@ export class TestMocks {
 
   static createMockJwtService() {
     return {
-      sign: jest.fn((payload) => `mock.jwt.token.${payload.sub}`),
+      sign: jest.fn(payload => `mock.jwt.token.${payload.sub}`),
       verify: jest.fn(() => ({ sub: 1, usuario: 'testuser' })),
     };
   }
@@ -367,4 +379,4 @@ export const TEST_CONSTANTS = {
     COPIA_AUTENTICADA: 'COPIA_AUTENTICADA',
     VISTA: 'VISTA',
   },
-}
+};

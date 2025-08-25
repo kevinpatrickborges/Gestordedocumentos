@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { User } from '../../users/entities/user.entity';
 import { IS_PUBLIC_KEY } from '../../../common/decorators/is-public.decorator';
@@ -16,7 +21,7 @@ export class RolesGuard implements CanActivate {
     if (isPublic) {
       return true;
     }
-    
+
     const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
       context.getClass(),
@@ -37,18 +42,9 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Usuário sem role definida');
     }
 
-    const hasRole = requiredRoles.some((role) => {
-      switch (role) {
-        case 'admin':
-          return user.isAdmin();
-        case 'editor':
-          return user.isEditor() || user.isAdmin();
-        case 'user':
-          return true; // Qualquer usuário autenticado
-        default:
-          return user.role.name === role;
-      }
-    });
+    const hasRole = requiredRoles.some(
+      role => user.role && user.role.name.toLowerCase() === role.toLowerCase(),
+    );
 
     if (!hasRole) {
       throw new ForbiddenException(

@@ -9,7 +9,9 @@ export class CodigoBarras {
 
     const trimmedValue = value.trim();
     if (!CodigoBarras.PATTERN.test(trimmedValue)) {
-      throw new Error('Código de barras deve seguir o formato DES + 10 dígitos (ex: DES2024010001)');
+      throw new Error(
+        'Código de barras deve seguir o formato DES + 10 dígitos (ex: DES2024010001)',
+      );
     }
 
     this._value = trimmedValue;
@@ -36,7 +38,7 @@ export class CodigoBarras {
     const month = String(new Date().getMonth() + 1).padStart(2, '0');
     const day = String(new Date().getDate()).padStart(2, '0');
     const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-    
+
     const codigo = `DES${year}${month}${day}${random}`;
     return new CodigoBarras(codigo);
   }

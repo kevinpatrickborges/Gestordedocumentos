@@ -156,7 +156,9 @@ describe('NugecidService', () => {
                 orderBy: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 take: jest.fn().mockReturnThis(),
-                getManyAndCount: jest.fn().mockResolvedValue([[mockDesarquivamento], 1]),
+                getManyAndCount: jest
+                    .fn()
+                    .mockResolvedValue([[mockDesarquivamento], 1]),
             };
             mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
             const result = await service.findAll(queryDto);
@@ -172,7 +174,9 @@ describe('NugecidService', () => {
                 orderBy: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 take: jest.fn().mockReturnThis(),
-                getManyAndCount: jest.fn().mockResolvedValue([[mockDesarquivamento], 1]),
+                getManyAndCount: jest
+                    .fn()
+                    .mockResolvedValue([[mockDesarquivamento], 1]),
             };
             mockDesarquivamentoRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
             const result = await service.findAll(queryDto);
@@ -261,7 +265,9 @@ describe('NugecidService', () => {
                 canBeDeletedBy: jest.fn().mockReturnValue(true),
             };
             mockDesarquivamentoRepository.findOne.mockResolvedValue(mockDesarquivamentoToDelete);
-            mockDesarquivamentoRepository.softDelete.mockResolvedValue({ affected: 1 });
+            mockDesarquivamentoRepository.softDelete.mockResolvedValue({
+                affected: 1,
+            });
             mockAuditoriaRepository.create.mockReturnValue({});
             mockAuditoriaRepository.save.mockResolvedValue({});
             await service.remove(1, mockEditorUser);

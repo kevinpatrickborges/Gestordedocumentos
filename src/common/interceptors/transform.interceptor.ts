@@ -13,16 +13,14 @@ import { Response } from 'express';
  * Padroniza o formato de resposta e adiciona metadados
  */
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, any>
-{
+export class TransformInterceptor<T> implements NestInterceptor<T, any> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const ctx = context.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest();
-    
+
     return next.handle().pipe(
-      map((data) => {
+      map(data => {
         // Se a resposta já foi enviada (ex: redirect, file download), não transformar
         if (response.headersSent) {
           return data;

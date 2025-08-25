@@ -31,7 +31,7 @@ export class User {
 
   constructor(props: UserProps) {
     this.validateProps(props);
-    
+
     this._id = props.id;
     this._nome = props.nome;
     this._usuario = props.usuario;

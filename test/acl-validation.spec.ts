@@ -6,7 +6,10 @@ import * as bcrypt from 'bcryptjs';
 
 import { User } from '../src/modules/users/entities/user.entity';
 import { Role } from '../src/modules/users/entities/role.entity';
-import { Desarquivamento, StatusDesarquivamento } from '../src/modules/nugecid/entities/desarquivamento.entity';
+import {
+  Desarquivamento,
+  StatusDesarquivamento,
+} from '../src/modules/nugecid/entities/desarquivamento.entity';
 import { TipoSolicitacaoEnum } from '../src/modules/nugecid/domain/value-objects/tipo-solicitacao.vo';
 import { TestSetup, TEST_CONSTANTS } from './test-setup';
 
@@ -26,7 +29,7 @@ describe('ACL Validation Tests', () => {
 
   beforeAll(async () => {
     module = await TestSetup.createTestModule();
-    
+
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     roleRepository = module.get<Repository<Role>>(getRepositoryToken(Role));
     desarquivamentoRepository = module.get<Repository<Desarquivamento>>(
@@ -369,12 +372,12 @@ describe('ACL Validation Tests', () => {
 
       const testRecord = desarquivamentoRepository.create({
         tipoSolicitacao: TipoSolicitacaoEnum.COPIA,
-          nomeSolicitante: 'Test Record',
-          numeroRegistro: '2024002',
-          finalidade: 'Test',
-          createdBy: editorUser1.id,
-          status: StatusDesarquivamento.PENDENTE,
-        });
+        nomeSolicitante: 'Test Record',
+        numeroRegistro: '2024002',
+        finalidade: 'Test',
+        createdBy: editorUser1.id,
+        status: StatusDesarquivamento.PENDENTE,
+      });
       await desarquivamentoRepository.save(testRecord);
 
       expect(blockedUser.isBlocked()).toBe(true);

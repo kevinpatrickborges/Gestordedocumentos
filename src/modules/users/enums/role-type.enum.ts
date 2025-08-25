@@ -4,4 +4,5 @@ export enum RoleType {
   GESTOR = 'gestor',
   USUARIO = 'usuario',
   EDITOR = 'editor',
+  NUGECID_OPERATOR = 'nugecid_operator',
 }

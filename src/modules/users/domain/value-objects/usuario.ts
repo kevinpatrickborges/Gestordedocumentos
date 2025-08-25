@@ -24,13 +24,21 @@ export class Usuario {
     // Validar caracteres permitidos (letras, números, underscore, hífen)
     const validPattern = /^[a-zA-Z0-9_-]+$/;
     if (!validPattern.test(trimmedValue)) {
-      throw new Error('Usuário pode conter apenas letras, números, underscore e hífen');
+      throw new Error(
+        'Usuário pode conter apenas letras, números, underscore e hífen',
+      );
     }
 
     // Não pode começar ou terminar com underscore ou hífen
-    if (trimmedValue.startsWith('_') || trimmedValue.startsWith('-') || 
-        trimmedValue.endsWith('_') || trimmedValue.endsWith('-')) {
-      throw new Error('Usuário não pode começar ou terminar com underscore ou hífen');
+    if (
+      trimmedValue.startsWith('_') ||
+      trimmedValue.startsWith('-') ||
+      trimmedValue.endsWith('_') ||
+      trimmedValue.endsWith('-')
+    ) {
+      throw new Error(
+        'Usuário não pode começar ou terminar com underscore ou hífen',
+      );
     }
   }
 

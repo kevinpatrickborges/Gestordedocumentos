@@ -62,13 +62,17 @@ let NugecidService = NugecidService_1 = class NugecidService {
                 'desarquivamento.codigoBarras ILIKE :search)', { search: `%${search}%` });
         }
         if (status && status.length > 0) {
-            queryBuilder.andWhere('desarquivamento.status IN (:...status)', { status });
+            queryBuilder.andWhere('desarquivamento.status IN (:...status)', {
+                status,
+            });
         }
         if (tipo && tipo.length > 0) {
             queryBuilder.andWhere('desarquivamento.tipo IN (:...tipo)', { tipo });
         }
         if (usuarioId) {
-            queryBuilder.andWhere('desarquivamento.criadoPor.id = :usuarioId', { usuarioId });
+            queryBuilder.andWhere('desarquivamento.criadoPor.id = :usuarioId', {
+                usuarioId,
+            });
         }
         if (dataInicio) {
             queryBuilder.andWhere('desarquivamento.createdAt >= :dataInicio', {
@@ -81,7 +85,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
             });
         }
         if (vencidos) {
-            queryBuilder.andWhere('desarquivamento.prazoAtendimento < :now', {
+            queryBuilder.andWhere('desarquivamento.prazo_atendimento < :now', {
                 now: new Date(),
             });
         }
@@ -137,9 +141,11 @@ let NugecidService = NugecidService_1 = class NugecidService {
             const row = data[i];
             const rowNumber = i + 2;
             const importDto = new import_desarquivamento_dto_1.ImportDesarquivamentoDto();
-            importDto.numero_processo = row['numero_processo'] || row['Numero Processo'] || row['Nº Processo'];
+            importDto.numero_processo =
+                row['numero_processo'] || row['Numero Processo'] || row['Nº Processo'];
             importDto.requerente = row['requerente'] || row['Requerente'];
-            importDto.data_requerimento = row['data_requerimento'] || row['Data Requerimento'];
+            importDto.data_requerimento =
+                row['data_requerimento'] || row['Data Requerimento'];
             importDto.palavras_chave = row['palavras_chave'] || row['Palavras Chave'];
             importDto.assunto = row['assunto'] || row['Assunto'];
             importDto.autorId = currentUser.id;
@@ -150,10 +156,10 @@ let NugecidService = NugecidService_1 = class NugecidService {
                     row: rowNumber,
                     details: {
                         message: errors
-                            .map((err) => Object.values(err.constraints).join(', '))
+                            .map(err => Object.values(err.constraints).join(', '))
                             .join('; '),
                         data: row,
-                    }
+                    },
                 });
                 continue;
             }
@@ -169,7 +175,10 @@ let NugecidService = NugecidService_1 = class NugecidService {
             catch (error) {
                 this.logger.error(`Erro ao salvar linha ${rowNumber}: ${error.message}`);
                 result.errorCount++;
-                result.errors.push({ row: rowNumber, details: { message: error.message, data: row } });
+                result.errors.push({
+                    row: rowNumber,
+                    details: { message: error.message, data: row },
+                });
             }
         }
         this.logger.log(`Importação concluída para ${file.originalname}: ${result.successCount} sucessos, ${result.errorCount} falhas.`);
@@ -223,21 +232,33 @@ let NugecidService = NugecidService_1 = class NugecidService {
             const row = data[i];
             const rowNumber = i + 2;
             const importDto = new import_registro_dto_1.ImportRegistroDto();
-            importDto.desarquivamentoTipo = row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamento_tipo'];
+            importDto.desarquivamentoTipo =
+                row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamento_tipo'];
             importDto.status = row['Status'] || row['status'];
             importDto.nomeCompleto = row['Nome Completo'] || row['nome_completo'];
-            importDto.numDocumento = row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['num_documento'];
+            importDto.numDocumento =
+                row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['num_documento'];
             importDto.numProcesso = row['Nº do Processo'] || row['num_processo'];
-            importDto.tipoDocumento = row['Tipo de Documento'] || row['tipo_documento'];
-            importDto.dataSolicitacao = row['Data de solicitação'] || row['data_solicitacao'];
-            importDto.dataDesarquivamento = row['Data do desarquivamento - SAG'] || row['data_desarquivamento'];
-            importDto.dataDevolucao = row['Data da devolução pelo setor'] || row['data_devolucao'];
-            importDto.setorDemandante = row['Setor Demandante'] || row['setor_demandante'];
-            importDto.servidorResponsavel = row['Servidor Responsável'] || row['servidor_responsavel'];
+            importDto.tipoDocumento =
+                row['Tipo de Documento'] || row['tipo_documento'];
+            importDto.dataSolicitacao =
+                row['Data de solicitação'] || row['data_solicitacao'];
+            importDto.dataDesarquivamento =
+                row['Data do desarquivamento - SAG'] || row['data_desarquivamento'];
+            importDto.dataDevolucao =
+                row['Data da devolução pelo setor'] || row['data_devolucao'];
+            importDto.setorDemandante =
+                row['Setor Demandante'] || row['setor_demandante'];
+            importDto.servidorResponsavel =
+                row['Servidor Responsável'] || row['servidor_responsavel'];
             importDto.finalidade = row['Finalidade'] || row['finalidade'];
             const prorrogacaoValue = row['Prorrogação'] || row['prorrogacao'];
             if (prorrogacaoValue !== undefined) {
-                importDto.prorrogacao = prorrogacaoValue === 'Sim' || prorrogacaoValue === 'sim' || prorrogacaoValue === true || prorrogacaoValue === 'true';
+                importDto.prorrogacao =
+                    prorrogacaoValue === 'Sim' ||
+                        prorrogacaoValue === 'sim' ||
+                        prorrogacaoValue === true ||
+                        prorrogacaoValue === 'true';
             }
             const errors = await (0, class_validator_1.validate)(importDto);
             if (errors.length > 0) {
@@ -246,10 +267,10 @@ let NugecidService = NugecidService_1 = class NugecidService {
                     row: rowNumber,
                     details: {
                         message: errors
-                            .map((err) => Object.values(err.constraints).join(', '))
+                            .map(err => Object.values(err.constraints).join(', '))
                             .join('; '),
                         data: row,
-                    }
+                    },
                 });
                 continue;
             }
@@ -260,7 +281,9 @@ let NugecidService = NugecidService_1 = class NugecidService {
                     nomeVitima: importDto.nomeCompleto,
                     numeroRegistro: importDto.numDocumento,
                     tipoDocumento: importDto.tipoDocumento,
-                    dataFato: importDto.dataSolicitacao ? new Date(importDto.dataSolicitacao) : undefined,
+                    dataFato: importDto.dataSolicitacao
+                        ? new Date(importDto.dataSolicitacao)
+                        : undefined,
                     observacoes: `Finalidade: ${importDto.finalidade || 'N/A'} | Setor: ${importDto.setorDemandante || 'N/A'} | Servidor: ${importDto.servidorResponsavel || 'N/A'}`,
                 };
                 await this.create(createDto, currentUser);
@@ -269,7 +292,10 @@ let NugecidService = NugecidService_1 = class NugecidService {
             catch (error) {
                 this.logger.error(`Erro ao salvar linha ${rowNumber} do arquivo ${file.originalname}: ${error.message}`);
                 result.errorCount++;
-                result.errors.push({ row: rowNumber, details: { message: error.message, data: row } });
+                result.errors.push({
+                    row: rowNumber,
+                    details: { message: error.message, data: row },
+                });
             }
         }
         this.logger.log(`Importação de registros concluída para ${file.originalname}: ${result.successCount} sucessos, ${result.errorCount} falhas.`);
@@ -336,7 +362,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
         });
         const vencidos = await this.desarquivamentoRepository
             .createQueryBuilder('desarquivamento')
-            .where('desarquivamento.prazoAtendimento < :now', { now: new Date() })
+            .where('desarquivamento.prazo_atendimento < :now', { now: new Date() })
             .andWhere('desarquivamento.status != :concluido', {
             concluido: desarquivamento_entity_1.StatusDesarquivamento.CONCLUIDO,
         })
@@ -416,7 +442,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
             return value;
         if (typeof value === 'string') {
             const lower = value.toLowerCase().trim();
-            return lower === 'sim' || lower === 'true' || lower === '1' || lower === 'x';
+            return (lower === 'sim' || lower === 'true' || lower === '1' || lower === 'x');
         }
         if (typeof value === 'number')
             return value === 1;
@@ -441,11 +467,21 @@ let NugecidService = NugecidService_1 = class NugecidService {
                     margins: { top: 50, bottom: 50, left: 72, right: 72 },
                     bufferPages: true,
                 });
-                doc.font('Helvetica').fontSize(12).text('GOVERNO DO ESTADO DO RIO GRANDE DO NORTE', { align: 'center' });
+                doc
+                    .font('Helvetica')
+                    .fontSize(12)
+                    .text('GOVERNO DO ESTADO DO RIO GRANDE DO NORTE', {
+                    align: 'center',
+                });
                 doc.text('SECRETARIA DE ESTADO DA SEGURANÇA PÚBLICA E DA DEFESA SOCIAL', { align: 'center' });
-                doc.text('INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA - ITEP/RN', { align: 'center' });
+                doc.text('INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA - ITEP/RN', {
+                    align: 'center',
+                });
                 doc.moveDown(2);
-                doc.font('Helvetica-Bold').fontSize(16).text('TERMO DE DESARQUIVAMENTO', { align: 'center' });
+                doc
+                    .font('Helvetica-Bold')
+                    .fontSize(16)
+                    .text('TERMO DE DESARQUIVAMENTO', { align: 'center' });
                 doc.moveDown(2);
                 const dataSolicitacao = new Date(desarquivamento.createdAt).toLocaleDateString('pt-BR');
                 const texto = `Pelo presente termo, certifico que, para fins de ${desarquivamento.finalidade || 'não especificado'}, foi desarquivado o procedimento referente a(o) ${desarquivamento.tipoDocumento || 'documento'} de número ${desarquivamento.numeroRegistro}, que tem como parte(s) ${desarquivamento.nomeSolicitante} e ${desarquivamento.nomeVitima || 'não aplicável'}. A solicitação foi realizada em ${dataSolicitacao}.`;
@@ -459,19 +495,29 @@ let NugecidService = NugecidService_1 = class NugecidService {
                 doc.text(`- Data da Solicitação: ${new Date(desarquivamento.createdAt).toLocaleString('pt-BR')}`);
                 doc.text(`- Prazo para Atendimento: ${new Date(desarquivamento.prazoAtendimento).toLocaleDateString('pt-BR')}`);
                 doc.moveDown(3);
-                doc.font('Helvetica').fontSize(12).text('___________________________________________', { align: 'center' });
-                doc.text(desarquivamento.responsavel ? desarquivamento.responsavel.nome : 'Responsável não atribuído', { align: 'center' });
+                doc
+                    .font('Helvetica')
+                    .fontSize(12)
+                    .text('___________________________________________', {
+                    align: 'center',
+                });
+                doc.text(desarquivamento.responsavel
+                    ? desarquivamento.responsavel.nome
+                    : 'Responsável não atribuído', { align: 'center' });
                 doc.text('Responsável pelo Desarquivamento', { align: 'center' });
                 doc.moveDown(2);
                 const dataGeracao = new Date().toLocaleString('pt-BR');
-                doc.font('Helvetica').fontSize(10).text(`Gerado em: ${dataGeracao} - SGC/ITEP`, { align: 'center' });
+                doc
+                    .font('Helvetica')
+                    .fontSize(10)
+                    .text(`Gerado em: ${dataGeracao} - SGC/ITEP`, { align: 'center' });
                 const buffers = [];
                 doc.on('data', buffers.push.bind(buffers));
                 doc.on('end', () => {
                     const pdfData = Buffer.concat(buffers);
                     resolve(pdfData);
                 });
-                doc.on('error', (err) => {
+                doc.on('error', err => {
                     this.logger.error('Erro no stream do PDF:', err);
                     reject(err);
                 });

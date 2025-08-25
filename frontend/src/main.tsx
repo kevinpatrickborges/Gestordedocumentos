@@ -19,6 +19,35 @@ const queryClient = new QueryClient({
   },
 })
 
+if (import.meta.env?.DEV) {
+  // Suprime ruído de extensões do navegador que causam:
+  // "A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received"
+  window.addEventListener('unhandledrejection', (event) => {
+    try {
+      const reason = event.reason
+      const message = typeof reason === 'string' ? reason : (reason?.message ?? '')
+      if (typeof message === 'string' && message.includes('listener indicated an asynchronous response')) {
+        event.preventDefault()
+        // console.debug('[suppress] unhandledrejection de extensão ignorado:', message)
+      }
+    } catch (_) {
+      // noop
+    }
+  })
+
+  window.addEventListener('error', (event) => {
+    try {
+      const message = event.message || ''
+      if (typeof message === 'string' && message.includes('listener indicated an asynchronous response')) {
+        event.preventDefault()
+        // console.debug('[suppress] error de extensão ignorado:', message)
+      }
+    } catch (_) {
+      // noop
+    }
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>

@@ -48,7 +48,9 @@ export class FindDesarquivamentoByIdUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: FindDesarquivamentoByIdRequest): Promise<FindDesarquivamentoByIdResponse> {
+  async execute(
+    request: FindDesarquivamentoByIdRequest,
+  ): Promise<FindDesarquivamentoByIdResponse> {
     // Validar entrada
     this.validateRequest(request);
 
@@ -56,7 +58,8 @@ export class FindDesarquivamentoByIdUseCase {
     const desarquivamentoId = DesarquivamentoId.create(request.id);
 
     // Buscar no repositório
-    const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
+    const desarquivamento =
+      await this.desarquivamentoRepository.findById(desarquivamentoId);
 
     if (!desarquivamento) {
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
@@ -65,12 +68,18 @@ export class FindDesarquivamentoByIdUseCase {
     // Verificar permissões de acesso
     if (request.userId && request.userRoles) {
       if (!desarquivamento.canBeAccessedBy(request.userId, request.userRoles)) {
-        throw new Error('Acesso negado: você não tem permissão para visualizar este desarquivamento');
+        throw new Error(
+          'Acesso negado: você não tem permissão para visualizar este desarquivamento',
+        );
       }
     }
 
     // Mapear para resposta
-    return this.mapToResponse(desarquivamento, request.userId, request.userRoles);
+    return this.mapToResponse(
+      desarquivamento,
+      request.userId,
+      request.userRoles,
+    );
   }
 
   private validateRequest(request: FindDesarquivamentoByIdRequest): void {
@@ -96,7 +105,7 @@ export class FindDesarquivamentoByIdUseCase {
     userRoles?: string[],
   ): FindDesarquivamentoByIdResponse {
     const plainObject = desarquivamento.toPlainObject();
-    
+
     // Calcular permissões se informações do usuário estiverem disponíveis
     let canBeEdited = false;
     let canBeCancelled = false;
@@ -107,7 +116,7 @@ export class FindDesarquivamentoByIdUseCase {
       canBeCancelled = desarquivamento.canBeCancelled() && canBeEdited;
       canBeCompleted = desarquivamento.canBeCompleted() && canBeEdited;
     }
-    
+
     return {
       id: plainObject.id,
       codigoBarras: plainObject.codigoBarras,

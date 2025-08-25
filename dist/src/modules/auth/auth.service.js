@@ -41,6 +41,7 @@ let AuthService = AuthService_1 = class AuthService {
                 return null;
             }
             this.logger.debug(`[AuthService] Usuário encontrado: ${user.usuario} (ID: ${user.id})`);
+            this.logger.debug(`[AuthService] Usuário object: ${JSON.stringify({ id: user.id, usuario: user.usuario, ativo: user.ativo, role: user.role ? user.role.name : null })}`);
             if (!user.ativo) {
                 this.logger.warn(`[AuthService] Tentativa de login com usuário inativo: "${usuario}"`);
                 throw new common_1.UnauthorizedException('Usuário inativo');
@@ -148,10 +149,22 @@ let AuthService = AuthService_1 = class AuthService {
         this.logger.log(`Logout realizado para usuário ID: ${userId}`);
     }
     async findUserById(id) {
-        const user = await this.userRepository.findOne({
-            where: { id },
-            relations: ['role'],
-        });
+        const user = await this.userRepository
+            .createQueryBuilder('user')
+            .leftJoinAndSelect('user.role', 'role')
+            .where('user.id = :id', { id })
+            .select([
+            'user.id',
+            'user.nome',
+            'user.usuario',
+            'user.ultimoLogin',
+            'user.createdAt',
+            'role.id',
+            'role.name',
+            'role.description',
+            'role.permissions',
+        ])
+            .getOne();
         if (!user) {
             throw new common_1.UnauthorizedException('Usuário não encontrado');
         }

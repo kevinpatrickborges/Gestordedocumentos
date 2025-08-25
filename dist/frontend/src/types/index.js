@@ -29,5 +29,6 @@ var UserRole;
     UserRole["ADMIN"] = "admin";
     UserRole["COORDENADOR"] = "coordenador";
     UserRole["USUARIO"] = "usuario";
+    UserRole["NUGECID_OPERATOR"] = "nugecid_operator";
 })(UserRole || (exports.UserRole = UserRole = {}));
 //# sourceMappingURL=index.js.map

@@ -71,13 +71,16 @@ export class GenerateTermoEntregaUseCase {
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
   ) {}
 
-  async execute(request: GenerateTermoEntregaRequest): Promise<GenerateTermoEntregaResponse> {
+  async execute(
+    request: GenerateTermoEntregaRequest,
+  ): Promise<GenerateTermoEntregaResponse> {
     // Validar entrada
     this.validateRequest(request);
 
     // Buscar desarquivamento
     const desarquivamentoId = DesarquivamentoId.create(request.id);
-    const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
+    const desarquivamento =
+      await this.desarquivamentoRepository.findById(desarquivamentoId);
 
     if (!desarquivamento) {
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
@@ -85,7 +88,9 @@ export class GenerateTermoEntregaUseCase {
 
     // Verificar permissões
     if (!desarquivamento.canBeAccessedBy(request.userId, request.userRoles)) {
-      throw new Error('Acesso negado: você não tem permissão para gerar termo deste desarquivamento');
+      throw new Error(
+        'Acesso negado: você não tem permissão para gerar termo deste desarquivamento',
+      );
     }
 
     // Verificar se o desarquivamento pode gerar termo
@@ -95,7 +100,10 @@ export class GenerateTermoEntregaUseCase {
     const termoData = await this.prepareTermoData(desarquivamento, request);
 
     // Gerar PDF
-    const pdfBuffer = await this.generatePDF(termoData, request.templateOptions);
+    const pdfBuffer = await this.generatePDF(
+      termoData,
+      request.templateOptions,
+    );
 
     // Preparar resposta
     const fileName = this.generateFileName(desarquivamento);
@@ -135,23 +143,33 @@ export class GenerateTermoEntregaUseCase {
     }
   }
 
-  private validateDesarquivamentoForTermo(desarquivamento: DesarquivamentoDomain): void {
+  private validateDesarquivamentoForTermo(
+    desarquivamento: DesarquivamentoDomain,
+  ): void {
     // Verificar se está em status apropriado
     if (desarquivamento.status.isPending()) {
-      throw new Error('Não é possível gerar termo para desarquivamento pendente');
+      throw new Error(
+        'Não é possível gerar termo para desarquivamento pendente',
+      );
     }
 
     if (desarquivamento.status.isCancelled()) {
-      throw new Error('Não é possível gerar termo para desarquivamento cancelado');
+      throw new Error(
+        'Não é possível gerar termo para desarquivamento cancelado',
+      );
     }
 
     if (desarquivamento.isDeleted()) {
-      throw new Error('Não é possível gerar termo para desarquivamento excluído');
+      throw new Error(
+        'Não é possível gerar termo para desarquivamento excluído',
+      );
     }
 
     // Verificar se tem localização física (necessária para entrega)
     if (!desarquivamento.localizacaoFisica) {
-      throw new Error('Localização física é obrigatória para gerar termo de entrega');
+      throw new Error(
+        'Localização física é obrigatória para gerar termo de entrega',
+      );
     }
   }
 
@@ -186,8 +204,12 @@ export class GenerateTermoEntregaUseCase {
         nomeVitima: plainObject.nomeVitima,
         dataFato: plainObject.dataFato,
         finalidade: plainObject.finalidade,
-        observacoes: request.templateOptions?.incluirObservacoes ? plainObject.observacoes : undefined,
-        localizacaoFisica: request.templateOptions?.incluirLocalizacao ? plainObject.localizacaoFisica : undefined,
+        observacoes: request.templateOptions?.incluirObservacoes
+          ? plainObject.observacoes
+          : undefined,
+        localizacaoFisica: request.templateOptions?.incluirLocalizacao
+          ? plainObject.localizacaoFisica
+          : undefined,
         urgente: plainObject.urgente,
       },
       entrega: {
@@ -209,15 +231,15 @@ export class GenerateTermoEntregaUseCase {
   ): Promise<Buffer> {
     // Aqui seria implementada a geração do PDF usando uma biblioteca como puppeteer, jsPDF, ou PDFKit
     // Por simplicidade, vou retornar um buffer simulado
-    
+
     const htmlContent = this.generateHTMLTemplate(termoData, templateOptions);
-    
+
     // Simulação da geração do PDF
     // Em uma implementação real, você usaria:
     // - puppeteer para converter HTML em PDF
     // - PDFKit para criar PDF programaticamente
     // - jsPDF para geração client-side
-    
+
     const mockPdfContent = `
       TERMO DE ENTREGA DE DOCUMENTO
       
@@ -281,12 +303,16 @@ export class GenerateTermoEntregaUseCase {
           ${termoData.desarquivamento.urgente ? '<div class="field"><strong>URGENTE</strong></div>' : ''}
         </div>
         
-        ${termoData.desarquivamento.observacoes ? `
+        ${
+          termoData.desarquivamento.observacoes
+            ? `
           <div class="field">
             <strong>Observações:</strong><br>
             ${termoData.desarquivamento.observacoes}
           </div>
-        ` : ''}
+        `
+            : ''
+        }
         
         <div class="signature-area">
           <div>

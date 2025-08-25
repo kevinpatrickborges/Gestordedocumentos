@@ -12,7 +12,10 @@ import { join } from 'path';
 import * as redisStore from 'cache-manager-redis-store';
 
 // Configuration
-import { DatabaseConfig, databaseConfigFactory } from './config/database.config';
+import {
+  DatabaseConfig,
+  databaseConfigFactory,
+} from './config/database.config';
 import authConfig from './config/auth.config';
 import appConfig from './config/app.config';
 
@@ -24,7 +27,6 @@ import { AuditoriaModule } from './modules/audit/auditoria.module';
 import { SeedingModule } from './modules/seeding/seeding.module';
 import { RegistrosModule } from './modules/registros/registros.module';
 import { EstatisticasModule } from './modules/estatisticas/estatisticas.module';
-
 
 // Guards
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
@@ -84,12 +86,12 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
     // Rate Limiting
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ([
+      useFactory: (configService: ConfigService) => [
         {
           ttl: configService.get<number>('THROTTLE_TTL', 60),
           limit: configService.get<number>('THROTTLE_LIMIT', 10),
         },
-      ]),
+      ],
       inject: [ConfigService],
     }),
 
@@ -129,7 +131,10 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
       useFactory: (configService: ConfigService) => ({
         dest: configService.get<string>('UPLOAD_PATH', './uploads'),
         limits: {
-          fileSize: configService.get<number>('MAX_FILE_SIZE', 10 * 1024 * 1024), // 10MB
+          fileSize: configService.get<number>(
+            'MAX_FILE_SIZE',
+            10 * 1024 * 1024,
+          ), // 10MB
           files: 5,
         },
       }),
@@ -144,7 +149,6 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
     SeedingModule,
     RegistrosModule,
     EstatisticasModule,
-
   ],
   controllers: [AppController],
   providers: [

@@ -33,12 +33,13 @@ const current_user_decorator_1 = require("../../common/decorators/current-user.d
 const user_entity_1 = require("../users/entities/user.entity");
 const role_type_enum_1 = require("../users/enums/role-type.enum");
 let NugecidController = NugecidController_1 = class NugecidController {
-    constructor(createDesarquivamentoUseCase, findAllDesarquivamentosUseCase, findDesarquivamentoByIdUseCase, updateDesarquivamentoUseCase, deleteDesarquivamentoUseCase, generateTermoEntregaUseCase, getDashboardStatsUseCase, importDesarquivamentoUseCase, importRegistrosUseCase) {
+    constructor(createDesarquivamentoUseCase, findAllDesarquivamentosUseCase, findDesarquivamentoByIdUseCase, updateDesarquivamentoUseCase, deleteDesarquivamentoUseCase, restoreDesarquivamentoUseCase, generateTermoEntregaUseCase, getDashboardStatsUseCase, importDesarquivamentoUseCase, importRegistrosUseCase) {
         this.createDesarquivamentoUseCase = createDesarquivamentoUseCase;
         this.findAllDesarquivamentosUseCase = findAllDesarquivamentosUseCase;
         this.findDesarquivamentoByIdUseCase = findDesarquivamentoByIdUseCase;
         this.updateDesarquivamentoUseCase = updateDesarquivamentoUseCase;
         this.deleteDesarquivamentoUseCase = deleteDesarquivamentoUseCase;
+        this.restoreDesarquivamentoUseCase = restoreDesarquivamentoUseCase;
         this.generateTermoEntregaUseCase = generateTermoEntregaUseCase;
         this.getDashboardStatsUseCase = getDashboardStatsUseCase;
         this.importDesarquivamentoUseCase = importDesarquivamentoUseCase;
@@ -174,18 +175,10 @@ let NugecidController = NugecidController_1 = class NugecidController {
             userId: currentUser.id,
             userRoles: [currentUser.role?.name || 'USER'],
         });
-        if (req.headers.accept?.includes('application/json')) {
-            return res.json({
-                success: true,
-                data: stats,
-            });
-        }
-        else {
-            return res.render('nugecid/dashboard', {
-                title: 'Dashboard - NUGECID',
-                stats,
-            });
-        }
+        return res.json({
+            success: true,
+            data: stats,
+        });
     }
     async exportToExcel(queryDto, currentUser, res) {
         const result = await this.findAllDesarquivamentosUseCase.execute({
@@ -197,25 +190,31 @@ let NugecidController = NugecidController_1 = class NugecidController {
         });
         const workbook = XLSX.utils.book_new();
         const worksheetData = result.data.map(item => ({
-            'ID': item.id,
+            ID: item.id,
             'Código de Barras': item.codigoBarras,
-            'Tipo': item.tipoSolicitacao,
-            'Status': item.status,
+            Tipo: item.tipoSolicitacao,
+            Status: item.status,
             'Nome Requerente': item.nomeSolicitante,
             'Nome Vítima': item.nomeVitima || '',
             'Número Registro': item.numeroRegistro,
             'Tipo Documento': item.tipoDocumento || '',
-            'Data Fato': item.dataFato ? item.dataFato.toISOString().split('T')[0] : '',
-            'Finalidade': item.finalidade || '',
-            'Urgente': item.urgente ? 'Sim' : 'Não',
+            'Data Fato': item.dataFato
+                ? item.dataFato.toISOString().split('T')[0]
+                : '',
+            Finalidade: item.finalidade || '',
+            Urgente: item.urgente ? 'Sim' : 'Não',
             'Localização Física': item.localizacaoFisica || '',
-            'Prazo Atendimento': item.prazoAtendimento ? item.prazoAtendimento.toISOString() : '',
-            'Data Atendimento': item.dataAtendimento ? item.dataAtendimento.toISOString() : '',
-            'Resultado': item.resultadoAtendimento || '',
+            'Prazo Atendimento': item.prazoAtendimento
+                ? item.prazoAtendimento.toISOString()
+                : '',
+            'Data Atendimento': item.dataAtendimento
+                ? item.dataAtendimento.toISOString()
+                : '',
+            Resultado: item.resultadoAtendimento || '',
             'Criado Por ID': item.criadoPorId || '',
             'Responsável ID': item.responsavelId || '',
             'Criado em': item.createdAt.toISOString(),
-            'Observações': item.observacoes || '',
+            Observações: item.observacoes || '',
         }));
         const worksheet = XLSX.utils.json_to_sheet(worksheetData);
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Desarquivamentos');
@@ -354,6 +353,62 @@ let NugecidController = NugecidController_1 = class NugecidController {
             return res.redirect('/nugecid?deleted=true');
         }
     }
+    async restore(id, currentUser, req, res) {
+        try {
+            const result = await this.restoreDesarquivamentoUseCase.execute({
+                id,
+                userId: currentUser.id,
+                userRoles: [currentUser.role?.name || 'USER'],
+            });
+            this.logger.log(`Desarquivamento restaurado: ${id} por ${currentUser.usuario}`);
+            if (req.headers.accept?.includes('application/json')) {
+                return res.json({
+                    success: true,
+                    message: result.message,
+                });
+            }
+            else {
+                return res.redirect('/nugecid/excluidos?restored=true');
+            }
+        }
+        catch (error) {
+            if (error.message.includes('não encontrado')) {
+                if (req.headers.accept?.includes('application/json')) {
+                    return res.status(common_1.HttpStatus.NOT_FOUND).json({
+                        success: false,
+                        message: error.message,
+                    });
+                }
+                else {
+                    return res.redirect('/nugecid/excluidos?error=not-found');
+                }
+            }
+            if (error.message.includes('permissão') ||
+                error.message.includes('Acesso negado')) {
+                if (req.headers.accept?.includes('application/json')) {
+                    return res.status(common_1.HttpStatus.FORBIDDEN).json({
+                        success: false,
+                        message: error.message,
+                    });
+                }
+                else {
+                    return res.redirect('/nugecid/excluidos?error=forbidden');
+                }
+            }
+            if (error.message.includes('não está excluído')) {
+                if (req.headers.accept?.includes('application/json')) {
+                    return res.status(common_1.HttpStatus.BAD_REQUEST).json({
+                        success: false,
+                        message: error.message,
+                    });
+                }
+                else {
+                    return res.redirect('/nugecid/excluidos?error=not-deleted');
+                }
+            }
+            throw error;
+        }
+    }
 };
 exports.NugecidController = NugecidController;
 __decorate([
@@ -450,7 +505,10 @@ __decorate([
         },
     }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Importação concluída' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Arquivo inválido ou dados incorretos' }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Arquivo inválido ou dados incorretos',
+    }),
     (0, swagger_1.ApiResponse)({ status: 403, description: 'Acesso negado' }),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN),
@@ -465,7 +523,11 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id/termo'),
     (0, swagger_1.ApiOperation)({ summary: 'Gerar termo de entrega de desarquivamento em PDF' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do desarquivamento', type: 'number' }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID do desarquivamento',
+        type: 'number',
+    }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'PDF do termo gerado com sucesso' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Desarquivamento não encontrado' }),
     (0, swagger_1.ApiResponse)({ status: 500, description: 'Erro ao gerar o PDF' }),
@@ -481,6 +543,7 @@ __decorate([
 ], NugecidController.prototype, "getTermoDeEntrega", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN, role_type_enum_1.RoleType.GESTOR, role_type_enum_1.RoleType.NUGECID_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Listar desarquivamentos com filtros e paginação' }),
     (0, swagger_1.ApiResponse)({
         status: 200,
@@ -539,7 +602,11 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Obter desarquivamento por ID' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do desarquivamento', type: 'integer' }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID do desarquivamento',
+        type: 'integer',
+    }),
     (0, swagger_1.ApiResponse)({
         status: 200,
         description: 'Desarquivamento encontrado',
@@ -558,7 +625,10 @@ __decorate([
 __decorate([
     (0, common_1.Get)('barcode/:codigo'),
     (0, swagger_1.ApiOperation)({ summary: 'Obter desarquivamento por código de barras' }),
-    (0, swagger_1.ApiParam)({ name: 'codigo', description: 'Código de barras do desarquivamento' }),
+    (0, swagger_1.ApiParam)({
+        name: 'codigo',
+        description: 'Código de barras do desarquivamento',
+    }),
     (0, swagger_1.ApiResponse)({
         status: 200,
         description: 'Desarquivamento encontrado',
@@ -577,7 +647,11 @@ __decorate([
 __decorate([
     (0, common_1.Patch)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Atualizar desarquivamento' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do desarquivamento', type: 'integer' }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID do desarquivamento',
+        type: 'integer',
+    }),
     (0, swagger_1.ApiResponse)({
         status: 200,
         description: 'Desarquivamento atualizado com sucesso',
@@ -599,8 +673,15 @@ __decorate([
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Remover desarquivamento' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do desarquivamento', type: 'integer' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Desarquivamento removido com sucesso' }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID do desarquivamento',
+        type: 'integer',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Desarquivamento removido com sucesso',
+    }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Desarquivamento não encontrado' }),
     (0, swagger_1.ApiResponse)({ status: 403, description: 'Sem permissão para remover' }),
     (0, swagger_1.ApiBearerAuth)(),
@@ -613,6 +694,35 @@ __decorate([
     __metadata("design:paramtypes", [Number, user_entity_1.User, Object, Object]),
     __metadata("design:returntype", Promise)
 ], NugecidController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/restore'),
+    (0, swagger_1.ApiOperation)({ summary: 'Restaurar desarquivamento excluído' }),
+    (0, swagger_1.ApiParam)({
+        name: 'id',
+        description: 'ID do desarquivamento',
+        type: 'integer',
+    }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Desarquivamento restaurado com sucesso',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Desarquivamento não encontrado' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Sem permissão para restaurar' }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Desarquivamento não está excluído',
+    }),
+    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN, role_type_enum_1.RoleType.NUGECID_OPERATOR),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
+    __param(3, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, user_entity_1.User, Object, Object]),
+    __metadata("design:returntype", Promise)
+], NugecidController.prototype, "restore", null);
 exports.NugecidController = NugecidController = NugecidController_1 = __decorate([
     (0, swagger_1.ApiTags)('NUGECID - Desarquivamentos'),
     (0, common_1.Controller)('nugecid'),
@@ -622,6 +732,7 @@ exports.NugecidController = NugecidController = NugecidController_1 = __decorate
         use_cases_1.FindDesarquivamentoByIdUseCase,
         use_cases_1.UpdateDesarquivamentoUseCase,
         use_cases_1.DeleteDesarquivamentoUseCase,
+        use_cases_1.RestoreDesarquivamentoUseCase,
         use_cases_1.GenerateTermoEntregaUseCase,
         use_cases_1.GetDashboardStatsUseCase,
         use_cases_1.ImportDesarquivamentoUseCase,

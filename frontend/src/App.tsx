@@ -15,7 +15,8 @@ import {
   NugecidListPage,
   NugecidCreatePage,
   NugecidEditPage,
-  NugecidDetailPage
+  NugecidDetailPage,
+  DesarquivamentosExcluidosPage
 } from '@/pages/nugecid'
 import UsuariosPage from '@/pages/usuarios/UsuariosPage'
 import NovoUsuarioPage from '@/pages/usuarios/NovoUsuarioPage'
@@ -86,6 +87,16 @@ const App: React.FC = () => {
               <Route path="nugecid">
                 {/* Lista de registros NUGECID - Todos os usuários */}
                 <Route index element={<NugecidListPage />} />
+                
+                {/* Registros excluídos - Apenas Admins e Operadores NUGECID */}
+                <Route
+                  path="excluidos"
+                  element={
+                    <ProtectedRoute requiredRole={UserRole.NUGECID_OPERATOR}>
+                      <DesarquivamentosExcluidosPage />
+                    </ProtectedRoute>
+                  }
+                />
                 
                 {/* Novo registro NUGECID - Coordenadores e Admins */}
                 <Route

@@ -30,7 +30,13 @@ let GetUsersUseCase = class GetUsersUseCase {
         const limit = query.limit || 10;
         if (page && limit) {
             const result = await this.userRepository.findWithPagination(page, limit, filters);
-            return result.users;
+            return {
+                users: result.users,
+                total: result.total,
+                totalPages: result.totalPages,
+                page,
+                limit,
+            };
         }
         return this.userRepository.findAll(filters);
     }

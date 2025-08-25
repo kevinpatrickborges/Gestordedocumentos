@@ -24,8 +24,12 @@ let DatabaseConfig = class DatabaseConfig {
             synchronize: false,
             logging: this.configService.get('NODE_ENV') === 'development',
             entities: [(0, path_1.join)(__dirname, '..', '**', '*.entity{.ts,.js}')],
-            migrations: [(0, path_1.join)(__dirname, '..', 'database', 'migrations', '*{.ts,.js}')],
-            subscribers: [(0, path_1.join)(__dirname, '..', 'database', 'subscribers', '*{.ts,.js}')],
+            migrations: [
+                (0, path_1.join)(__dirname, '..', 'database', 'migrations', '*{.ts,.js}'),
+            ],
+            subscribers: [
+                (0, path_1.join)(__dirname, '..', 'database', 'subscribers', '*{.ts,.js}'),
+            ],
             migrationsRun: false,
             autoLoadEntities: true,
         };

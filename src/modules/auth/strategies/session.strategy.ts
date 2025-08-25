@@ -20,7 +20,7 @@ export class SessionStrategy extends PassportStrategy(Strategy, 'session') {
     try {
       // Verifica se o usuário ainda existe e está ativo
       const user = await this.authService.findUserById(req.session.user.id);
-      
+
       if (!user.ativo) {
         throw new UnauthorizedException('Usuário inativo');
       }

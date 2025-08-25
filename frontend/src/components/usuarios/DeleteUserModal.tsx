@@ -5,9 +5,10 @@ import { useDeleteUser, useUser } from '@/hooks/useUsers'
 interface DeleteUserModalProps {
   userId: number
   onClose: () => void
+  onSuccess?: () => void
 }
 
-const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onClose }) => {
+const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onClose, onSuccess }) => {
   const { data: userResponse, isLoading: isLoadingUser } = useUser(userId)
   const deleteUserMutation = useDeleteUser()
 
@@ -16,6 +17,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onClose }) =>
   const handleConfirmDelete = async () => {
     try {
       await deleteUserMutation.mutateAsync(userId)
+      onSuccess?.()
       onClose()
     } catch (error) {
       // Erro já tratado no hook
@@ -74,8 +76,8 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onClose }) =>
                     <span className="text-sm text-gray-900">{user.nome}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm font-medium text-gray-600">Email:</span>
-                    <span className="text-sm text-gray-900">{user.email}</span>
+                    <span className="text-sm font-medium text-gray-600">Login:</span>
+                    <span className="text-sm text-gray-900">{user.usuario}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm font-medium text-gray-600">Papel:</span>

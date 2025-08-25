@@ -33,7 +33,9 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)({ message: 'Usuário é obrigatório' }),
     (0, class_validator_1.MinLength)(3, { message: 'Usuário deve ter pelo menos 3 caracteres' }),
     (0, class_validator_1.MaxLength)(50, { message: 'Usuário deve ter no máximo 50 caracteres' }),
-    (0, class_validator_1.Matches)(/^[a-zA-Z0-9._-]+$/, { message: 'Usuário deve conter apenas letras, números, pontos, hífens e underscores' }),
+    (0, class_validator_1.Matches)(/^[a-zA-Z0-9._-]+$/, {
+        message: 'Usuário deve conter apenas letras, números, pontos, hífens e underscores',
+    }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "usuario", void 0);
 __decorate([

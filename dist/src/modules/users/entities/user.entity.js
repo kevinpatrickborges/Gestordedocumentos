@@ -17,7 +17,10 @@ const desarquivamento_entity_1 = require("../../nugecid/entities/desarquivamento
 const auditoria_entity_1 = require("../../audit/entities/auditoria.entity");
 let User = class User {
     async hashPassword() {
-        if (this.senha && !this.senha.startsWith('$2a$') && !this.senha.startsWith('$2b$') && !this.senha.startsWith('$2y$')) {
+        if (this.senha &&
+            !this.senha.startsWith('$2a$') &&
+            !this.senha.startsWith('$2b$') &&
+            !this.senha.startsWith('$2y$')) {
             this.senha = await bcrypt.hash(this.senha, 12);
         }
     }
@@ -25,10 +28,10 @@ let User = class User {
         return bcrypt.compare(password, this.senha);
     }
     isAdmin() {
-        return this.role?.name === 'admin';
+        return this.role?.name.toLowerCase() === 'admin';
     }
     isEditor() {
-        return this.role?.name === 'editor';
+        return this.role?.name.toLowerCase() === 'editor';
     }
     canManageUser(targetUserId) {
         return this.isAdmin() || this.id === targetUserId;

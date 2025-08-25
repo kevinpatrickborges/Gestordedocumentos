@@ -52,7 +52,12 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         if (existingByNumero.length > 0) {
             throw new Error(`Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`);
         }
-        if (!Object.values(['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO']).includes(request.tipoSolicitacao)) {
+        if (!Object.values([
+            'DESARQUIVAMENTO',
+            'COPIA',
+            'VISTA',
+            'CERTIDAO',
+        ]).includes(request.tipoSolicitacao)) {
             throw new Error('Tipo de solicitação inválido');
         }
         if (!request.criadoPorId || request.criadoPorId <= 0) {
@@ -61,7 +66,8 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         if (request.responsavelId && request.responsavelId <= 0) {
             throw new Error('ID do responsável deve ser válido');
         }
-        if (!request.nomeSolicitante || request.nomeSolicitante.trim().length === 0) {
+        if (!request.nomeSolicitante ||
+            request.nomeSolicitante.trim().length === 0) {
             throw new Error('Nome do solicitante é obrigatório');
         }
         if (!request.numeroRegistro || request.numeroRegistro.trim().length === 0) {

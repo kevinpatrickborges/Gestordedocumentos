@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Filter, Download, RefreshCw, Upload } from 'lucide-react'
+import { Plus, Search, Filter, Download, RefreshCw, Upload, Trash2 } from 'lucide-react'
 import { useNugecidImport } from '@/hooks/useNugecidImport'
 import { ImportModal } from './components/ImportModal'
 import { useDesarquivamentos } from '../../hooks/useDesarquivamentos'
 import { QueryDesarquivamentoDto } from '../../types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import NugecidTable from '@/components/nugecid/NugecidTable'
-import NugecidFilters from '@/components/nugecid/NugecidFilters'
-import NugecidStats from '@/components/nugecid/NugecidStats'
+// Componentes nugecid removidos - implementações temporárias abaixo
+// import NugecidTable from '@/components/nugecid/NugecidTable'
+// import NugecidFilters from '@/components/nugecid/NugecidFilters'
+// import NugecidStats from '@/components/nugecid/NugecidStats'
 import { PageLoading } from '@/components/ui/Loading'
 import { toast } from 'sonner'
 
@@ -138,6 +139,12 @@ const NugecidListPage: React.FC = () => {
             <Upload className="w-4 h-4 mr-2" />
             Importar Planilha
           </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/nugecid/excluidos">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Registros Excluídos
+            </Link>
+          </Button>
           <Button asChild>
             <Link to="/nugecid/novo">
               <Plus className="w-4 h-4 mr-2" />
@@ -147,8 +154,13 @@ const NugecidListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <NugecidStats />
+      {/* Stats - Temporariamente desabilitado */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="text-center text-gray-500">
+          <p>Estatísticas temporariamente indisponíveis</p>
+          <p className="text-sm mt-1">Componente NugecidStats será reimplementado</p>
+        </div>
+      </div>
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -185,38 +197,44 @@ const NugecidListPage: React.FC = () => {
           </Button>
         </div>
 
-        {/* Advanced Filters */}
+        {/* Advanced Filters - Temporariamente desabilitado */}
         {showFilters && (
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <NugecidFilters
-              filters={query}
-              onChange={handleFilterChange}
-              onReset={() => {
-                setQuery({
-                  page: 1,
-                  limit: 10,
-                  sortBy: 'createdAt',
-                  sortOrder: 'DESC'
-                })
-                setSearchTerm('')
-              }}
-            />
+            <div className="text-center text-gray-500 py-4">
+              <p>Filtros avançados temporariamente indisponíveis</p>
+              <p className="text-sm mt-1">Componente NugecidFilters será reimplementado</p>
+              <Button 
+                onClick={() => {
+                  setQuery({
+                    page: 1,
+                    limit: 10,
+                    sortBy: 'createdAt',
+                    sortOrder: 'DESC'
+                  })
+                  setSearchTerm('')
+                }}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <NugecidTable
-          desarquivamentos={desarquivamentos}
-          loading={isLoading}
-          pagination={meta}
-          onPageChange={handlePageChange}
-          onLimitChange={handleLimitChange}
-          onSort={handleSort}
-          sortBy={query.sortBy}
-          sortOrder={query.sortOrder}
-        />
+      {/* Table - Temporariamente desabilitado */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="text-center text-gray-500">
+          <p>Tabela de desarquivamentos temporariamente indisponível</p>
+          <p className="text-sm mt-1">Componente NugecidTable será reimplementado</p>
+          {desarquivamentos.length > 0 && (
+            <p className="text-sm mt-2 text-blue-600">
+              {desarquivamentos.length} registro(s) encontrado(s)
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Empty State */}

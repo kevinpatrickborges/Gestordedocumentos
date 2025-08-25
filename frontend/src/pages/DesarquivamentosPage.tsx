@@ -159,10 +159,12 @@ const DesarquivamentosPage: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar</label>
+              <label htmlFor="search" className="text-sm font-medium">Buscar</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
+                  id="search"
+                  name="search"
                   placeholder="Buscar por código, requerente..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
@@ -171,9 +173,9 @@ const DesarquivamentosPage: React.FC = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
+              <label htmlFor="status" className="text-sm font-medium">Status</label>
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger id="status" name="status">
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,9 +205,9 @@ const DesarquivamentosPage: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo</label>
+              <label htmlFor="tipo" className="text-sm font-medium">Tipo</label>
               <Select value={tipoFilter} onValueChange={handleTipoFilter}>
-                <SelectTrigger>
+                <SelectTrigger id="tipo" name="tipo">
                   <SelectValue placeholder="Todos os tipos" />
                 </SelectTrigger>
                 <SelectContent>
@@ -226,9 +228,9 @@ const DesarquivamentosPage: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Desarquivamento</label>
+              <label htmlFor="tipoDesarquivamento" className="text-sm font-medium">Desarquivamento</label>
               <Select value={tipoDesarquivamentoFilter} onValueChange={handleTipoDesarquivamentoFilter}>
-                <SelectTrigger>
+                <SelectTrigger id="tipoDesarquivamento" name="tipoDesarquivamento">
                   <SelectValue placeholder="Todos os tipos" />
                 </SelectTrigger>
                 <SelectContent>

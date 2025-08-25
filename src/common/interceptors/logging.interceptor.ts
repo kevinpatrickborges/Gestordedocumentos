@@ -18,9 +18,9 @@ export class LoggingInterceptor implements NestInterceptor {
     const { method, url, ip } = request;
     const userAgent = request.get('User-Agent') || '';
     const user = request.user as any;
-    
+
     const now = Date.now();
-    
+
     // Log da requisição
     this.logger.log(
       `${method} ${url} - ${ip} - ${userAgent} - User: ${user?.id || 'Anonymous'}`,

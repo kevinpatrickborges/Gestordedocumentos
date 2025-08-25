@@ -27,21 +27,19 @@ export function RelatoriosPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [cardsResponse, atendimentosResponse, statusResponse] = await Promise.all([
+        const [cards, atendimentos, status] = await Promise.all([
           getCardData(),
           getAtendimentosPorMes(),
           getStatusDistribuicao(),
         ]);
 
-        // Acessa a propriedade 'data' da resposta da API
-        const cards = (cardsResponse as any).data;
-        const atendimentos = (atendimentosResponse as any).data;
-        const status = (statusResponse as any).data;
+        setCardData(cards ?? null);
+        // Garantir arrays válidos antes de mapear
+        const atendArr = Array.isArray(atendimentos) ? atendimentos : [];
+        const statusArr = Array.isArray(status) ? status : [];
 
-        setCardData(cards);
-        // Mapeia para os tipos de dados específicos dos gráficos, garantindo que os valores sejam números
-        setAtendimentosPorMes(atendimentos.map((a: any) => ({ name: a.name, total: a.total || 0 })));
-        setStatusDistribuicao(status.map((s: any) => ({ name: s.name, value: s.value || 0 })));
+        setAtendimentosPorMes(atendArr.map((a: any) => ({ name: a.name, total: Number(a.total) || 0 })));
+        setStatusDistribuicao(statusArr.map((s: any) => ({ name: s.name, value: Number(s.value) || 0 })));
       } catch (err) {
         setError('Falha ao carregar os dados de estatísticas.');
         console.error(err);

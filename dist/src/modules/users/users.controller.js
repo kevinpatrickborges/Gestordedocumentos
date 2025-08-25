@@ -34,24 +34,69 @@ let UsersController = class UsersController {
         this.getUserStatisticsUseCase = getUserStatisticsUseCase;
         this.getRolesUseCase = getRolesUseCase;
     }
-    async listPage(query, req) {
-        if (req.headers.accept?.includes('application/json')) {
-            return this.findAll(query);
+    async findAll(query) {
+        const result = await this.getUsersUseCase.execute(query);
+        if (Array.isArray(result.users)) {
+            const pag = result;
+            const items = pag.users.map((u) => user_mapper_1.UserMapper.toEntity(u));
+            return {
+                success: true,
+                data: items,
+                meta: {
+                    total: pag.total || items.length,
+                    page: pag.page || (query.page || 1),
+                    limit: pag.limit || (query.limit || items.length),
+                    totalPages: pag.totalPages || 1,
+                    hasNext: (pag.page || 1) < (pag.totalPages || 1),
+                    hasPrev: (pag.page || 1) > 1,
+                },
+            };
         }
-        const users = await this.getUsersUseCase.execute(query);
-        const roles = await this.getRolesUseCase.execute();
-        const stats = await this.getUserStatisticsUseCase.execute();
+        const users = result;
         return {
-            title: 'Usuários - SGC ITEP',
-            users: users.map(user => user_mapper_1.UserMapper.toEntity(user)),
-            roles: roles.map(role => role_mapper_1.RoleMapper.toEntity(role)),
-            stats,
-            query,
+            success: true,
+            data: users.map(user => user_mapper_1.UserMapper.toEntity(user)),
+            meta: {
+                total: users.length,
+                page: 1,
+                limit: users.length,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            },
         };
     }
-    async findAll(query) {
-        const users = await this.getUsersUseCase.execute(query);
-        return users.map(user => user_mapper_1.UserMapper.toEntity(user));
+    async findAllApi(query) {
+        const result = await this.getUsersUseCase.execute(query);
+        if (Array.isArray(result.users)) {
+            const pag = result;
+            const items = pag.users.map((u) => user_mapper_1.UserMapper.toEntity(u));
+            return {
+                success: true,
+                data: items,
+                meta: {
+                    total: pag.total || items.length,
+                    page: pag.page || (query.page || 1),
+                    limit: pag.limit || (query.limit || items.length),
+                    totalPages: pag.totalPages || 1,
+                    hasNext: (pag.page || 1) < (pag.totalPages || 1),
+                    hasPrev: (pag.page || 1) > 1,
+                },
+            };
+        }
+        const users = result;
+        return {
+            success: true,
+            data: users.map(user => user_mapper_1.UserMapper.toEntity(user)),
+            meta: {
+                total: users.length,
+                page: 1,
+                limit: users.length,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            },
+        };
     }
     async createPage() {
         const roles = await this.getRolesUseCase.execute();
@@ -172,30 +217,45 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.Render)('usuarios/lista'),
-    (0, swagger_1.ApiOperation)({ summary: 'Lista usuários (página web)' }),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Header)('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'),
+    (0, swagger_1.ApiOperation)({ summary: 'Lista todos os usuários' }),
+    (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
+    (0, swagger_1.ApiQuery)({ name: 'search', required: false, type: String }),
+    (0, swagger_1.ApiQuery)({ name: 'role', required: false, type: String }),
+    (0, swagger_1.ApiQuery)({ name: 'ativo', required: false, type: Boolean }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de usuários retornada com sucesso.',
+    }),
     __param(0, (0, common_1.Query)()),
-    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], UsersController.prototype, "listPage", null);
+], UsersController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)('api'),
+    (0, roles_decorator_1.Roles)('admin', 'coordenador'),
+    (0, common_1.Header)('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'),
     (0, swagger_1.ApiOperation)({ summary: 'Lista usuários com paginação e filtros' }),
     (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number }),
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
     (0, swagger_1.ApiQuery)({ name: 'search', required: false, type: String }),
     (0, swagger_1.ApiQuery)({ name: 'roleId', required: false, type: Number }),
     (0, swagger_1.ApiQuery)({ name: 'ativo', required: false, type: Boolean }),
-    (0, swagger_1.ApiQuery)({ name: 'sortBy', required: false, enum: ['nome', 'usuario', 'criadoEm', 'ultimoLogin'] }),
+    (0, swagger_1.ApiQuery)({
+        name: 'sortBy',
+        required: false,
+        enum: ['nome', 'usuario', 'criadoEm', 'ultimoLogin'],
+    }),
     (0, swagger_1.ApiQuery)({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Lista de usuários' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], UsersController.prototype, "findAll", null);
+], UsersController.prototype, "findAllApi", null);
 __decorate([
     (0, common_1.Get)('novo'),
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
@@ -273,6 +333,7 @@ __decorate([
 ], UsersController.prototype, "editPage", null);
 __decorate([
     (0, common_1.Patch)(':id'),
+    (0, roles_decorator_1.Roles)('admin'),
     (0, swagger_1.ApiOperation)({ summary: 'Atualiza usuário' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Usuário atualizado com sucesso' }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),

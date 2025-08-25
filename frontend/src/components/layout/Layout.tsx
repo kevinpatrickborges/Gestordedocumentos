@@ -47,12 +47,6 @@ const Layout: React.FC = () => {
       current: location.pathname.startsWith('/desarquivamentos')
     },
     {
-      name: 'NUGECID',
-      href: '/nugecid',
-      icon: Archive,
-      current: location.pathname.startsWith('/nugecid')
-    },
-    {
       name: 'Relatórios',
       href: '/relatorios',
       icon: BarChart,
@@ -64,13 +58,6 @@ const Layout: React.FC = () => {
       icon: Users,
       current: location.pathname.startsWith('/usuarios'),
       adminOnly: true
-    },
-    {
-      name: 'Configurações',
-      href: '/configuracoes',
-      icon: Settings,
-      current: location.pathname.startsWith('/configuracoes'),
-      adminOnly: true
     }
   ]
 
@@ -79,12 +66,15 @@ const Layout: React.FC = () => {
     
     // Para o item de usuários, permitir admin e coordenador
     if (item.name === 'Usuários') {
-      return user?.role === 'admin' || user?.role === 'coordenador'
+      return user?.role?.name === 'admin' || user?.role?.name === 'coordenador'
     }
     
     // Para outros itens adminOnly, apenas admin
-    return user?.role === 'admin'
+    return user?.role?.name === 'admin'
   })
+
+  // Verificar se deve mostrar configurações (apenas admin)
+  const showSettings = user?.role?.name === 'admin'
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -95,7 +85,7 @@ const Layout: React.FC = () => {
           <div className="flex h-16 items-center justify-between px-4">
             <Link to="/" className="flex items-center gap-2">
               <Archive className='h-8 w-auto' />
-              <h1 className='text-xl font-bold text-gray-900'>SGC-ITEP</h1>
+              <h1 className='text-xl font-bold text-gray-900'>NUGECID</h1>
             </Link>
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
               <X className="h-6 w-6" />
@@ -122,7 +112,7 @@ const Layout: React.FC = () => {
               )
             })}
           </nav>
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-3">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
@@ -133,10 +123,18 @@ const Layout: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-700 truncate">{user?.nome}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="mt-3 w-full justify-start">
+            {showSettings && (
+              <Link
+                to="/configuracoes"
+                className="mt-2 w-full flex items-center px-2 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md transition-colors"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </Link>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="mt-2 w-full justify-start py-1.5 h-auto text-sm">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sair</span>
             </Button>
@@ -155,7 +153,7 @@ const Layout: React.FC = () => {
           <div className="flex h-16 items-center px-4 flex-shrink-0 justify-center">
             <Link to="/" className="flex items-center gap-2">
               <Archive className={cn('h-8 w-auto', isCollapsed ? 'h-10 w-10' : 'h-8 w-auto')} />
-              <h1 className={cn('text-xl font-bold text-gray-900', isCollapsed && 'hidden')}>SGC-ITEP</h1>
+              <h1 className={cn('text-xl font-bold text-gray-900', isCollapsed && 'hidden')}>NUGECID</h1>
             </Link>
           </div>
 
@@ -182,27 +180,39 @@ const Layout: React.FC = () => {
             })}
           </nav>
 
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-3">
             <div className={cn('flex items-center', isCollapsed && 'justify-center')}>
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-700">
+                <div className="h-7 w-7 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span className="text-xs font-medium text-gray-700">
                     {user?.nome?.charAt(0).toUpperCase()}
                   </span>
                 </div>
               </div>
               <div className={cn('ml-3', isCollapsed && 'hidden')}>
-                <p className="text-sm font-medium text-gray-700 truncate">{user?.nome}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-xs font-medium text-gray-700 truncate">{user?.nome}</p>
               </div>
             </div>
+            {showSettings && (
+              <Link
+                to="/configuracoes"
+                className={cn(
+                  'mt-2 w-full flex items-center px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md transition-colors',
+                  isCollapsed ? 'justify-center' : 'justify-start'
+                )}
+                title={isCollapsed ? 'Configurações' : undefined}
+              >
+                <Settings className={cn('h-3.5 w-3.5', !isCollapsed && 'mr-2')} />
+                <span className={cn(isCollapsed && 'hidden')}>Configurações</span>
+              </Link>
+            )}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className={cn('mt-3 w-full', isCollapsed ? 'justify-center' : 'justify-start')}
+              className={cn('mt-2 w-full py-1.5 h-auto text-xs', isCollapsed ? 'justify-center' : 'justify-start')}
             >
-              <LogOut className={cn('h-4 w-4', !isCollapsed && 'mr-2')} />
+              <LogOut className={cn('h-3.5 w-3.5', !isCollapsed && 'mr-2')} />
               <span className={cn(isCollapsed && 'hidden')}>Sair</span>
             </Button>
           </div>
@@ -223,7 +233,7 @@ const Layout: React.FC = () => {
       {/* Main content */}
       <div className={cn('transition-all duration-300', isCollapsed ? 'lg:pl-20' : 'lg:pl-64')}>
         {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8" style={{height: '60px'}}>
           <Button
             variant="ghost"
             size="icon"

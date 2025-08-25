@@ -11,7 +11,10 @@ import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { Desarquivamento, StatusDesarquivamento } from './entities/desarquivamento.entity';
+import {
+  Desarquivamento,
+  StatusDesarquivamento,
+} from './entities/desarquivamento.entity';
 import { TipoSolicitacaoEnum } from './domain/value-objects/tipo-solicitacao.vo';
 import * as PDFDocument from 'pdfkit';
 import { User } from '../users/entities/user.entity';
@@ -72,7 +75,9 @@ export class NugecidService {
     const saved = await this.desarquivamentoRepository.save(desarquivamento);
 
     if (Array.isArray(saved)) {
-      throw new Error('A operação de salvar retornou um array, mas um único objeto era esperado.');
+      throw new Error(
+        'A operação de salvar retornou um array, mas um único objeto era esperado.',
+      );
     }
 
     // Salva auditoria
@@ -94,7 +99,9 @@ export class NugecidService {
   /**
    * Lista desarquivamentos com paginação e filtros
    */
-  async findAll(queryDto: QueryDesarquivamentoDto): Promise<PaginatedDesarquivamentos> {
+  async findAll(
+    queryDto: QueryDesarquivamentoDto,
+  ): Promise<PaginatedDesarquivamentos> {
     const {
       page = 1,
       limit = 10,
@@ -118,15 +125,17 @@ export class NugecidService {
     if (search) {
       queryBuilder.andWhere(
         '(desarquivamento.nomeSolicitante ILIKE :search OR ' +
-        'desarquivamento.nomeVitima ILIKE :search OR ' +
-        'desarquivamento.numeroRegistro ILIKE :search OR ' +
-        'desarquivamento.codigoBarras ILIKE :search)',
+          'desarquivamento.nomeVitima ILIKE :search OR ' +
+          'desarquivamento.numeroRegistro ILIKE :search OR ' +
+          'desarquivamento.codigoBarras ILIKE :search)',
         { search: `%${search}%` },
       );
     }
 
     if (status && status.length > 0) {
-      queryBuilder.andWhere('desarquivamento.status IN (:...status)', { status });
+      queryBuilder.andWhere('desarquivamento.status IN (:...status)', {
+        status,
+      });
     }
 
     if (tipo && tipo.length > 0) {
@@ -134,7 +143,9 @@ export class NugecidService {
     }
 
     if (usuarioId) {
-      queryBuilder.andWhere('desarquivamento.criadoPor.id = :usuarioId', { usuarioId });
+      queryBuilder.andWhere('desarquivamento.criadoPor.id = :usuarioId', {
+        usuarioId,
+      });
     }
 
     if (dataInicio) {
@@ -150,7 +161,7 @@ export class NugecidService {
     }
 
     if (vencidos) {
-      queryBuilder.andWhere('desarquivamento.prazoAtendimento < :now', {
+      queryBuilder.andWhere('desarquivamento.prazo_atendimento < :now', {
         now: new Date(),
       });
     }
@@ -234,9 +245,11 @@ export class NugecidService {
 
       const importDto = new ImportDesarquivamentoDto();
       // Mapeamento explícito para garantir a integridade dos tipos
-      importDto.numero_processo = row['numero_processo'] || row['Numero Processo'] || row['Nº Processo'];
+      importDto.numero_processo =
+        row['numero_processo'] || row['Numero Processo'] || row['Nº Processo'];
       importDto.requerente = row['requerente'] || row['Requerente'];
-      importDto.data_requerimento = row['data_requerimento'] || row['Data Requerimento'];
+      importDto.data_requerimento =
+        row['data_requerimento'] || row['Data Requerimento'];
       importDto.palavras_chave = row['palavras_chave'] || row['Palavras Chave'];
       importDto.assunto = row['assunto'] || row['Assunto'];
       importDto.autorId = currentUser.id;
@@ -249,28 +262,32 @@ export class NugecidService {
           row: rowNumber,
           details: {
             message: errors
-              .map((err) => Object.values(err.constraints).join(', '))
+              .map(err => Object.values(err.constraints).join(', '))
               .join('; '),
             data: row,
-          }
+          },
         });
         continue; // Pula para a próxima linha
       }
 
       try {
         const createDto: CreateDesarquivamentoDto = {
-            numeroRegistro: importDto.numero_processo,
-            nomeSolicitante: importDto.requerente,
-            tipoSolicitacao: TipoSolicitacaoEnum.DESARQUIVAMENTO, // Adicionado tipo padrão
-          };
+          numeroRegistro: importDto.numero_processo,
+          nomeSolicitante: importDto.requerente,
+          tipoSolicitacao: TipoSolicitacaoEnum.DESARQUIVAMENTO, // Adicionado tipo padrão
+        };
 
         await this.create(createDto, currentUser);
         result.successCount++;
-
       } catch (error) {
-        this.logger.error(`Erro ao salvar linha ${rowNumber}: ${error.message}`);
+        this.logger.error(
+          `Erro ao salvar linha ${rowNumber}: ${error.message}`,
+        );
         result.errorCount++;
-        result.errors.push({ row: rowNumber, details: { message: error.message, data: row } });
+        result.errors.push({
+          row: rowNumber,
+          details: { message: error.message, data: row },
+        });
       }
     }
 
@@ -316,7 +333,7 @@ export class NugecidService {
 
     // Atualiza os campos
     Object.assign(desarquivamento, updateDesarquivamentoDto);
-    
+
     // Se mudou o responsável, atualiza
     if (updateDesarquivamentoDto.responsavelId) {
       const responsavel = await this.userRepository.findOne({
@@ -357,7 +374,9 @@ export class NugecidService {
       throw new BadRequestException('Arquivo não enviado.');
     }
 
-    this.logger.log(`Iniciando importação de registros do arquivo: ${file.originalname}`);
+    this.logger.log(
+      `Iniciando importação de registros do arquivo: ${file.originalname}`,
+    );
 
     const workbook = XLSX.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
@@ -376,23 +395,35 @@ export class NugecidService {
 
       const importDto = new ImportRegistroDto();
       // Mapeamento baseado na especificação do PRD
-      importDto.desarquivamentoTipo = row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamento_tipo'];
+      importDto.desarquivamentoTipo =
+        row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamento_tipo'];
       importDto.status = row['Status'] || row['status'];
       importDto.nomeCompleto = row['Nome Completo'] || row['nome_completo'];
-      importDto.numDocumento = row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['num_documento'];
+      importDto.numDocumento =
+        row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['num_documento'];
       importDto.numProcesso = row['Nº do Processo'] || row['num_processo'];
-      importDto.tipoDocumento = row['Tipo de Documento'] || row['tipo_documento'];
-      importDto.dataSolicitacao = row['Data de solicitação'] || row['data_solicitacao'];
-      importDto.dataDesarquivamento = row['Data do desarquivamento - SAG'] || row['data_desarquivamento'];
-      importDto.dataDevolucao = row['Data da devolução pelo setor'] || row['data_devolucao'];
-      importDto.setorDemandante = row['Setor Demandante'] || row['setor_demandante'];
-      importDto.servidorResponsavel = row['Servidor Responsável'] || row['servidor_responsavel'];
+      importDto.tipoDocumento =
+        row['Tipo de Documento'] || row['tipo_documento'];
+      importDto.dataSolicitacao =
+        row['Data de solicitação'] || row['data_solicitacao'];
+      importDto.dataDesarquivamento =
+        row['Data do desarquivamento - SAG'] || row['data_desarquivamento'];
+      importDto.dataDevolucao =
+        row['Data da devolução pelo setor'] || row['data_devolucao'];
+      importDto.setorDemandante =
+        row['Setor Demandante'] || row['setor_demandante'];
+      importDto.servidorResponsavel =
+        row['Servidor Responsável'] || row['servidor_responsavel'];
       importDto.finalidade = row['Finalidade'] || row['finalidade'];
-      
+
       // Converte prorrogação para boolean
       const prorrogacaoValue = row['Prorrogação'] || row['prorrogacao'];
       if (prorrogacaoValue !== undefined) {
-        importDto.prorrogacao = prorrogacaoValue === 'Sim' || prorrogacaoValue === 'sim' || prorrogacaoValue === true || prorrogacaoValue === 'true';
+        importDto.prorrogacao =
+          prorrogacaoValue === 'Sim' ||
+          prorrogacaoValue === 'sim' ||
+          prorrogacaoValue === true ||
+          prorrogacaoValue === 'true';
       }
 
       const errors = await validate(importDto);
@@ -403,10 +434,10 @@ export class NugecidService {
           row: rowNumber,
           details: {
             message: errors
-              .map((err) => Object.values(err.constraints).join(', '))
+              .map(err => Object.values(err.constraints).join(', '))
               .join('; '),
             data: row,
-          }
+          },
         });
         continue; // Pula para a próxima linha
       }
@@ -419,17 +450,23 @@ export class NugecidService {
           nomeVitima: importDto.nomeCompleto, // Usando o mesmo nome
           numeroRegistro: importDto.numDocumento,
           tipoDocumento: importDto.tipoDocumento,
-          dataFato: importDto.dataSolicitacao ? new Date(importDto.dataSolicitacao) : undefined,
+          dataFato: importDto.dataSolicitacao
+            ? new Date(importDto.dataSolicitacao)
+            : undefined,
           observacoes: `Finalidade: ${importDto.finalidade || 'N/A'} | Setor: ${importDto.setorDemandante || 'N/A'} | Servidor: ${importDto.servidorResponsavel || 'N/A'}`,
         };
 
         await this.create(createDto, currentUser);
         result.successCount++;
-
       } catch (error) {
-        this.logger.error(`Erro ao salvar linha ${rowNumber} do arquivo ${file.originalname}: ${error.message}`);
+        this.logger.error(
+          `Erro ao salvar linha ${rowNumber} do arquivo ${file.originalname}: ${error.message}`,
+        );
         result.errorCount++;
-        result.errors.push({ row: rowNumber, details: { message: error.message, data: row } });
+        result.errors.push({
+          row: rowNumber,
+          details: { message: error.message, data: row },
+        });
       }
     }
 
@@ -545,22 +582,22 @@ export class NugecidService {
    */
   async getDashboardStats(): Promise<DashboardStats> {
     const total = await this.desarquivamentoRepository.count();
-    
+
     const pendentes = await this.desarquivamentoRepository.count({
       where: { status: StatusDesarquivamento.PENDENTE },
     });
-    
+
     const emAndamento = await this.desarquivamentoRepository.count({
       where: { status: StatusDesarquivamento.EM_ANDAMENTO },
     });
-    
+
     const concluidos = await this.desarquivamentoRepository.count({
       where: { status: StatusDesarquivamento.CONCLUIDO },
     });
 
     const vencidos = await this.desarquivamentoRepository
       .createQueryBuilder('desarquivamento')
-      .where('desarquivamento.prazoAtendimento < :now', { now: new Date() })
+      .where('desarquivamento.prazo_atendimento < :now', { now: new Date() })
       .andWhere('desarquivamento.status != :concluido', {
         concluido: StatusDesarquivamento.CONCLUIDO,
       })
@@ -617,9 +654,9 @@ export class NugecidService {
   ): Promise<Desarquivamento> {
     // Mapeia campos da planilha
     const data: CreateDesarquivamentoDto = {
-        tipoSolicitacao: this.mapTipoFromExcel(row['Tipo'] || row['tipo']),
-        nomeSolicitante: row['Nome Requerente'] || row['nome_requerente'] || '',
-        nomeVitima: row['Nome Vítima'] || row['nome_vitima'] || '',
+      tipoSolicitacao: this.mapTipoFromExcel(row['Tipo'] || row['tipo']),
+      nomeSolicitante: row['Nome Requerente'] || row['nome_requerente'] || '',
+      nomeVitima: row['Nome Vítima'] || row['nome_vitima'] || '',
       numeroRegistro: row['Número Registro'] || row['numero_registro'] || '',
       tipoDocumento: row['Tipo Documento'] || row['tipo_documento'] || '',
       dataFato: row['Data Fato'] ? new Date(row['Data Fato']) : null,
@@ -648,12 +685,15 @@ export class NugecidService {
     if (!tipo) return TipoSolicitacaoEnum.DESARQUIVAMENTO;
 
     const tipoLower = tipo.toLowerCase().trim();
-    
-    if (tipoLower.includes('desarquiv')) return TipoSolicitacaoEnum.DESARQUIVAMENTO;
-    if (tipoLower.includes('cópia') || tipoLower.includes('copia')) return TipoSolicitacaoEnum.COPIA;
+
+    if (tipoLower.includes('desarquiv'))
+      return TipoSolicitacaoEnum.DESARQUIVAMENTO;
+    if (tipoLower.includes('cópia') || tipoLower.includes('copia'))
+      return TipoSolicitacaoEnum.COPIA;
     if (tipoLower.includes('vista')) return TipoSolicitacaoEnum.VISTA;
-    if (tipoLower.includes('certidão') || tipoLower.includes('certidao')) return TipoSolicitacaoEnum.CERTIDAO;
-    
+    if (tipoLower.includes('certidão') || tipoLower.includes('certidao'))
+      return TipoSolicitacaoEnum.CERTIDAO;
+
     return TipoSolicitacaoEnum.DESARQUIVAMENTO;
   }
 
@@ -664,7 +704,9 @@ export class NugecidService {
     if (typeof value === 'boolean') return value;
     if (typeof value === 'string') {
       const lower = value.toLowerCase().trim();
-      return lower === 'sim' || lower === 'true' || lower === '1' || lower === 'x';
+      return (
+        lower === 'sim' || lower === 'true' || lower === '1' || lower === 'x'
+      );
     }
     if (typeof value === 'number') return value === 1;
     return false;
@@ -684,70 +726,110 @@ export class NugecidService {
   }
 
   /**
-     * Gera o Termo de Desarquivamento em PDF
-     */
+   * Gera o Termo de Desarquivamento em PDF
+   */
   async generatePdf(desarquivamento: Desarquivamento): Promise<Buffer> {
     try {
-      this.logger.log(`Iniciando geração de PDF para o desarquivamento ID: ${desarquivamento.id}`);
-      this.logger.debug('Dados do desarquivamento para o PDF:', JSON.stringify(desarquivamento, null, 2));
+      this.logger.log(
+        `Iniciando geração de PDF para o desarquivamento ID: ${desarquivamento.id}`,
+      );
+      this.logger.debug(
+        'Dados do desarquivamento para o PDF:',
+        JSON.stringify(desarquivamento, null, 2),
+      );
 
       return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({
-        size: 'A4',
-        margins: { top: 50, bottom: 50, left: 72, right: 72 },
-        bufferPages: true,
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: 50, bottom: 50, left: 72, right: 72 },
+          bufferPages: true,
+        });
+
+        // Cabeçalho
+        doc
+          .font('Helvetica')
+          .fontSize(12)
+          .text('GOVERNO DO ESTADO DO RIO GRANDE DO NORTE', {
+            align: 'center',
+          });
+        doc.text(
+          'SECRETARIA DE ESTADO DA SEGURANÇA PÚBLICA E DA DEFESA SOCIAL',
+          { align: 'center' },
+        );
+        doc.text('INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA - ITEP/RN', {
+          align: 'center',
+        });
+        doc.moveDown(2);
+
+        // Título
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(16)
+          .text('TERMO DE DESARQUIVAMENTO', { align: 'center' });
+        doc.moveDown(2);
+
+        // Corpo do Termo
+        const dataSolicitacao = new Date(
+          desarquivamento.createdAt,
+        ).toLocaleDateString('pt-BR');
+        const texto = `Pelo presente termo, certifico que, para fins de ${desarquivamento.finalidade || 'não especificado'}, foi desarquivado o procedimento referente a(o) ${desarquivamento.tipoDocumento || 'documento'} de número ${desarquivamento.numeroRegistro}, que tem como parte(s) ${desarquivamento.nomeSolicitante} e ${desarquivamento.nomeVitima || 'não aplicável'}. A solicitação foi realizada em ${dataSolicitacao}.`;
+        doc.font('Helvetica').fontSize(12).text(texto, { align: 'justify' });
+        doc.moveDown(2);
+
+        // Detalhes do Registro
+        doc.font('Helvetica-Bold').fontSize(12).text('DETALHES DA SOLICITAÇÃO');
+        doc.moveDown();
+        doc.font('Helvetica').fontSize(12);
+        doc.text(`- Código de Barras: ${desarquivamento.codigoBarras}`);
+        doc.text(`- Solicitante: ${desarquivamento.criadoPor.nome}`);
+        doc.text(
+          `- Data da Solicitação: ${new Date(desarquivamento.createdAt).toLocaleString('pt-BR')}`,
+        );
+        doc.text(
+          `- Prazo para Atendimento: ${new Date(desarquivamento.prazoAtendimento).toLocaleDateString('pt-BR')}`,
+        );
+        doc.moveDown(3);
+
+        // Assinatura
+        doc
+          .font('Helvetica')
+          .fontSize(12)
+          .text('___________________________________________', {
+            align: 'center',
+          });
+        doc.text(
+          desarquivamento.responsavel
+            ? desarquivamento.responsavel.nome
+            : 'Responsável não atribuído',
+          { align: 'center' },
+        );
+        doc.text('Responsável pelo Desarquivamento', { align: 'center' });
+        doc.moveDown(2);
+
+        // Rodapé
+        const dataGeracao = new Date().toLocaleString('pt-BR');
+        doc
+          .font('Helvetica')
+          .fontSize(10)
+          .text(`Gerado em: ${dataGeracao} - SGC/ITEP`, { align: 'center' });
+
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+        doc.on('error', err => {
+          this.logger.error('Erro no stream do PDF:', err);
+          reject(err);
+        });
+        doc.end();
       });
-
-      // Cabeçalho
-      doc.font('Helvetica').fontSize(12).text('GOVERNO DO ESTADO DO RIO GRANDE DO NORTE', { align: 'center' });
-      doc.text('SECRETARIA DE ESTADO DA SEGURANÇA PÚBLICA E DA DEFESA SOCIAL', { align: 'center' });
-      doc.text('INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA - ITEP/RN', { align: 'center' });
-      doc.moveDown(2);
-
-      // Título
-      doc.font('Helvetica-Bold').fontSize(16).text('TERMO DE DESARQUIVAMENTO', { align: 'center' });
-      doc.moveDown(2);
-
-      // Corpo do Termo
-      const dataSolicitacao = new Date(desarquivamento.createdAt).toLocaleDateString('pt-BR');
-      const texto = `Pelo presente termo, certifico que, para fins de ${desarquivamento.finalidade || 'não especificado'}, foi desarquivado o procedimento referente a(o) ${desarquivamento.tipoDocumento || 'documento'} de número ${desarquivamento.numeroRegistro}, que tem como parte(s) ${desarquivamento.nomeSolicitante} e ${desarquivamento.nomeVitima || 'não aplicável'}. A solicitação foi realizada em ${dataSolicitacao}.`;
-      doc.font('Helvetica').fontSize(12).text(texto, { align: 'justify' });
-      doc.moveDown(2);
-
-      // Detalhes do Registro
-      doc.font('Helvetica-Bold').fontSize(12).text('DETALHES DA SOLICITAÇÃO');
-      doc.moveDown();
-      doc.font('Helvetica').fontSize(12);
-      doc.text(`- Código de Barras: ${desarquivamento.codigoBarras}`);
-      doc.text(`- Solicitante: ${desarquivamento.criadoPor.nome}`);
-      doc.text(`- Data da Solicitação: ${new Date(desarquivamento.createdAt).toLocaleString('pt-BR')}`);
-      doc.text(`- Prazo para Atendimento: ${new Date(desarquivamento.prazoAtendimento).toLocaleDateString('pt-BR')}`);
-      doc.moveDown(3);
-
-      // Assinatura
-      doc.font('Helvetica').fontSize(12).text('___________________________________________', { align: 'center' });
-      doc.text(desarquivamento.responsavel ? desarquivamento.responsavel.nome : 'Responsável não atribuído', { align: 'center' });
-      doc.text('Responsável pelo Desarquivamento', { align: 'center' });
-      doc.moveDown(2);
-
-      // Rodapé
-      const dataGeracao = new Date().toLocaleString('pt-BR');
-      doc.font('Helvetica').fontSize(10).text(`Gerado em: ${dataGeracao} - SGC/ITEP`, { align: 'center' });
-
-      const buffers = [];
-      doc.on('data', buffers.push.bind(buffers));
-      doc.on('end', () => {
-        const pdfData = Buffer.concat(buffers);
-        resolve(pdfData);
-      });
-      doc.on('error', (err) => {
-        this.logger.error('Erro no stream do PDF:', err);
-        reject(err);
-      });
-      doc.end();
-    });
     } catch (error) {
-      this.logger.error(`Erro catastrófico ao gerar PDF para ID ${desarquivamento?.id}:`, error.stack);
+      this.logger.error(
+        `Erro catastrófico ao gerar PDF para ID ${desarquivamento?.id}:`,
+        error.stack,
+      );
       // Lançar o erro para que o NestJS o capture e envie uma resposta de erro HTTP adequada
       throw error;
     }
@@ -779,6 +861,4 @@ export class NugecidService {
       this.logger.error(`Erro ao salvar auditoria: ${error.message}`);
     }
   }
-
-
 }

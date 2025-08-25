@@ -55,12 +55,17 @@ __decorate([
         },
     }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Relatório da importação.' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Arquivo inválido ou erro de validação.' }),
+    (0, swagger_1.ApiResponse)({
+        status: 400,
+        description: 'Arquivo inválido ou erro de validação.',
+    }),
     (0, swagger_1.ApiResponse)({ status: 403, description: 'Acesso negado.' }),
     __param(0, (0, common_1.UploadedFile)(new common_1.ParseFilePipe({
         validators: [
             new common_1.MaxFileSizeValidator({ maxSize: 1024 * 1024 * 5 }),
-            new common_1.FileTypeValidator({ fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+            new common_1.FileTypeValidator({
+                fileType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            }),
         ],
     }))),
     __metadata("design:type", Function),

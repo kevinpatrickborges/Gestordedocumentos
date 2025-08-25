@@ -48,14 +48,14 @@ let AuditInterceptor = class AuditInterceptor {
             timestamp: new Date(),
         };
         return next.handle().pipe((0, operators_1.tap)({
-            next: (response) => {
+            next: response => {
                 this.saveAudit({
                     ...auditData,
                     success: true,
                     response: this.sanitizeResponse(response),
                 });
             },
-            error: (error) => {
+            error: error => {
                 this.saveAudit({
                     ...auditData,
                     success: false,

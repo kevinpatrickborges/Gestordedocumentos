@@ -51,8 +51,12 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Nome do requerente deve ser uma string' }),
-    (0, class_validator_1.MinLength)(2, { message: 'Nome do requerente deve ter pelo menos 2 caracteres' }),
-    (0, class_validator_1.MaxLength)(255, { message: 'Nome do requerente deve ter no máximo 255 caracteres' }),
+    (0, class_validator_1.MinLength)(2, {
+        message: 'Nome do requerente deve ter pelo menos 2 caracteres',
+    }),
+    (0, class_validator_1.MaxLength)(255, {
+        message: 'Nome do requerente deve ter no máximo 255 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "nomeRequerente", void 0);
@@ -64,7 +68,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Nome da vítima deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(255, { message: 'Nome da vítima deve ter no máximo 255 caracteres' }),
+    (0, class_validator_1.MaxLength)(255, {
+        message: 'Nome da vítima deve ter no máximo 255 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "nomeVitima", void 0);
@@ -77,8 +83,12 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Número do registro deve ser uma string' }),
-    (0, class_validator_1.MinLength)(3, { message: 'Número do registro deve ter pelo menos 3 caracteres' }),
-    (0, class_validator_1.MaxLength)(50, { message: 'Número do registro deve ter no máximo 50 caracteres' }),
+    (0, class_validator_1.MinLength)(3, {
+        message: 'Número do registro deve ter pelo menos 3 caracteres',
+    }),
+    (0, class_validator_1.MaxLength)(50, {
+        message: 'Número do registro deve ter no máximo 50 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "numeroRegistro", void 0);
@@ -90,7 +100,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Tipo do documento deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(100, { message: 'Tipo do documento deve ter no máximo 100 caracteres' }),
+    (0, class_validator_1.MaxLength)(100, {
+        message: 'Tipo do documento deve ter no máximo 100 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "tipoDocumento", void 0);
@@ -103,7 +115,7 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)({}, { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' }),
-    (0, class_transformer_1.Transform)(({ value }) => value ? new Date(value) : null),
+    (0, class_transformer_1.Transform)(({ value }) => (value ? new Date(value) : null)),
     __metadata("design:type", Date)
 ], UpdateDesarquivamentoDto.prototype, "dataFato", void 0);
 __decorate([
@@ -126,7 +138,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Observações devem ser uma string' }),
-    (0, class_validator_1.MaxLength)(1000, { message: 'Observações devem ter no máximo 1000 caracteres' }),
+    (0, class_validator_1.MaxLength)(1000, {
+        message: 'Observações devem ter no máximo 1000 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "observacoes", void 0);
@@ -153,7 +167,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Localização física deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(255, { message: 'Localização física deve ter no máximo 255 caracteres' }),
+    (0, class_validator_1.MaxLength)(255, {
+        message: 'Localização física deve ter no máximo 255 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "localizacaoFisica", void 0);
@@ -166,7 +182,7 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)({}, { message: 'Prazo de atendimento deve estar no formato válido' }),
-    (0, class_transformer_1.Transform)(({ value }) => value ? new Date(value) : null),
+    (0, class_transformer_1.Transform)(({ value }) => (value ? new Date(value) : null)),
     __metadata("design:type", Date)
 ], UpdateDesarquivamentoDto.prototype, "prazoAtendimento", void 0);
 __decorate([
@@ -190,7 +206,7 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsDateString)({}, { message: 'Data de conclusão deve estar no formato válido' }),
-    (0, class_transformer_1.Transform)(({ value }) => value ? new Date(value) : null),
+    (0, class_transformer_1.Transform)(({ value }) => (value ? new Date(value) : null)),
     __metadata("design:type", Date)
 ], UpdateDesarquivamentoDto.prototype, "dataAtendimento", void 0);
 __decorate([
@@ -201,7 +217,9 @@ __decorate([
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Resultado do atendimento deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(1000, { message: 'Resultado do atendimento deve ter no máximo 1000 caracteres' }),
+    (0, class_validator_1.MaxLength)(1000, {
+        message: 'Resultado do atendimento deve ter no máximo 1000 caracteres',
+    }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "resultadoAtendimento", void 0);

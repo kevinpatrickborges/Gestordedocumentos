@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsBoolean, IsIn, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsIn,
+  Min,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -69,7 +76,8 @@ export class QueryUsersDto {
   @IsOptional()
   @IsString({ message: 'SortBy deve ser uma string' })
   @IsIn(['nome', 'usuario', 'criadoEm', 'ultimoLogin'], {
-    message: 'SortBy deve ser um dos valores: nome, usuario, criadoEm, ultimoLogin',
+    message:
+      'SortBy deve ser um dos valores: nome, usuario, criadoEm, ultimoLogin',
   })
   sortBy?: string = 'criadoEm';
 

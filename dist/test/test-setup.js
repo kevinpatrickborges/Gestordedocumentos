@@ -240,7 +240,7 @@ class TestMocks {
     }
     static createMockJwtService() {
         return {
-            sign: jest.fn((payload) => `mock.jwt.token.${payload.sub}`),
+            sign: jest.fn(payload => `mock.jwt.token.${payload.sub}`),
             verify: jest.fn(() => ({ sub: 1, usuario: 'testuser' })),
         };
     }

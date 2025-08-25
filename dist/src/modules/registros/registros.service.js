@@ -27,7 +27,10 @@ let RegistrosService = RegistrosService_1 = class RegistrosService {
         this.logger = new common_1.Logger(RegistrosService_1.name);
     }
     async importFromXlsx(file) {
-        const workbook = XLSX.read(file.buffer, { type: 'buffer', cellDates: true });
+        const workbook = XLSX.read(file.buffer, {
+            type: 'buffer',
+            cellDates: true,
+        });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const data = XLSX.utils.sheet_to_json(sheet);
@@ -50,8 +53,8 @@ let RegistrosService = RegistrosService_1 = class RegistrosService {
                     data: row,
                     errors: validationErrors.map(err => ({
                         property: err.property,
-                        constraints: err.constraints
-                    }))
+                        constraints: err.constraints,
+                    })),
                 });
             }
             else {
@@ -65,7 +68,14 @@ let RegistrosService = RegistrosService_1 = class RegistrosService {
                     errors.push({
                         row: i + 2,
                         data: row,
-                        errors: [{ property: 'database', constraints: { save: 'Falha ao inserir o registro no banco de dados.' } }]
+                        errors: [
+                            {
+                                property: 'database',
+                                constraints: {
+                                    save: 'Falha ao inserir o registro no banco de dados.',
+                                },
+                            },
+                        ],
                     });
                 }
             }

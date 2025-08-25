@@ -170,7 +170,11 @@ describe('AuthService', () => {
             await expect(service.validateUser('test@itep.rn.gov.br', 'password123')).rejects.toThrow(common_1.UnauthorizedException);
         });
         it('should throw UnauthorizedException for blocked user', async () => {
-            const blockedUser = { ...mockUser, isBlocked: jest.fn().mockReturnValue(true), bloqueadoAte: new Date() };
+            const blockedUser = {
+                ...mockUser,
+                isBlocked: jest.fn().mockReturnValue(true),
+                bloqueadoAte: new Date(),
+            };
             mockUserRepository.findOne.mockResolvedValue(blockedUser);
             await expect(service.validateUser('test@itep.rn.gov.br', 'password123')).rejects.toThrow(common_1.UnauthorizedException);
         });

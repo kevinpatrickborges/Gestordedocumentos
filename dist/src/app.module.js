@@ -70,12 +70,12 @@ exports.AppModule = AppModule = __decorate([
             }),
             throttler_1.ThrottlerModule.forRootAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: (configService) => ([
+                useFactory: (configService) => [
                     {
                         ttl: configService.get('THROTTLE_TTL', 60),
                         limit: configService.get('THROTTLE_LIMIT', 10),
                     },
-                ]),
+                ],
                 inject: [config_1.ConfigService],
             }),
             schedule_1.ScheduleModule.forRoot(),

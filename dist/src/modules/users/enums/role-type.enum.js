@@ -8,5 +8,6 @@ var RoleType;
     RoleType["GESTOR"] = "gestor";
     RoleType["USUARIO"] = "usuario";
     RoleType["EDITOR"] = "editor";
+    RoleType["NUGECID_OPERATOR"] = "nugecid_operator";
 })(RoleType || (exports.RoleType = RoleType = {}));
 //# sourceMappingURL=role-type.enum.js.map

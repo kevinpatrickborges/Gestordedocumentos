@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { User } from './modules/users/entities/user.entity';
-import { Desarquivamento, StatusDesarquivamento } from './modules/nugecid/entities/desarquivamento.entity';
+import {
+  Desarquivamento,
+  StatusDesarquivamento,
+} from './modules/nugecid/entities/desarquivamento.entity';
 
 @Injectable()
 export class AppService {
@@ -34,12 +37,14 @@ export class AppService {
       },
     });
 
-    const desarquivamentosDaSemana = await this.desarquivamentoRepository.count({
-      where: {
-        createdAt: { $gte: startOfWeek } as any,
-        deletedAt: null,
+    const desarquivamentosDaSemana = await this.desarquivamentoRepository.count(
+      {
+        where: {
+          createdAt: { $gte: startOfWeek } as any,
+          deletedAt: null,
+        },
       },
-    });
+    );
 
     // Desarquivamentos em posse (status específicos)
     const emPosse = await this.desarquivamentoRepository.count({
@@ -58,9 +63,10 @@ export class AppService {
     });
 
     // Últimos desarquivamentos (apenas para o usuário se não for admin)
-    const whereCondition = user.role?.name === 'admin' 
-      ? { deletedAt: null }
-      : { createdBy: user.id, deletedAt: null };
+    const whereCondition =
+      user.role?.name === 'admin'
+        ? { deletedAt: null }
+        : { createdBy: user.id, deletedAt: null };
 
     const ultimosDesarquivamentos = await this.desarquivamentoRepository.find({
       where: whereCondition,

@@ -29,7 +29,8 @@ class DesarquivamentoDomain {
     }
     static create(props) {
         const now = new Date();
-        return new DesarquivamentoDomain(undefined, props.codigoBarras, props.tipoSolicitacao, props.status || value_objects_1.StatusDesarquivamento.createPendente(), props.nomeSolicitante, props.nomeVitima, props.numeroRegistro, props.tipoDocumento, props.dataFato, props.prazoAtendimento || DesarquivamentoDomain.calculateDefaultDeadline(props.tipoSolicitacao, props.urgente), props.dataAtendimento, props.resultadoAtendimento, props.finalidade, props.observacoes, props.urgente, props.localizacaoFisica, props.criadoPorId, props.responsavelId, now, now, props.deletedAt);
+        return new DesarquivamentoDomain(undefined, props.codigoBarras, props.tipoSolicitacao, props.status || value_objects_1.StatusDesarquivamento.createPendente(), props.nomeSolicitante, props.nomeVitima, props.numeroRegistro, props.tipoDocumento, props.dataFato, props.prazoAtendimento ||
+            DesarquivamentoDomain.calculateDefaultDeadline(props.tipoSolicitacao, props.urgente), props.dataAtendimento, props.resultadoAtendimento, props.finalidade, props.observacoes, props.urgente, props.localizacaoFisica, props.criadoPorId, props.responsavelId, now, now, props.deletedAt);
     }
     static reconstruct(props) {
         return new DesarquivamentoDomain(props.id, props.codigoBarras, props.tipoSolicitacao, props.status, props.nomeSolicitante, props.nomeVitima, props.numeroRegistro, props.tipoDocumento, props.dataFato, props.prazoAtendimento, props.dataAtendimento, props.resultadoAtendimento, props.finalidade, props.observacoes, props.urgente, props.localizacaoFisica, props.criadoPorId, props.responsavelId, props.createdAt, props.updatedAt, props.deletedAt);
@@ -121,7 +122,9 @@ class DesarquivamentoDomain {
         }
     }
     static calculateDefaultDeadline(tipo, urgente) {
-        const days = urgente ? Math.ceil(tipo.getDefaultDeadlineDays() / 2) : tipo.getDefaultDeadlineDays();
+        const days = urgente
+            ? Math.ceil(tipo.getDefaultDeadlineDays() / 2)
+            : tipo.getDefaultDeadlineDays();
         const deadline = new Date();
         deadline.setDate(deadline.getDate() + days);
         return deadline;
@@ -136,7 +139,8 @@ class DesarquivamentoDomain {
         if (userRoles.includes('ADMIN')) {
             return true;
         }
-        if (userRoles.includes('NUGECID_VIEWER') || userRoles.includes('NUGECID_OPERATOR')) {
+        if (userRoles.includes('NUGECID_VIEWER') ||
+            userRoles.includes('NUGECID_OPERATOR')) {
             return true;
         }
         return false;
@@ -183,7 +187,8 @@ class DesarquivamentoDomain {
         }
         this._status = newStatus;
         this._updatedAt = new Date();
-        if (newStatus.value === value_objects_1.StatusDesarquivamentoEnum.CONCLUIDO && !this._dataAtendimento) {
+        if (newStatus.value === value_objects_1.StatusDesarquivamentoEnum.CONCLUIDO &&
+            !this._dataAtendimento) {
             this._dataAtendimento = new Date();
         }
     }

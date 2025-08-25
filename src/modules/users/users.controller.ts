@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Header,
   UseGuards,
   ParseIntPipe,
   HttpCode,
@@ -15,8 +16,17 @@ import {
   Request,
   Response,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
+import {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from 'express';
 
 // Use Cases
 import {
@@ -63,44 +73,110 @@ export class UsersController {
   ) {}
 
   @Get()
-  @Render('usuarios/lista')
-  @ApiOperation({ summary: 'Lista usuários (página web)' })
-  async listPage(
-    @Query() query: QueryUsersDto,
-    @Request() req: ExpressRequest,
-  ) {
-    // Se for requisição AJAX/API, retorna JSON
-    if (req.headers.accept?.includes('application/json')) {
-      return this.findAll(query);
+  @Roles('admin')
+  // Ensure API responses are not cached by browsers/proxies
+  // This prevents browsers from returning 304 Not Modified for the users list
+  // which was causing the frontend to mis-handle the response.
+  // Using no-store and no-cache guarantees fresh data.
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  @ApiOperation({ summary: 'Lista todos os usuários' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'role', required: false, type: String })
+  @ApiQuery({ name: 'ativo', required: false, type: Boolean })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuários retornada com sucesso.',
+  })
+  async findAll(@Query() query: QueryUsersDto) {
+    const result = await this.getUsersUseCase.execute(query as any);
+
+    // Caso paginado (objeto com users + meta)
+    if (Array.isArray((result as any).users)) {
+      const pag = result as any;
+      const items = pag.users.map((u: any) => UserMapper.toEntity(u));
+      return {
+        success: true,
+        data: items,
+        meta: {
+          total: pag.total || items.length,
+          page: pag.page || (query.page || 1),
+          limit: pag.limit || (query.limit || items.length),
+          totalPages: pag.totalPages || 1,
+          hasNext: (pag.page || 1) < (pag.totalPages || 1),
+          hasPrev: (pag.page || 1) > 1,
+        },
+      };
     }
 
-    // Se for requisição web, renderiza página
-    const users = await this.getUsersUseCase.execute(query);
-    const roles = await this.getRolesUseCase.execute();
-    const stats = await this.getUserStatisticsUseCase.execute();
-
+    // Caso não paginado (array simples)
+    const users = result as any[];
     return {
-      title: 'Usuários - SGC ITEP',
-      users: users.map(user => UserMapper.toEntity(user)),
-      roles: roles.map(role => RoleMapper.toEntity(role)),
-      stats,
-      query,
+      success: true,
+      data: users.map(user => UserMapper.toEntity(user)),
+      meta: {
+        total: users.length,
+        page: 1,
+        limit: users.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
 
   @Get('api')
+  @Roles('admin', 'coordenador')
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
   @ApiOperation({ summary: 'Lista usuários com paginação e filtros' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'roleId', required: false, type: Number })
   @ApiQuery({ name: 'ativo', required: false, type: Boolean })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['nome', 'usuario', 'criadoEm', 'ultimoLogin'] })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['nome', 'usuario', 'criadoEm', 'ultimoLogin'],
+  })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   @ApiResponse({ status: 200, description: 'Lista de usuários' })
-  async findAll(@Query() query: QueryUsersDto) {
-    const users = await this.getUsersUseCase.execute(query);
-    return users.map(user => UserMapper.toEntity(user));
+  async findAllApi(@Query() query: QueryUsersDto) {
+    const result = await this.getUsersUseCase.execute(query as any);
+
+    // Caso paginado (objeto com users + meta)
+    if (Array.isArray((result as any).users)) {
+      const pag = result as any;
+      const items = pag.users.map((u: any) => UserMapper.toEntity(u));
+      return {
+        success: true,
+        data: items,
+        meta: {
+          total: pag.total || items.length,
+          page: pag.page || (query.page || 1),
+          limit: pag.limit || (query.limit || items.length),
+          totalPages: pag.totalPages || 1,
+          hasNext: (pag.page || 1) < (pag.totalPages || 1),
+          hasPrev: (pag.page || 1) > 1,
+        },
+      };
+    }
+
+    // Caso não paginado (array simples)
+    const users = result as any[];
+    return {
+      success: true,
+      data: users.map(user => UserMapper.toEntity(user)),
+      meta: {
+        total: users.length,
+        page: 1,
+        limit: users.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    };
   }
 
   @Get('novo')
@@ -132,20 +208,22 @@ export class UsersController {
     try {
       const user = await this.createUserUseCase.execute(createUserDto);
       const userEntity = UserMapper.toEntity(user);
-      
+
       // Se for requisição AJAX/API, retorna JSON
       if (req.headers.accept?.includes('application/json')) {
         return res.status(201).json(userEntity);
       }
-      
+
       // Se for requisição web, redireciona
       return res.redirect('/users?message=Usuário criado com sucesso');
     } catch (error) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(400).json({ message: error.message });
       }
-      
-      return res.redirect(`/users/novo?error=${encodeURIComponent(error.message)}`);
+
+      return res.redirect(
+        `/users/novo?error=${encodeURIComponent(error.message)}`,
+      );
     }
   }
 
@@ -176,12 +254,12 @@ export class UsersController {
   ) {
     const user = await this.getUserByIdUseCase.execute(id);
     const userEntity = UserMapper.toEntity(user);
-    
+
     // Se for requisição AJAX/API, retorna JSON
     if (req.headers.accept?.includes('application/json')) {
       return userEntity;
     }
-    
+
     // Se for requisição web, renderiza página de detalhes
     return {
       title: `${userEntity.nome} - SGC ITEP`,
@@ -218,6 +296,7 @@ export class UsersController {
   }
 
   @Patch(':id')
+  @Roles('admin')
   @ApiOperation({ summary: 'Atualiza usuário' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })
@@ -233,20 +312,24 @@ export class UsersController {
     try {
       const user = await this.updateUserUseCase.execute(id, updateUserDto);
       const userEntity = UserMapper.toEntity(user);
-      
+
       // Se for requisição AJAX/API, retorna JSON
       if (req.headers.accept?.includes('application/json')) {
         return res.json(userEntity);
       }
-      
+
       // Se for requisição web, redireciona
-      return res.redirect(`/users/${id}?message=Usuário atualizado com sucesso`);
+      return res.redirect(
+        `/users/${id}?message=Usuário atualizado com sucesso`,
+      );
     } catch (error) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(400).json({ message: error.message });
       }
-      
-      return res.redirect(`/users/${id}/editar?error=${encodeURIComponent(error.message)}`);
+
+      return res.redirect(
+        `/users/${id}/editar?error=${encodeURIComponent(error.message)}`,
+      );
     }
   }
 
@@ -266,19 +349,19 @@ export class UsersController {
   ) {
     try {
       await this.deleteUserUseCase.execute(id);
-      
+
       // Se for requisição AJAX/API, retorna status 204
       if (req.headers.accept?.includes('application/json')) {
         return res.status(204).send();
       }
-      
+
       // Se for requisição web, redireciona
       return res.redirect('/users?message=Usuário removido com sucesso');
     } catch (error) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(400).json({ message: error.message });
       }
-      
+
       return res.redirect(`/users?error=${encodeURIComponent(error.message)}`);
     }
   }
@@ -299,19 +382,19 @@ export class UsersController {
     try {
       const user = await this.restoreUserUseCase.execute(id);
       const userEntity = UserMapper.toEntity(user);
-      
+
       // Se for requisição AJAX/API, retorna JSON
       if (req.headers.accept?.includes('application/json')) {
         return res.json(userEntity);
       }
-      
+
       // Se for requisição web, redireciona
       return res.redirect(`/users/${id}?message=Usuário reativado com sucesso`);
     } catch (error) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(400).json({ message: error.message });
       }
-      
+
       return res.redirect(`/users?error=${encodeURIComponent(error.message)}`);
     }
   }

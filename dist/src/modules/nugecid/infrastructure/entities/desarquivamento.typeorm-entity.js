@@ -83,7 +83,11 @@ __decorate([
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "codigoBarras", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'tipo_solicitacao', type: 'varchar', default: 'DESARQUIVAMENTO' }),
+    (0, typeorm_1.Column)({
+        name: 'tipo_solicitacao',
+        type: 'varchar',
+        default: 'DESARQUIVAMENTO',
+    }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "tipoSolicitacao", void 0);
 __decorate([

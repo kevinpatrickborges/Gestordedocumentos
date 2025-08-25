@@ -42,12 +42,13 @@ let Desarquivamento = class Desarquivamento {
     isOverdue() {
         if (!this.prazoAtendimento)
             return false;
-        return new Date() > this.prazoAtendimento &&
+        return (new Date() > this.prazoAtendimento &&
             this.status !== StatusDesarquivamento.CONCLUIDO &&
-            this.status !== StatusDesarquivamento.CANCELADO;
+            this.status !== StatusDesarquivamento.CANCELADO);
     }
     canBeAccessedBy(user) {
-        if (user.role?.name === role_type_enum_1.RoleType.ADMIN || user.role?.name === role_type_enum_1.RoleType.COORDENADOR) {
+        if (user.role?.name === role_type_enum_1.RoleType.ADMIN ||
+            user.role?.name === role_type_enum_1.RoleType.COORDENADOR) {
             return true;
         }
         if (this.criadoPor.id === user.id)
@@ -57,17 +58,20 @@ let Desarquivamento = class Desarquivamento {
         return false;
     }
     canBeEditedBy(user) {
-        if (user.role?.name === role_type_enum_1.RoleType.ADMIN || user.role?.name === role_type_enum_1.RoleType.COORDENADOR) {
+        if (user.role?.name === role_type_enum_1.RoleType.ADMIN ||
+            user.role?.name === role_type_enum_1.RoleType.COORDENADOR) {
             return true;
         }
         if (this.status === StatusDesarquivamento.CONCLUIDO ||
             this.status === StatusDesarquivamento.CANCELADO) {
             return false;
         }
-        if (this.criadoPor.id === user.id && this.status === StatusDesarquivamento.PENDENTE) {
+        if (this.criadoPor.id === user.id &&
+            this.status === StatusDesarquivamento.PENDENTE) {
             return true;
         }
-        if (this.responsavelId === user.id && this.status === StatusDesarquivamento.EM_ANDAMENTO) {
+        if (this.responsavelId === user.id &&
+            this.status === StatusDesarquivamento.EM_ANDAMENTO) {
             return true;
         }
         return false;
@@ -106,14 +110,14 @@ let Desarquivamento = class Desarquivamento {
         const transitions = {
             [StatusDesarquivamento.PENDENTE]: [
                 StatusDesarquivamento.EM_ANDAMENTO,
-                StatusDesarquivamento.CANCELADO
+                StatusDesarquivamento.CANCELADO,
             ],
             [StatusDesarquivamento.EM_ANDAMENTO]: [
                 StatusDesarquivamento.CONCLUIDO,
-                StatusDesarquivamento.CANCELADO
+                StatusDesarquivamento.CANCELADO,
             ],
             [StatusDesarquivamento.CONCLUIDO]: [],
-            [StatusDesarquivamento.CANCELADO]: []
+            [StatusDesarquivamento.CANCELADO]: [],
         };
         return transitions[this.status]?.includes(newStatus) || false;
     }
@@ -162,7 +166,11 @@ __decorate([
         enum: tipo_solicitacao_vo_1.TipoSolicitacaoEnum,
         example: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
     }),
-    (0, typeorm_1.Column)({ name: 'tipo_solicitacao', type: 'varchar', default: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO }),
+    (0, typeorm_1.Column)({
+        name: 'tipo_solicitacao',
+        type: 'varchar',
+        default: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
+    }),
     __metadata("design:type", String)
 ], Desarquivamento.prototype, "tipoSolicitacao", void 0);
 __decorate([
@@ -214,7 +222,7 @@ __decorate([
         format: 'date',
     }),
     (0, typeorm_1.Column)({ name: 'data_fato', type: 'date', nullable: true }),
-    (0, class_transformer_1.Transform)(({ value }) => value ? value.toISOString().split('T')[0] : null),
+    (0, class_transformer_1.Transform)(({ value }) => (value ? value.toISOString().split('T')[0] : null)),
     __metadata("design:type", Date)
 ], Desarquivamento.prototype, "dataFato", void 0);
 __decorate([

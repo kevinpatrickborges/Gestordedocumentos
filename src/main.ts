@@ -18,29 +18,49 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port', 3000);
-  const environment = configService.get<string>('app.environment', 'development');
+  const environment = configService.get<string>(
+    'app.environment',
+    'development',
+  );
   const appName = configService.get<string>('app.name', 'SGC-ITEP v2.0');
 
   // Configuração de segurança
   app.use(
     helmet({
-      contentSecurityPolicy: environment === 'production' ? {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-          imgSrc: ["'self'", 'data:', 'https:'],
-          fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-          connectSrc: ["'self'"],
-        },
-      } : false,
+      contentSecurityPolicy:
+        environment === 'production'
+          ? {
+              directives: {
+                defaultSrc: ["'self'"],
+                styleSrc: [
+                  "'self'",
+                  "'unsafe-inline'",
+                  'https://cdn.jsdelivr.net',
+                  'https://cdnjs.cloudflare.com',
+                ],
+                scriptSrc: [
+                  "'self'",
+                  "'unsafe-inline'",
+                  'https://cdn.jsdelivr.net',
+                  'https://cdnjs.cloudflare.com',
+                ],
+                imgSrc: ["'self'", 'data:', 'https:'],
+                fontSrc: [
+                  "'self'",
+                  'https://cdn.jsdelivr.net',
+                  'https://cdnjs.cloudflare.com',
+                ],
+                connectSrc: ["'self'"],
+              },
+            }
+          : false,
       crossOriginEmbedderPolicy: false,
     }),
   );
@@ -89,7 +109,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'), {
     prefix: '/public/',
   });
-  
+
   // Diretório de uploads
   const uploadPath = configService.get<string>('app.uploadPath');
   app.useStaticAssets(uploadPath, {
@@ -114,8 +134,6 @@ async function bootstrap() {
 
   // Prefixo global da API
   app.setGlobalPrefix('api');
-
-
 
   // Interceptors globais
   app.useGlobalInterceptors(
@@ -150,13 +168,16 @@ async function bootstrap() {
       .addTag('users', 'Gestão de Usuários')
       .addTag('nugecid', 'NUGECID - Desarquivamentos')
       .addTag('auditoria', 'Auditoria e Logs')
-      .addServer(configService.get<string>('app.baseUrl', 'http://localhost:3000'))
+      .addServer(
+        configService.get<string>('app.baseUrl', 'http://localhost:3000'),
+      )
       .build();
 
     const document = SwaggerModule.createDocument(app, config, {
-      operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
+      operationIdFactory: (controllerKey: string, methodKey: string) =>
+        methodKey,
     });
-    
+
     SwaggerModule.setup('api/docs', app, document, {
       customSiteTitle: `${appName} - API Documentation`,
       customfavIcon: '/public/favicon.ico',
@@ -166,8 +187,10 @@ async function bootstrap() {
         displayRequestDuration: true,
       },
     });
-    
-    logger.log(`📚 Swagger documentation available at: http://localhost:${port}/api/docs`);
+
+    logger.log(
+      `📚 Swagger documentation available at: http://localhost:${port}/api/docs`,
+    );
   }
 
   // CORS
@@ -178,6 +201,11 @@ async function bootstrap() {
     methods: corsConfig.methods,
     allowedHeaders: corsConfig.allowedHeaders,
   });
+
+  // Disable ETag to avoid 304 Not Modified responses interfering with API clients
+  // This ensures the API always returns fresh JSON during development and when
+  // clients don't send proper cache validators.
+  app.set('etag', false);
 
   // Graceful shutdown
   process.on('SIGTERM', async () => {
@@ -197,7 +225,7 @@ async function bootstrap() {
   logger.log(`🚀 ${appName} está rodando em: http://localhost:${port}`);
   logger.log(`🌍 Ambiente: ${environment}`);
   logger.log(`📊 Health check: http://localhost:${port}/health`);
-  
+
   if (environment !== 'production') {
     logger.log(`📚 Documentação da API: http://localhost:${port}/api/docs`);
   }

@@ -4,7 +4,9 @@ import { IRoleRepository } from '../../domain/repositories/role.repository.inter
 
 @Injectable()
 export class GetRolesUseCase {
-  constructor(@Inject('IRoleRepository') private readonly roleRepository: IRoleRepository) {}
+  constructor(
+    @Inject('IRoleRepository') private readonly roleRepository: IRoleRepository,
+  ) {}
 
   async execute(): Promise<Role[]> {
     return this.roleRepository.findAll();

@@ -25,16 +25,32 @@ async function bootstrap() {
     const environment = configService.get('app.environment', 'development');
     const appName = configService.get('app.name', 'SGC-ITEP v2.0');
     app.use((0, helmet_1.default)({
-        contentSecurityPolicy: environment === 'production' ? {
-            directives: {
-                defaultSrc: ["'self'"],
-                styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-                scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-                imgSrc: ["'self'", 'data:', 'https:'],
-                fontSrc: ["'self'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
-                connectSrc: ["'self'"],
-            },
-        } : false,
+        contentSecurityPolicy: environment === 'production'
+            ? {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    styleSrc: [
+                        "'self'",
+                        "'unsafe-inline'",
+                        'https://cdn.jsdelivr.net',
+                        'https://cdnjs.cloudflare.com',
+                    ],
+                    scriptSrc: [
+                        "'self'",
+                        "'unsafe-inline'",
+                        'https://cdn.jsdelivr.net',
+                        'https://cdnjs.cloudflare.com',
+                    ],
+                    imgSrc: ["'self'", 'data:', 'https:'],
+                    fontSrc: [
+                        "'self'",
+                        'https://cdn.jsdelivr.net',
+                        'https://cdnjs.cloudflare.com',
+                    ],
+                    connectSrc: ["'self'"],
+                },
+            }
+            : false,
         crossOriginEmbedderPolicy: false,
     }));
     const rateLimitConfig = configService.get('app.security.rateLimit');
@@ -128,6 +144,7 @@ async function bootstrap() {
         methods: corsConfig.methods,
         allowedHeaders: corsConfig.allowedHeaders,
     });
+    app.set('etag', false);
     process.on('SIGTERM', async () => {
         logger.log('SIGTERM received, shutting down gracefully');
         await app.close();

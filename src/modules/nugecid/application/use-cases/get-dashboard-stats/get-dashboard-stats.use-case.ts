@@ -1,8 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import {
-  IDesarquivamentoRepository,
-  DashboardStats,
-} from '../../../domain';
+import { IDesarquivamentoRepository, DashboardStats } from '../../../domain';
 import { DESARQUIVAMENTO_REPOSITORY_TOKEN } from '../../../domain/nugecid.constants';
 
 export interface GetDashboardStatsRequest {
@@ -32,11 +29,14 @@ export interface GetDashboardStatsResponse {
   taxaConclusao: number;
   tempoMedioAtendimento: number;
   registrosVencendoEm7Dias: number;
-  eficienciaPorResponsavel?: Record<string, {
-    total: number;
-    concluidos: number;
-    tempoMedio: number;
-  }>;
+  eficienciaPorResponsavel?: Record<
+    string,
+    {
+      total: number;
+      concluidos: number;
+      tempoMedio: number;
+    }
+  >;
 }
 
 @Injectable()
@@ -67,7 +67,7 @@ export class GetDashboardStatsUseCase {
     // Validar range de datas se fornecido
     if (request.dateRange) {
       const { startDate, endDate } = request.dateRange;
-      
+
       if (!(startDate instanceof Date) || !(endDate instanceof Date)) {
         throw new Error('Datas devem ser objetos Date válidos');
       }

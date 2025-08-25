@@ -28,7 +28,10 @@ import {
 import { IUserRepository, IRoleRepository } from './domain/repositories';
 
 // Repository Implementations
-import { TypeOrmUserRepository, TypeOrmRoleRepository } from './infrastructure/repositories';
+import {
+  TypeOrmUserRepository,
+  TypeOrmRoleRepository,
+} from './infrastructure/repositories';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Role, Auditoria])],
@@ -36,7 +39,7 @@ import { TypeOrmUserRepository, TypeOrmRoleRepository } from './infrastructure/r
   providers: [
     // Legacy Service (manter para compatibilidade)
     UsersService,
-    
+
     // Repository Implementations
     {
       provide: 'IUserRepository',
@@ -46,7 +49,7 @@ import { TypeOrmUserRepository, TypeOrmRoleRepository } from './infrastructure/r
       provide: 'IRoleRepository',
       useClass: TypeOrmRoleRepository,
     },
-    
+
     // Use Cases
     CreateUserUseCase,
     UpdateUserUseCase,

@@ -25,26 +25,44 @@ export class SeedingService implements OnModuleInit {
   }
 
   private async seedRoles() {
-    const roles = await this.roleRepository.find();
-    if (roles.length === 0) {
-      this.logger.log('Nenhuma role encontrada. Criando roles padrão...');
-      const adminRole = this.roleRepository.create({ name: RoleType.ADMIN, description: 'Administrador do sistema' });
-      const userRole = this.roleRepository.create({ name: RoleType.USUARIO, description: 'Usuário padrão' });
-      await this.roleRepository.save([adminRole, userRole]);
-      this.logger.log('Roles padrão criadas com sucesso.');
+    const existingRoles = await this.roleRepository.find();
+    const existingRoleNames = existingRoles.map(role => role.name);
+    
+    const rolesToCreate = [
+      { name: RoleType.ADMIN, description: 'Administrador do sistema' },
+      { name: RoleType.COORDENADOR, description: 'Coordenador' },
+      { name: RoleType.NUGECID_OPERATOR, description: 'Operador NUGECID' },
+      { name: RoleType.GESTOR, description: 'Gestor' },
+      { name: RoleType.EDITOR, description: 'Editor' },
+      { name: RoleType.USUARIO, description: 'Usuário padrão' },
+    ];
+    
+    const newRoles = rolesToCreate.filter(role => !existingRoleNames.includes(role.name));
+    
+    if (newRoles.length > 0) {
+      this.logger.log(`Criando ${newRoles.length} roles faltantes...`);
+      const roleEntities = newRoles.map(role => this.roleRepository.create(role));
+      await this.roleRepository.save(roleEntities);
+      this.logger.log('Roles criadas com sucesso:', newRoles.map(r => r.name).join(', '));
     } else {
-      this.logger.log('Roles já existem. Nenhuma ação necessária.');
+      this.logger.log('Todas as roles já existem.');
     }
   }
 
   private async seedAdminUser() {
-    const adminRole = await this.roleRepository.findOne({ where: { name: RoleType.ADMIN } });
+    const adminRole = await this.roleRepository.findOne({
+      where: { name: RoleType.ADMIN },
+    });
     if (!adminRole) {
-      this.logger.error('Role de Admin não encontrada. Não foi possível criar ou atualizar o usuário admin.');
+      this.logger.error(
+        'Role de Admin não encontrada. Não foi possível criar ou atualizar o usuário admin.',
+      );
       return;
     }
 
-    const adminUser = await this.userRepository.findOne({ where: { usuario: 'admin' } });
+    const adminUser = await this.userRepository.findOne({
+      where: { usuario: 'admin' },
+    });
     const hashedPassword = await bcrypt.hash('admin123', 12);
 
     if (adminUser) {

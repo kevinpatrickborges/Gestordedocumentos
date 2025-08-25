@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsDateString, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsDateString,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
 
 // Enum para a Coluna B: DESARQUIVAMENTO FÍSICO/DIGITAL
 export enum TipoDesarquivamento {
@@ -19,11 +26,18 @@ export enum StatusDesarquivamento {
 }
 
 export class ImportRegistroDto {
-  @IsEnum(TipoDesarquivamento, { message: 'O valor para a coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é inválido.' })
-  @IsNotEmpty({ message: 'A coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é obrigatória.' })
+  @IsEnum(TipoDesarquivamento, {
+    message:
+      'O valor para a coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é inválido.',
+  })
+  @IsNotEmpty({
+    message: 'A coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é obrigatória.',
+  })
   desarquivamentoTipo: TipoDesarquivamento;
 
-  @IsEnum(StatusDesarquivamento, { message: 'O valor para a coluna "Status" é inválido.' })
+  @IsEnum(StatusDesarquivamento, {
+    message: 'O valor para a coluna "Status" é inválido.',
+  })
   @IsNotEmpty({ message: 'A coluna "Status" é obrigatória.' })
   status: StatusDesarquivamento;
 
@@ -32,7 +46,10 @@ export class ImportRegistroDto {
   nomeCompleto: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'A coluna "Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA" é obrigatória.' })
+  @IsNotEmpty({
+    message:
+      'A coluna "Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA" é obrigatória.',
+  })
   numDocumento: string;
 
   @IsString()
@@ -43,15 +60,24 @@ export class ImportRegistroDto {
   @IsOptional()
   tipoDocumento?: string;
 
-  @IsDateString({}, { message: 'A "Data de solicitação" deve ser uma data válida.' })
+  @IsDateString(
+    {},
+    { message: 'A "Data de solicitação" deve ser uma data válida.' },
+  )
   @IsNotEmpty({ message: 'A coluna "Data de solicitação" é obrigatória.' })
   dataSolicitacao: string;
 
-  @IsDateString({}, { message: 'A "Data do desarquivamento - SAG" deve ser uma data válida.' })
+  @IsDateString(
+    {},
+    { message: 'A "Data do desarquivamento - SAG" deve ser uma data válida.' },
+  )
   @IsOptional()
   dataDesarquivamento?: string;
 
-  @IsDateString({}, { message: 'A "Data da devolução pelo setor" deve ser uma data válida.' })
+  @IsDateString(
+    {},
+    { message: 'A "Data da devolução pelo setor" deve ser uma data válida.' },
+  )
   @IsOptional()
   dataDevolucao?: string;
 
@@ -67,7 +93,10 @@ export class ImportRegistroDto {
   @IsOptional()
   finalidade?: string;
 
-  @IsBoolean({ message: 'A coluna de "Prorrogação" deve ser um valor booleano (sim/não ou true/false).' })
+  @IsBoolean({
+    message:
+      'A coluna de "Prorrogação" deve ser um valor booleano (sim/não ou true/false).',
+  })
   @IsOptional()
   prorrogacao: boolean;
 }
