@@ -44,3 +44,4 @@ export {
 export { Checkbox } from './Checkbox';
 export { Alert, AlertTitle, AlertDescription } from './Alert';
 export { Textarea } from './Textarea';
+export { Switch } from './Switch';

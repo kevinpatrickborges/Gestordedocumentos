@@ -39,11 +39,17 @@ export class DesarquivamentoTypeOrmEntity {
   @Column({ name: 'nome_solicitante', length: 255, nullable: false })
   nomeSolicitante: string;
 
+  @Column({ name: 'requerente', length: 255, nullable: false })
+  requerente: string;
+
   @Column({ name: 'nome_vitima', length: 255, nullable: true })
   nomeVitima?: string;
 
   @Column({ name: 'numero_registro', length: 50, nullable: false })
   numeroRegistro: string;
+
+  @Column({ name: 'numero_processo', length: 50, nullable: false })
+  numeroProcesso: string;
 
   @Column({ name: 'tipo_documento', length: 100, nullable: true })
   tipoDocumento?: string;
@@ -119,6 +125,7 @@ export class DesarquivamentoTypeOrmEntity {
     entity.nomeSolicitante = domain.nomeSolicitante;
     entity.nomeVitima = domain.nomeVitima;
     entity.numeroRegistro = domain.numeroRegistro.value;
+    entity.numeroProcesso = domain.numeroProcesso;
     entity.tipoDocumento = domain.tipoDocumento;
     entity.dataFato = domain.dataFato;
     entity.prazoAtendimento = domain.prazoAtendimento;
@@ -146,6 +153,7 @@ export class DesarquivamentoTypeOrmEntity {
       nomeSolicitante: this.nomeSolicitante,
       nomeVitima: this.nomeVitima,
       numeroRegistro: this.numeroRegistro,
+      numeroProcesso: this.numeroProcesso,
       tipoDocumento: this.tipoDocumento,
       dataFato: this.dataFato,
       prazoAtendimento: this.prazoAtendimento,

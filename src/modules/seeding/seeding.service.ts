@@ -27,7 +27,7 @@ export class SeedingService implements OnModuleInit {
   private async seedRoles() {
     const existingRoles = await this.roleRepository.find();
     const existingRoleNames = existingRoles.map(role => role.name);
-    
+
     const rolesToCreate = [
       { name: RoleType.ADMIN, description: 'Administrador do sistema' },
       { name: RoleType.COORDENADOR, description: 'Coordenador' },
@@ -36,14 +36,21 @@ export class SeedingService implements OnModuleInit {
       { name: RoleType.EDITOR, description: 'Editor' },
       { name: RoleType.USUARIO, description: 'Usuário padrão' },
     ];
-    
-    const newRoles = rolesToCreate.filter(role => !existingRoleNames.includes(role.name));
-    
+
+    const newRoles = rolesToCreate.filter(
+      role => !existingRoleNames.includes(role.name),
+    );
+
     if (newRoles.length > 0) {
       this.logger.log(`Criando ${newRoles.length} roles faltantes...`);
-      const roleEntities = newRoles.map(role => this.roleRepository.create(role));
+      const roleEntities = newRoles.map(role =>
+        this.roleRepository.create(role),
+      );
       await this.roleRepository.save(roleEntities);
-      this.logger.log('Roles criadas com sucesso:', newRoles.map(r => r.name).join(', '));
+      this.logger.log(
+        'Roles criadas com sucesso:',
+        newRoles.map(r => r.name).join(', '),
+      );
     } else {
       this.logger.log('Todas as roles já existem.');
     }

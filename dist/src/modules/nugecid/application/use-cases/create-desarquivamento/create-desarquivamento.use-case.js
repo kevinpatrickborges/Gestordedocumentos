@@ -32,8 +32,10 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
             tipoSolicitacao: tipoSolicitacaoVO,
             status: statusVO,
             nomeSolicitante: request.nomeSolicitante,
+            requerente: request.requerente,
             nomeVitima: request.nomeVitima,
             numeroRegistro: numeroRegistroVO,
+            numeroProcesso: request.numeroProcesso,
             tipoDocumento: request.tipoDocumento,
             dataFato: request.dataFato,
             prazoAtendimento: request.prazoAtendimento,
@@ -48,24 +50,6 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         return this.mapToResponse(savedDesarquivamento);
     }
     async validateRequest(request) {
-        const existingByNumero = await this.desarquivamentoRepository.findByNumeroRegistro(request.numeroRegistro);
-        if (existingByNumero.length > 0) {
-            throw new Error(`Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`);
-        }
-        if (!Object.values([
-            'DESARQUIVAMENTO',
-            'COPIA',
-            'VISTA',
-            'CERTIDAO',
-        ]).includes(request.tipoSolicitacao)) {
-            throw new Error('Tipo de solicitação inválido');
-        }
-        if (!request.criadoPorId || request.criadoPorId <= 0) {
-            throw new Error('ID do usuário criador é obrigatório');
-        }
-        if (request.responsavelId && request.responsavelId <= 0) {
-            throw new Error('ID do responsável deve ser válido');
-        }
         if (!request.nomeSolicitante ||
             request.nomeSolicitante.trim().length === 0) {
             throw new Error('Nome do solicitante é obrigatório');
@@ -73,8 +57,28 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         if (!request.numeroRegistro || request.numeroRegistro.trim().length === 0) {
             throw new Error('Número do registro é obrigatório');
         }
+        if (!request.numeroProcesso || request.numeroProcesso.trim().length === 0) {
+            throw new Error('Número do processo é obrigatório');
+        }
+        if (!request.criadoPorId || request.criadoPorId <= 0) {
+            throw new Error('ID do usuário criador é obrigatório e deve ser válido');
+        }
+        const existingByNumero = await this.desarquivamentoRepository.findByNumeroRegistro(request.numeroRegistro);
+        if (existingByNumero.length > 0) {
+            throw new Error(`Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`);
+        }
+        const tiposValidos = ['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO'];
+        if (!tiposValidos.includes(request.tipoSolicitacao)) {
+            throw new Error(`Tipo de solicitação inválido. Valores aceitos: ${tiposValidos.join(', ')}`);
+        }
+        if (request.responsavelId && request.responsavelId <= 0) {
+            throw new Error('ID do responsável deve ser válido');
+        }
         if (request.nomeSolicitante.length > 255) {
             throw new Error('Nome do solicitante deve ter no máximo 255 caracteres');
+        }
+        if (request.numeroProcesso.length > 50) {
+            throw new Error('Número do processo deve ter no máximo 50 caracteres');
         }
         if (request.nomeVitima && request.nomeVitima.length > 255) {
             throw new Error('Nome da vítima deve ter no máximo 255 caracteres');
@@ -85,11 +89,22 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         if (request.localizacaoFisica && request.localizacaoFisica.length > 255) {
             throw new Error('Localização física deve ter no máximo 255 caracteres');
         }
+        if (request.finalidade && request.finalidade.length > 500) {
+            throw new Error('Finalidade deve ter no máximo 500 caracteres');
+        }
+        if (request.observacoes && request.observacoes.length > 1000) {
+            throw new Error('Observações deve ter no máximo 1000 caracteres');
+        }
         if (request.dataFato && request.dataFato > new Date()) {
             throw new Error('Data do fato não pode ser futura');
         }
         if (request.prazoAtendimento && request.prazoAtendimento <= new Date()) {
             throw new Error('Prazo de atendimento deve ser futuro');
+        }
+        if (request.dataFato && request.prazoAtendimento) {
+            if (request.dataFato >= request.prazoAtendimento) {
+                throw new Error('Prazo de atendimento deve ser posterior à data do fato');
+            }
         }
     }
     async generateUniqueCodigoBarras() {
@@ -115,6 +130,7 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
             nomeSolicitante: plainObject.nomeSolicitante,
             nomeVitima: plainObject.nomeVitima,
             numeroRegistro: plainObject.numeroRegistro,
+            numeroProcesso: plainObject.numeroProcesso,
             tipoDocumento: plainObject.tipoDocumento,
             dataFato: plainObject.dataFato,
             prazoAtendimento: plainObject.prazoAtendimento,

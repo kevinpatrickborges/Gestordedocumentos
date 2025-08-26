@@ -1,9 +1,9 @@
 # Documento de Requisitos do Produto (PRD): Sistema Integrado de Gestão Documental (SGC-ITEP)
-**Versão:** 2.0 (AI-Driven)
+**Versão:** 1.0
 
-**Data:** 31 de julho de 2025
+**Data:** 26 de agosto de 2025
 
-**Status:** Em Desenvolvimento (Fase de Migração para v2.0)
+**Status:** Em Desenvolvimento 
 
 **Autor:** Kevin Patrick Borges 
 
@@ -12,7 +12,7 @@
 ### **1. Introdução e Objetivo**
 
 #### **1.1. Visão Geral**
-O SGC-ITEP v2.0 é a evolução de uma plataforma web modular, projetada para modernizar, automatizar e escalar a gestão de fluxos documentais no ITEP-RN, utilizando uma arquitetura de microsserviços e um processo de desenvolvimento orquestrado por agentes de Inteligência Artificial.
+O SGC-ITEP v2.0 é a evolução de uma plataforma web modular, projetada para modernizar, automatizar e escalar a gestão de fluxos documentais no ITEP-RN, utilizando uma arquitetura de microsserviços e um processo de desenvolvimento orquestrado.
 
 #### **1.2. Problema**
 Atualmente, o controle de processos de desarquivamento de documentos no setor NUGECID é realizado de forma manual através de planilhas. Este método é suscetível a erros, demorado, dificulta a rastreabilidade (auditoria) e não oferece um controle de acesso seguro às informações.
@@ -23,10 +23,6 @@ O objetivo do SGC-ITEP é substituir o processo manual por um sistema digital ce
 - Garanta a segurança da informação através de controle de acesso por níveis.
 - Forneça uma trilha de auditoria completa para todas as ações.
 - Seja a base para a digitalização de outros fluxos de trabalho no ITEP.
-
-#### **1.4. Filosofia de Desenvolvimento**
-Este projeto será desenvolvido seguindo uma filosofia de **Qualidade e Automação Contínua**. Uma equipe de agentes de IA especializados (Back-end, Front-end, QA, DevOps) será responsável pela execução, garantindo aderência a padrões de código, cobertura de testes e um fluxo de trabalho previsível e auditável.
-
 ---
 
 ### **2. Personas e Papéis de Usuário**
@@ -77,9 +73,7 @@ Os requisitos funcionais serão organizados em Épicos. Cada requisito se torna 
     - O sistema deve impedir o acesso a qualquer página interna sem autenticação.
     - O sistema deve ter uma função de "Logout".
 - **Diretrizes para os Agentes de IA:**
-    - **Agente Back-end:** Deve propor um módulo `auth.module.ts` encapsulando `AuthController` e `AuthService`. A validação de entrada (email, senha) deve ser feita via DTOs (`LoginDto.ts`). A lógica de negócio (busca de usuário, comparação de hash com `bcrypt`, geração de token JWT) deve residir no `AuthService`. Deve seguir o Fluxo de Trabalho Mandatório de 5 fases.
-    - **Agente Front-end:** Deve criar uma página de login com um formulário controlado, que faz uma requisição `POST` para o endpoint da API. Deve gerenciar o `accessToken` recebido (ex: em `localStorage`) e anexá-lo às requisições subsequentes.
-    - **Agente QA:** Deve criar testes E2E com Playwright para simular o login com sucesso, com usuário inválido e com senha inválida.
+
 
 #### **ÉPICO 2: Gestão de Registros de Desarquivamento (CRUD)**
 - **História (RF-02):** Como um Usuário, eu quero poder criar, visualizar, editar e excluir registros de desarquivamento para manter o controle do fluxo de documentos.
@@ -90,9 +84,6 @@ Os requisitos funcionais serão organizados em Épicos. Cada requisito se torna 
     - O Administrador pode ver e gerenciar todos os registros.
     - A exclusão deve ser do tipo "soft delete".
 - **Diretrizes para os Agentes de IA:**
-    - **Agente Back-end:** Deve propor um `registros.module.ts`. O `RegistroService` deve implementar a lógica de CRUD, incluindo a regra de negócio que restringe o acesso de "Editores" aos seus próprios registros. O `soft delete` deve ser implementado no nível do ORM (Prisma).
-    - **Agente QA:** Deve criar testes de integração para a API, validando todas as operações do CRUD e, principalmente, as regras de permissão de acesso para os diferentes papéis de usuário.
-
 *(Outros épicos como RF-03, RF-04 e RF-05 seguirão esta mesma estrutura)*
 
 ---
@@ -102,29 +93,6 @@ Os requisitos funcionais serão organizados em Épicos. Cada requisito se torna 
 - **5.1. Segurança:** O back-end DEVE usar `helmet`, proteção contra CSRF, e o `class-validator` do NestJS para todas as DTOs. Todas as senhas DEVEM ser hasheadas com `bcrypt`. O controle de acesso (ACL) deve ser implementado via `Guards` do NestJS.
 - **5.2. Desempenho:** As consultas ao banco de dados DEVEM ser otimizadas. O padrão de paginação deve ser implementado em todas as listagens de API. O cache com **Redis** deve ser considerado para dados acessados frequentemente.
 - **5.3. Usabilidade:** A interface deve ser intuitiva, responsiva e seguir um Design System consistente.
-- **5.4. Qualidade de Código e Testabilidade:** Todo código gerado pelo Agente Back-end DEVE ser acompanhado de testes unitários e de integração, visando uma cobertura de testes (`test coverage`) mínima de 85%. O Agente de QA é responsável por garantir a cobertura dos testes E2E.
-
----
-
-### **6. Stack Tecnológica e Ferramentas (v2.0)**
-
-- **Backend:** TypeScript, Node.js, **NestJS**.
-- **Banco de Dados:** **PostgreSQL** (Produção), **SQLite** (Desenvolvimento e Testes).
-- **ORM:** **Prisma**.
-- **Frontend:** **React** com **Vite** e **TypeScript**.
-- **QA / Testes:** **Jest** (Unitários/Integração), **Playwright** (End-to-End).
-- **DevOps:** **Docker**, **GitHub Actions** para CI/CD.
-
----
-
-### **7. Processo de Desenvolvimento com Agentes de IA**
-
-#### **7.1. A Equipe de Agentes**
-O desenvolvimento será orquestrado por uma equipe de agentes especializados, cada um com um prompt de sistema e ferramentas definidas:
-- **Agente Back-end:** Responsável pela API, lógica de negócio e banco de dados.
-- **Agente Front-end:** Responsável pela interface do usuário.
-- **Agente QA:** Responsável pelos testes E2E e garantia de qualidade.
-- **Agente DevOps:** Responsável pela pipeline de CI/CD e infraestrutura.
 
 #### **7.2. Fluxo de Trabalho Mandatório (Backend)**
 Toda tarefa delegada ao Agente Back-end DEVE seguir o seguinte fluxo de 5 fases, sem exceção:

@@ -25,7 +25,7 @@ class CodigoBarras {
         return new CodigoBarras(value);
     }
     static generateNew() {
-        const year = new Date().getFullYear();
+        const year = String(new Date().getFullYear()).slice(-2);
         const month = String(new Date().getMonth() + 1).padStart(2, '0');
         const day = String(new Date().getDate()).padStart(2, '0');
         const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');

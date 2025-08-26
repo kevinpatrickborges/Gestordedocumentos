@@ -15,8 +15,10 @@ import { DESARQUIVAMENTO_REPOSITORY_TOKEN } from '../../../domain/nugecid.consta
 export interface CreateDesarquivamentoRequest {
   tipoSolicitacao: string;
   nomeSolicitante: string;
+  requerente: string;
   nomeVitima?: string;
   numeroRegistro: string;
+  numeroProcesso: string;
   tipoDocumento?: string;
   dataFato?: Date;
   prazoAtendimento?: Date;
@@ -36,6 +38,7 @@ export interface CreateDesarquivamentoResponse {
   nomeSolicitante: string;
   nomeVitima?: string;
   numeroRegistro: string;
+  numeroProcesso: string;
   tipoDocumento?: string;
   dataFato?: Date;
   prazoAtendimento?: Date;
@@ -81,8 +84,10 @@ export class CreateDesarquivamentoUseCase {
       tipoSolicitacao: tipoSolicitacaoVO,
       status: statusVO,
       nomeSolicitante: request.nomeSolicitante,
+      requerente: request.requerente,
       nomeVitima: request.nomeVitima,
       numeroRegistro: numeroRegistroVO,
+      numeroProcesso: request.numeroProcesso,
       tipoDocumento: request.tipoDocumento,
       dataFato: request.dataFato,
       prazoAtendimento: request.prazoAtendimento,
@@ -105,39 +110,6 @@ export class CreateDesarquivamentoUseCase {
   private async validateRequest(
     request: CreateDesarquivamentoRequest,
   ): Promise<void> {
-    // Validar se o número de registro já existe
-    const existingByNumero =
-      await this.desarquivamentoRepository.findByNumeroRegistro(
-        request.numeroRegistro,
-      );
-    if (existingByNumero.length > 0) {
-      throw new Error(
-        `Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`,
-      );
-    }
-
-    // Validar tipo de solicitação
-    if (
-      !Object.values([
-        'DESARQUIVAMENTO',
-        'COPIA',
-        'VISTA',
-        'CERTIDAO',
-      ]).includes(request.tipoSolicitacao)
-    ) {
-      throw new Error('Tipo de solicitação inválido');
-    }
-
-    // Validar se o usuário criador existe (seria ideal ter um repositório de usuários)
-    if (!request.criadoPorId || request.criadoPorId <= 0) {
-      throw new Error('ID do usuário criador é obrigatório');
-    }
-
-    // Validar se o responsável existe (se fornecido)
-    if (request.responsavelId && request.responsavelId <= 0) {
-      throw new Error('ID do responsável deve ser válido');
-    }
-
     // Validar campos obrigatórios
     if (
       !request.nomeSolicitante ||
@@ -150,9 +122,45 @@ export class CreateDesarquivamentoUseCase {
       throw new Error('Número do registro é obrigatório');
     }
 
+    if (!request.numeroProcesso || request.numeroProcesso.trim().length === 0) {
+      throw new Error('Número do processo é obrigatório');
+    }
+
+    if (!request.criadoPorId || request.criadoPorId <= 0) {
+      throw new Error('ID do usuário criador é obrigatório e deve ser válido');
+    }
+
+    // Validar se o número de registro já existe
+    const existingByNumero =
+      await this.desarquivamentoRepository.findByNumeroRegistro(
+        request.numeroRegistro,
+      );
+    if (existingByNumero.length > 0) {
+      throw new Error(
+        `Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`,
+      );
+    }
+
+    // Validar tipo de solicitação
+    const tiposValidos = ['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO'];
+    if (!tiposValidos.includes(request.tipoSolicitacao)) {
+      throw new Error(
+        `Tipo de solicitação inválido. Valores aceitos: ${tiposValidos.join(', ')}`,
+      );
+    }
+
+    // Validar se o responsável existe (se fornecido)
+    if (request.responsavelId && request.responsavelId <= 0) {
+      throw new Error('ID do responsável deve ser válido');
+    }
+
     // Validar tamanhos máximos
     if (request.nomeSolicitante.length > 255) {
       throw new Error('Nome do solicitante deve ter no máximo 255 caracteres');
+    }
+
+    if (request.numeroProcesso.length > 50) {
+      throw new Error('Número do processo deve ter no máximo 50 caracteres');
     }
 
     if (request.nomeVitima && request.nomeVitima.length > 255) {
@@ -167,6 +175,14 @@ export class CreateDesarquivamentoUseCase {
       throw new Error('Localização física deve ter no máximo 255 caracteres');
     }
 
+    if (request.finalidade && request.finalidade.length > 500) {
+      throw new Error('Finalidade deve ter no máximo 500 caracteres');
+    }
+
+    if (request.observacoes && request.observacoes.length > 1000) {
+      throw new Error('Observações deve ter no máximo 1000 caracteres');
+    }
+
     // Validar datas
     if (request.dataFato && request.dataFato > new Date()) {
       throw new Error('Data do fato não pode ser futura');
@@ -174,6 +190,15 @@ export class CreateDesarquivamentoUseCase {
 
     if (request.prazoAtendimento && request.prazoAtendimento <= new Date()) {
       throw new Error('Prazo de atendimento deve ser futuro');
+    }
+
+    // Validar consistência de dados
+    if (request.dataFato && request.prazoAtendimento) {
+      if (request.dataFato >= request.prazoAtendimento) {
+        throw new Error(
+          'Prazo de atendimento deve ser posterior à data do fato',
+        );
+      }
     }
   }
 
@@ -212,6 +237,7 @@ export class CreateDesarquivamentoUseCase {
       nomeSolicitante: plainObject.nomeSolicitante,
       nomeVitima: plainObject.nomeVitima,
       numeroRegistro: plainObject.numeroRegistro,
+      numeroProcesso: plainObject.numeroProcesso,
       tipoDocumento: plainObject.tipoDocumento,
       dataFato: plainObject.dataFato,
       prazoAtendimento: plainObject.prazoAtendimento,

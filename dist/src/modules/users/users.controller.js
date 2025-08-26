@@ -44,8 +44,8 @@ let UsersController = class UsersController {
                 data: items,
                 meta: {
                     total: pag.total || items.length,
-                    page: pag.page || (query.page || 1),
-                    limit: pag.limit || (query.limit || items.length),
+                    page: pag.page || query.page || 1,
+                    limit: pag.limit || query.limit || items.length,
                     totalPages: pag.totalPages || 1,
                     hasNext: (pag.page || 1) < (pag.totalPages || 1),
                     hasPrev: (pag.page || 1) > 1,
@@ -76,8 +76,8 @@ let UsersController = class UsersController {
                 data: items,
                 meta: {
                     total: pag.total || items.length,
-                    page: pag.page || (query.page || 1),
-                    limit: pag.limit || (query.limit || items.length),
+                    page: pag.page || query.page || 1,
+                    limit: pag.limit || query.limit || items.length,
                     totalPages: pag.totalPages || 1,
                     hasNext: (pag.page || 1) < (pag.totalPages || 1),
                     hasPrev: (pag.page || 1) > 1,

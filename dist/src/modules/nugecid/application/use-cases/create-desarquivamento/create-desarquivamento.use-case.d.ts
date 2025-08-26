@@ -2,8 +2,10 @@ import { IDesarquivamentoRepository } from '../../../domain';
 export interface CreateDesarquivamentoRequest {
     tipoSolicitacao: string;
     nomeSolicitante: string;
+    requerente: string;
     nomeVitima?: string;
     numeroRegistro: string;
+    numeroProcesso: string;
     tipoDocumento?: string;
     dataFato?: Date;
     prazoAtendimento?: Date;
@@ -22,6 +24,7 @@ export interface CreateDesarquivamentoResponse {
     nomeSolicitante: string;
     nomeVitima?: string;
     numeroRegistro: string;
+    numeroProcesso: string;
     tipoDocumento?: string;
     dataFato?: Date;
     prazoAtendimento?: Date;

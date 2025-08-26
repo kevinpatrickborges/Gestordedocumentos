@@ -34,12 +34,12 @@ export class CodigoBarras {
   }
 
   static generateNew(): CodigoBarras {
-    const year = new Date().getFullYear();
+    const year = String(new Date().getFullYear()).slice(-2); // Últimos 2 dígitos do ano
     const month = String(new Date().getMonth() + 1).padStart(2, '0');
     const day = String(new Date().getDate()).padStart(2, '0');
     const random = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
 
-    const codigo = `DES${year}${month}${day}${random}`;
+    const codigo = `DES${year}${month}${day}${random}`; // Total: DES + 10 dígitos
     return new CodigoBarras(codigo);
   }
 

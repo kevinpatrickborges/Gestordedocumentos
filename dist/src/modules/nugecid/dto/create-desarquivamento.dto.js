@@ -13,175 +13,158 @@ exports.CreateDesarquivamentoDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
+const tipo_desarquivamento_vo_1 = require("../domain/value-objects/tipo-desarquivamento.vo");
 const tipo_solicitacao_vo_1 = require("../domain/value-objects/tipo-solicitacao.vo");
 class CreateDesarquivamentoDto {
     constructor() {
+        this.solicitacaoProrrogacao = false;
         this.urgente = false;
     }
 }
 exports.CreateDesarquivamentoDto = CreateDesarquivamentoDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Tipo da solicitação',
+        description: 'Tipo de solicitação',
         enum: tipo_solicitacao_vo_1.TipoSolicitacaoEnum,
-        example: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
+        example: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.COPIA,
     }),
-    (0, class_validator_1.IsEnum)(tipo_solicitacao_vo_1.TipoSolicitacaoEnum, {
-        message: 'Tipo deve ser um dos valores válidos: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
-    }),
+    (0, class_validator_1.IsEnum)(tipo_solicitacao_vo_1.TipoSolicitacaoEnum),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "tipoSolicitacao", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Nome completo do requerente',
-        example: 'João Silva Santos',
-        minLength: 2,
-        maxLength: 255,
+        description: 'Nome do solicitante',
+        example: 'João da Silva',
     }),
-    (0, class_validator_1.IsString)({ message: 'Nome do requerente deve ser uma string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Nome do requerente é obrigatório' }),
-    (0, class_validator_1.MinLength)(2, {
-        message: 'Nome do solicitante deve ter pelo menos 2 caracteres',
-    }),
-    (0, class_validator_1.MaxLength)(255, {
-        message: 'Nome do solicitante deve ter no máximo 255 caracteres',
-    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Nome do solicitante é obrigatório' }),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(255),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "nomeSolicitante", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Nome da vítima (quando aplicável)',
-        example: 'Maria Oliveira',
-        maxLength: 255,
+    (0, swagger_1.ApiProperty)({
+        description: 'Requerente',
+        example: 'João da Silva',
     }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Nome da vítima deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(255, {
-        message: 'Nome da vítima deve ter no máximo 255 caracteres',
-    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Requerente é obrigatório' }),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(255),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
-], CreateDesarquivamentoDto.prototype, "nomeVitima", void 0);
+], CreateDesarquivamentoDto.prototype, "requerente", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Número do registro/processo',
-        example: '2024.001.123456',
-        minLength: 3,
-        maxLength: 50,
+        description: 'Número de registro (Processo, NIC, etc.)',
+        example: '0800123-45.2025.8.20.0001',
     }),
-    (0, class_validator_1.IsString)({ message: 'Número do registro deve ser uma string' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Número do registro é obrigatório' }),
-    (0, class_validator_1.MinLength)(3, {
-        message: 'Número do registro deve ter pelo menos 3 caracteres',
-    }),
-    (0, class_validator_1.MaxLength)(50, {
-        message: 'Número do registro deve ter no máximo 50 caracteres',
-    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Número de registro é obrigatório' }),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(100),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "numeroRegistro", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Número do processo',
+        example: '2025.001.123456',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Número do processo é obrigatório' }),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(50),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], CreateDesarquivamentoDto.prototype, "numeroProcesso", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipo de desarquivamento (Físico ou Digital)',
+        enum: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum,
+        example: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+    }),
+    (0, class_validator_1.IsEnum)(tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum, {
+        message: 'Tipo de desarquivamento deve ser FÍSICO ou DIGITAL',
+    }),
+    __metadata("design:type", String)
+], CreateDesarquivamentoDto.prototype, "tipoDesarquivamento", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Tipo do documento solicitado',
-        example: 'Laudo Pericial',
-        maxLength: 100,
+        description: 'Número do NIC, Laudo, Auto ou Informação Técnica',
+        example: 'NIC 123456',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Tipo do documento deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(100, {
-        message: 'Tipo do documento deve ter no máximo 100 caracteres',
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], CreateDesarquivamentoDto.prototype, "numeroNicLaudoAuto", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipo do documento',
+        example: 'Laudo de Perícia Criminal',
     }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de documento é obrigatório' }),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(100),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "tipoDocumento", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Data do fato/ocorrência',
-        example: '2024-01-15',
-        type: 'string',
-        format: 'date',
+    (0, swagger_1.ApiProperty)({
+        description: 'Setor que está solicitando o desarquivamento',
+        example: 'Delegacia de Plantão da Zona Sul',
     }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsDateString)({}, { message: 'Data do fato deve estar no formato válido (YYYY-MM-DD)' }),
-    (0, class_transformer_1.Transform)(({ value }) => (value ? new Date(value) : null)),
-    __metadata("design:type", Date)
-], CreateDesarquivamentoDto.prototype, "dataFato", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Finalidade da solicitação',
-        example: 'Processo judicial em andamento',
-        maxLength: 500,
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Finalidade deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(500, { message: 'Finalidade deve ter no máximo 500 caracteres' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Setor demandante é obrigatório' }),
+    (0, class_validator_1.MinLength)(2),
+    (0, class_validator_1.MaxLength)(100),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
-], CreateDesarquivamentoDto.prototype, "finalidade", void 0);
+], CreateDesarquivamentoDto.prototype, "setorDemandante", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Observações adicionais',
-        example: 'Solicitação urgente para audiência',
-        maxLength: 1000,
+    (0, swagger_1.ApiProperty)({
+        description: 'Servidor do ITEP responsável pela solicitação (Nome e Matrícula)',
+        example: 'Maria Oliveira (mat. 654321)',
     }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Observações deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(1000, {
-        message: 'Observações deve ter no máximo 1000 caracteres',
-    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Servidor responsável é obrigatório' }),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(255),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
-], CreateDesarquivamentoDto.prototype, "observacoes", void 0);
+], CreateDesarquivamentoDto.prototype, "servidorResponsavel", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Finalidade e justificativa para o desarquivamento',
+        example: 'Para instrução em processo judicial.',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Finalidade é obrigatória' }),
+    (0, class_validator_1.MinLength)(10),
+    (0, class_validator_1.MaxLength)(1000),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], CreateDesarquivamentoDto.prototype, "finalidadeDesarquivamento", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Indica se a solicitação é urgente',
-        example: false,
+        description: 'Indica se há uma solicitação de prorrogação de prazo',
         default: false,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)({ message: 'Urgente deve ser um valor booleano' }),
-    (0, class_transformer_1.Transform)(({ value }) => {
-        if (typeof value === 'string') {
-            return value.toLowerCase() === 'true' || value === '1';
-        }
-        return Boolean(value);
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateDesarquivamentoDto.prototype, "solicitacaoProrrogacao", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Indica se a solicitação é urgente',
+        default: false,
     }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateDesarquivamentoDto.prototype, "urgente", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Localização física do documento/processo',
-        example: 'Arquivo Central - Estante 15, Prateleira 3',
-        maxLength: 255,
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)({ message: 'Localização física deve ser uma string' }),
-    (0, class_validator_1.MaxLength)(255, {
-        message: 'Localização física deve ter no máximo 255 caracteres',
-    }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
-    __metadata("design:type", String)
-], CreateDesarquivamentoDto.prototype, "localizacaoFisica", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Data limite para atendimento',
-        example: '2024-02-15T10:00:00Z',
-        type: 'string',
-        format: 'date-time',
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsDateString)({}, { message: 'Prazo de atendimento deve estar no formato válido' }),
-    (0, class_transformer_1.Transform)(({ value }) => (value ? new Date(value) : null)),
-    __metadata("design:type", Date)
-], CreateDesarquivamentoDto.prototype, "prazoAtendimento", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'ID do usuário responsável pelo atendimento',
-        example: 2,
-        type: 'integer',
-    }),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Number)
-], CreateDesarquivamentoDto.prototype, "responsavelId", void 0);
 //# sourceMappingURL=create-desarquivamento.dto.js.map

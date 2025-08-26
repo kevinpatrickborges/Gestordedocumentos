@@ -10,11 +10,6 @@ interface ProtectedRouteProps {
   requireAuth?: boolean
 }
 
-/**
- * Rota protegida por autenticação e/ou nível mínimo de papel (requiredRole).
- * - requireAuth: quando false, redireciona usuários autenticados para home (ex: página de login)
- * - requiredRole: nível mínimo de acesso, considerando hierarquia (ADMIN>COORDENADOR>NUGECID_OPERATOR>USUARIO)
- */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   requiredRole,
@@ -67,10 +62,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   return <>{children}</>
 }
 
-/**
- * Normaliza diferentes formatos de role para o enum UserRole.
- * Aceita string (ex: 'admin') ou objeto { name: string }.
- */
+// Normaliza diferentes formatos de role para o enum UserRole
 function normalizeUserRole(role: unknown): UserRole | undefined {
   if (!role) return undefined
 
@@ -97,10 +89,7 @@ function normalizeUserRole(role: unknown): UserRole | undefined {
   return undefined
 }
 
-/**
- * Verifica se userRole possui acesso ao nível exigido (requiredRole),
- * respeitando hierarquia ADMIN > COORDENADOR > NUGECID_OPERATOR > USUARIO.
- */
+// Função para verificar permissões de role
 function checkRolePermission(userRole: UserRole, requiredRole: UserRole): boolean {
   // Hierarquia de permissões: ADMIN > COORDENADOR > NUGECID_OPERATOR > USUARIO
   const roleHierarchy = {

@@ -58,16 +58,14 @@ export class TransformInterceptor<T> implements NestInterceptor<T, any> {
         };
 
         // Adicionar metadados de paginação se existirem
-        if (data && typeof data === 'object') {
-          if ('items' in data && 'total' in data) {
-            transformedResponse.data = data.items;
-            transformedResponse['pagination'] = {
-              total: data.total,
-              page: data.page || 1,
-              limit: data.limit || 10,
-              totalPages: Math.ceil(data.total / (data.limit || 10)),
-            };
-          }
+        if (
+          data &&
+          typeof data === 'object' &&
+          'data' in data &&
+          'meta' in data
+        ) {
+          transformedResponse.data = data.data;
+          transformedResponse['meta'] = data.meta;
         }
 
         return transformedResponse;

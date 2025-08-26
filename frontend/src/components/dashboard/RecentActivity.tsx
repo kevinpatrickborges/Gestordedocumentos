@@ -12,7 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { formatDate, formatStatus, formatTipo } from '@/utils/format'
+import { formatDate, getStatusLabel, getTipoLabel } from '@/utils/format'
 import { Desarquivamento } from '@/types'
 import { cn } from '@/utils/cn'
 
@@ -145,14 +145,14 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isLoading =
                     variant="outline" 
                     className={cn("text-xs", getStatusColor(activity.status))}
                   >
-                    {formatStatus(activity.status)}
+                    {getStatusLabel(activity.status)}
                   </Badge>
                 </div>
                 
                 <div className="flex items-center gap-4 text-xs text-gray-600">
                   <span className="flex items-center gap-1">
                     <FileText className="h-3 w-3" />
-                    {formatTipo(activity.tipo)}
+                    {getTipoLabel(activity.tipo)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />

@@ -20,6 +20,7 @@ const typeorm_2 = require("typeorm");
 const XLSX = require("xlsx");
 const fs = require("fs");
 const desarquivamento_entity_1 = require("./entities/desarquivamento.entity");
+const tipo_desarquivamento_vo_1 = require("./domain/value-objects/tipo-desarquivamento.vo");
 const tipo_solicitacao_vo_1 = require("./domain/value-objects/tipo-solicitacao.vo");
 const PDFDocument = require("pdfkit");
 const user_entity_1 = require("../users/entities/user.entity");
@@ -45,7 +46,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
         if (Array.isArray(saved)) {
             throw new Error('A operação de salvar retornou um array, mas um único objeto era esperado.');
         }
-        await this.saveAudit(currentUser.id, 'CREATE', 'DESARQUIVAMENTO', `Desarquivamento criado: ${saved.codigoBarras}`, { desarquivamentoId: saved.id });
+        await this.saveDesarquivamentoAudit(currentUser.id, 'CREATE', saved, null);
         this.logger.log(`Desarquivamento criado: ${saved.codigoBarras} por ${currentUser.usuario}`);
         return this.findOne(saved.id);
     }
@@ -57,7 +58,6 @@ let NugecidService = NugecidService_1 = class NugecidService {
             .leftJoinAndSelect('desarquivamento.responsavel', 'responsavel');
         if (search) {
             queryBuilder.andWhere('(desarquivamento.nomeSolicitante ILIKE :search OR ' +
-                'desarquivamento.nomeVitima ILIKE :search OR ' +
                 'desarquivamento.numeroRegistro ILIKE :search OR ' +
                 'desarquivamento.codigoBarras ILIKE :search)', { search: `%${search}%` });
         }
@@ -92,7 +92,6 @@ let NugecidService = NugecidService_1 = class NugecidService {
         const validSortFields = [
             'createdAt',
             'nomeSolicitante',
-            'nomeVitima',
             'status',
             'tipo',
             'prazoAtendimento',
@@ -166,8 +165,15 @@ let NugecidService = NugecidService_1 = class NugecidService {
             try {
                 const createDto = {
                     numeroRegistro: importDto.numero_processo,
+                    numeroProcesso: importDto.numero_processo || '',
                     nomeSolicitante: importDto.requerente,
+                    requerente: importDto.requerente,
                     tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
+                    tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+                    tipoDocumento: importDto.assunto || 'Não especificado',
+                    setorDemandante: 'A verificar',
+                    servidorResponsavel: 'A verificar',
+                    finalidadeDesarquivamento: importDto.assunto || 'Não especificado',
                 };
                 await this.create(createDto, currentUser);
                 result.successCount++;
@@ -210,7 +216,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
             desarquivamento.responsavel = responsavel;
         }
         const updated = await this.desarquivamentoRepository.save(desarquivamento);
-        await this.saveAudit(currentUser.id, 'UPDATE', 'DESARQUIVAMENTO', `Desarquivamento atualizado: ${updated.codigoBarras}`, { desarquivamentoId: updated.id, changes: updateDesarquivamentoDto });
+        await this.saveDesarquivamentoAudit(currentUser.id, 'UPDATE', updated, updateDesarquivamentoDto);
         this.logger.log(`Desarquivamento atualizado: ${updated.codigoBarras} por ${currentUser.usuario}`);
         return this.findOne(updated.id);
     }
@@ -278,13 +284,16 @@ let NugecidService = NugecidService_1 = class NugecidService {
                 const createDto = {
                     tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
                     nomeSolicitante: importDto.nomeCompleto,
-                    nomeVitima: importDto.nomeCompleto,
-                    numeroRegistro: importDto.numDocumento,
+                    requerente: importDto.nomeCompleto,
+                    numeroRegistro: importDto.numProcesso,
+                    numeroProcesso: importDto.numProcesso || '',
+                    numeroNicLaudoAuto: importDto.numDocumento,
                     tipoDocumento: importDto.tipoDocumento,
-                    dataFato: importDto.dataSolicitacao
-                        ? new Date(importDto.dataSolicitacao)
-                        : undefined,
-                    observacoes: `Finalidade: ${importDto.finalidade || 'N/A'} | Setor: ${importDto.setorDemandante || 'N/A'} | Servidor: ${importDto.servidorResponsavel || 'N/A'}`,
+                    tipoDesarquivamento: this.mapTipoDesarquivamentoFromExcel(importDto.desarquivamentoTipo),
+                    setorDemandante: importDto.setorDemandante,
+                    servidorResponsavel: importDto.servidorResponsavel,
+                    finalidadeDesarquivamento: importDto.finalidade,
+                    solicitacaoProrrogacao: importDto.prorrogacao,
                 };
                 await this.create(createDto, currentUser);
                 result.successCount++;
@@ -406,14 +415,23 @@ let NugecidService = NugecidService_1 = class NugecidService {
         const data = {
             tipoSolicitacao: this.mapTipoFromExcel(row['Tipo'] || row['tipo']),
             nomeSolicitante: row['Nome Requerente'] || row['nome_requerente'] || '',
-            nomeVitima: row['Nome Vítima'] || row['nome_vitima'] || '',
+            requerente: row['Requerente'] ||
+                row['requerente'] ||
+                row['Nome Requerente'] ||
+                row['nome_requerente'] ||
+                '',
             numeroRegistro: row['Número Registro'] || row['numero_registro'] || '',
+            numeroProcesso: row['Número Processo'] ||
+                row['numero_processo'] ||
+                row['numeroRegistro'] ||
+                row['numero_registro'] ||
+                '',
             tipoDocumento: row['Tipo Documento'] || row['tipo_documento'] || '',
-            dataFato: row['Data Fato'] ? new Date(row['Data Fato']) : null,
-            finalidade: row['Finalidade'] || row['finalidade'] || '',
-            observacoes: row['Observações'] || row['observacoes'] || '',
+            finalidadeDesarquivamento: row['Finalidade'] || row['finalidade'] || '',
             urgente: this.parseBooleanFromExcel(row['Urgente'] || row['urgente']),
-            localizacaoFisica: row['Localização'] || row['localizacao_fisica'] || '',
+            tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+            setorDemandante: 'A verificar',
+            servidorResponsavel: 'A verificar',
         };
         if (!data.nomeSolicitante) {
             throw new Error('Nome do requerente é obrigatório');
@@ -436,6 +454,14 @@ let NugecidService = NugecidService_1 = class NugecidService {
         if (tipoLower.includes('certidão') || tipoLower.includes('certidao'))
             return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.CERTIDAO;
         return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO;
+    }
+    mapTipoDesarquivamentoFromExcel(tipo) {
+        if (!tipo)
+            return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO;
+        const tipoLower = tipo.toLowerCase().trim();
+        if (tipoLower.includes('digital'))
+            return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.DIGITAL;
+        return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO;
     }
     parseBooleanFromExcel(value) {
         if (typeof value === 'boolean')
@@ -529,15 +555,65 @@ let NugecidService = NugecidService_1 = class NugecidService {
             throw error;
         }
     }
-    async saveAudit(userId, action, resource, details, data) {
+    async saveAudit(userId, action, resource, details, data, resourceId, ipAddress, userAgent) {
         try {
-            const auditData = auditoria_entity_1.Auditoria.createResourceAudit(userId, action, resource, 0, { details, data }, 'unknown', 'unknown');
+            const enrichedData = {
+                details,
+                originalData: data,
+                timestamp: new Date().toISOString(),
+                action,
+                resource,
+                userId,
+                resourceId: resourceId || data?.desarquivamentoId || 0,
+                metadata: {
+                    environment: process.env.NODE_ENV || 'development',
+                    version: process.env.npm_package_version || '1.0.0',
+                    service: 'nugecid-service',
+                },
+            };
+            const auditData = auditoria_entity_1.Auditoria.createResourceAudit(userId, action, resource, resourceId || data?.desarquivamentoId || 0, enrichedData, ipAddress || 'system', userAgent || 'nugecid-service');
             const audit = this.auditoriaRepository.create(auditData);
             await this.auditoriaRepository.save(audit);
+            this.logger.debug(`Auditoria salva: ${action} em ${resource} por usuário ${userId}`, { enrichedData });
         }
         catch (error) {
-            this.logger.error(`Erro ao salvar auditoria: ${error.message}`);
+            this.logger.error(`Erro ao salvar auditoria: ${error.message}`, error.stack);
         }
+    }
+    async saveDesarquivamentoAudit(userId, action, desarquivamento, changes, ipAddress, userAgent) {
+        const details = this.buildAuditDetails(action, desarquivamento, changes);
+        const auditData = {
+            desarquivamentoId: desarquivamento.id,
+            codigoBarras: desarquivamento.codigoBarras,
+            numeroRegistro: desarquivamento.numeroRegistro,
+            nomeSolicitante: desarquivamento.nomeSolicitante,
+            tipoSolicitacao: desarquivamento.tipoSolicitacao,
+            status: desarquivamento.status,
+            changes,
+            previousValues: changes ? this.extractPreviousValues(changes) : null,
+        };
+        await this.saveAudit(userId, action, 'DESARQUIVAMENTO', details, auditData, desarquivamento.id, ipAddress, userAgent);
+    }
+    buildAuditDetails(action, desarquivamento, changes) {
+        const baseInfo = `${desarquivamento.codigoBarras || 'N/A'} - ${desarquivamento.nomeSolicitante || 'N/A'}`;
+        switch (action) {
+            case 'CREATE':
+                return `Novo desarquivamento criado: ${baseInfo} (Tipo: ${desarquivamento.tipoSolicitacao}, Status: ${desarquivamento.status})`;
+            case 'UPDATE':
+                const changedFields = changes ? Object.keys(changes).join(', ') : 'N/A';
+                return `Desarquivamento atualizado: ${baseInfo} (Campos alterados: ${changedFields})`;
+            case 'DELETE':
+                return `Desarquivamento removido: ${baseInfo}`;
+            case 'RESTORE':
+                return `Desarquivamento restaurado: ${baseInfo}`;
+            case 'VIEW':
+                return `Desarquivamento visualizado: ${baseInfo}`;
+            default:
+                return `Ação ${action} executada em desarquivamento: ${baseInfo}`;
+        }
+    }
+    extractPreviousValues(changes) {
+        return null;
     }
 };
 exports.NugecidService = NugecidService;

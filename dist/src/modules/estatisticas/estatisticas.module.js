@@ -11,13 +11,15 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const estatisticas_controller_1 = require("./estatisticas.controller");
 const estatisticas_service_1 = require("./estatisticas.service");
-const desarquivamento_entity_1 = require("../nugecid/entities/desarquivamento.entity");
+const desarquivamento_typeorm_entity_1 = require("../nugecid/infrastructure/entities/desarquivamento.typeorm-entity");
 let EstatisticasModule = class EstatisticasModule {
 };
 exports.EstatisticasModule = EstatisticasModule;
 exports.EstatisticasModule = EstatisticasModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([desarquivamento_entity_1.Desarquivamento])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([desarquivamento_typeorm_entity_1.DesarquivamentoTypeOrmEntity]),
+        ],
         controllers: [estatisticas_controller_1.EstatisticasController],
         providers: [estatisticas_service_1.EstatisticasService],
     })

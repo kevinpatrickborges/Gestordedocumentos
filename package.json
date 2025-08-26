@@ -1,7 +1,7 @@
 {
   "name": "sgc-itep-nestjs",
-  "version": "2.0.0",
-  "description": "Sistema Integrado de Gestão Documental - ITEP-RN (NestJS)",
+  "version": "1.0.0",
+  "description": "Sistema Integrado de Gestão Documental - ITEP-RN",
   "author": "Kevin Patrick Borges",
   "private": true,
   "license": "UNLICENSED",

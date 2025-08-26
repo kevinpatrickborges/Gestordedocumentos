@@ -30,9 +30,9 @@ let UpdateDesarquivamentoUseCase = class UpdateDesarquivamentoUseCase {
         if (!desarquivamento.canBeEditedBy(request.userId, request.userRoles)) {
             throw new Error('Acesso negado: você não tem permissão para editar este desarquivamento');
         }
-        await this.applyUpdates(desarquivamento, request);
-        const updatedDesarquivamento = await this.desarquivamentoRepository.update(desarquivamento);
-        return this.mapToResponse(updatedDesarquivamento);
+        const updatedDesarquivamento = await this.applyUpdates(desarquivamento, request);
+        const savedDesarquivamento = await this.desarquivamentoRepository.update(updatedDesarquivamento);
+        return this.mapToResponse(savedDesarquivamento);
     }
     validateRequest(request) {
         if (!request.id || request.id <= 0 || !Number.isInteger(request.id)) {
@@ -83,24 +83,51 @@ let UpdateDesarquivamentoUseCase = class UpdateDesarquivamentoUseCase {
         }
     }
     async applyUpdates(desarquivamento, request) {
-        if (request.localizacaoFisica !== undefined) {
-            desarquivamento.setPhysicalLocation(request.localizacaoFisica);
-        }
-        if (request.responsavelId !== undefined) {
-            desarquivamento.assignResponsible(request.responsavelId);
-        }
-        if (request.status !== undefined) {
-            await this.updateStatus(desarquivamento, request.status, request.resultadoAtendimento);
-        }
         if (this.requiresReconstruction(request)) {
-            if (request.nomeVitima !== undefined ||
-                request.tipoDocumento !== undefined ||
-                request.dataFato !== undefined ||
-                request.prazoAtendimento !== undefined ||
-                request.finalidade !== undefined ||
-                request.observacoes !== undefined) {
-                throw new Error('Atualização de campos específicos ainda não implementada. Use a reconstrução da entidade.');
+            const currentData = desarquivamento.toPlainObject();
+            const updatedData = {
+                ...currentData,
+                ...(request.nomeVitima !== undefined && {
+                    nomeVitima: request.nomeVitima,
+                }),
+                ...(request.tipoDocumento !== undefined && {
+                    tipoDocumento: request.tipoDocumento,
+                }),
+                ...(request.dataFato !== undefined && { dataFato: request.dataFato }),
+                ...(request.prazoAtendimento !== undefined && {
+                    prazoAtendimento: request.prazoAtendimento,
+                }),
+                ...(request.finalidade !== undefined && {
+                    finalidade: request.finalidade,
+                }),
+                ...(request.observacoes !== undefined && {
+                    observacoes: request.observacoes,
+                }),
+                ...(request.localizacaoFisica !== undefined && {
+                    localizacaoFisica: request.localizacaoFisica,
+                }),
+                ...(request.responsavelId !== undefined && {
+                    responsavelId: request.responsavelId,
+                }),
+                updatedAt: new Date(),
+            };
+            const reconstructedEntity = domain_1.DesarquivamentoDomain.reconstruct(updatedData);
+            if (request.status !== undefined) {
+                await this.updateStatus(reconstructedEntity, request.status, request.resultadoAtendimento);
             }
+            return reconstructedEntity;
+        }
+        else {
+            if (request.localizacaoFisica !== undefined) {
+                desarquivamento.setPhysicalLocation(request.localizacaoFisica);
+            }
+            if (request.responsavelId !== undefined) {
+                desarquivamento.assignResponsible(request.responsavelId);
+            }
+            if (request.status !== undefined) {
+                await this.updateStatus(desarquivamento, request.status, request.resultadoAtendimento);
+            }
+            return desarquivamento;
         }
     }
     async updateStatus(desarquivamento, newStatus, resultadoAtendimento) {

@@ -31,6 +31,7 @@ let DesarquivamentoTypeOrmEntity = DesarquivamentoTypeOrmEntity_1 = class Desarq
         entity.nomeSolicitante = domain.nomeSolicitante;
         entity.nomeVitima = domain.nomeVitima;
         entity.numeroRegistro = domain.numeroRegistro.value;
+        entity.numeroProcesso = domain.numeroProcesso;
         entity.tipoDocumento = domain.tipoDocumento;
         entity.dataFato = domain.dataFato;
         entity.prazoAtendimento = domain.prazoAtendimento;
@@ -56,6 +57,7 @@ let DesarquivamentoTypeOrmEntity = DesarquivamentoTypeOrmEntity_1 = class Desarq
             nomeSolicitante: this.nomeSolicitante,
             nomeVitima: this.nomeVitima,
             numeroRegistro: this.numeroRegistro,
+            numeroProcesso: this.numeroProcesso,
             tipoDocumento: this.tipoDocumento,
             dataFato: this.dataFato,
             prazoAtendimento: this.prazoAtendimento,
@@ -99,6 +101,10 @@ __decorate([
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "nomeSolicitante", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: 'requerente', length: 255, nullable: false }),
+    __metadata("design:type", String)
+], DesarquivamentoTypeOrmEntity.prototype, "requerente", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: 'nome_vitima', length: 255, nullable: true }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "nomeVitima", void 0);
@@ -106,6 +112,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'numero_registro', length: 50, nullable: false }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "numeroRegistro", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'numero_processo', length: 50, nullable: false }),
+    __metadata("design:type", String)
+], DesarquivamentoTypeOrmEntity.prototype, "numeroProcesso", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'tipo_documento', length: 100, nullable: true }),
     __metadata("design:type", String)

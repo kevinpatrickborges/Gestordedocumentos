@@ -5,8 +5,10 @@ export interface DesarquivamentoDomainProps {
     tipoSolicitacao: TipoSolicitacao;
     status: StatusDesarquivamento;
     nomeSolicitante: string;
+    requerente: string;
     nomeVitima?: string;
     numeroRegistro: NumeroRegistro;
+    numeroProcesso?: string;
     tipoDocumento?: string;
     dataFato?: Date;
     prazoAtendimento?: Date;
@@ -28,8 +30,10 @@ export declare class DesarquivamentoDomain {
     private readonly _tipoSolicitacao;
     private _status;
     private readonly _nomeSolicitante;
+    private readonly _requerente;
     private readonly _nomeVitima;
     private readonly _numeroRegistro;
+    private readonly _numeroProcesso;
     private readonly _tipoDocumento;
     private readonly _dataFato;
     private _prazoAtendimento;
@@ -52,8 +56,10 @@ export declare class DesarquivamentoDomain {
     get tipoSolicitacao(): TipoSolicitacao;
     get status(): StatusDesarquivamento;
     get nomeSolicitante(): string;
+    get requerente(): string;
     get nomeVitima(): string | undefined;
     get numeroRegistro(): NumeroRegistro;
+    get numeroProcesso(): string | undefined;
     get tipoDocumento(): string | undefined;
     get dataFato(): Date | undefined;
     get prazoAtendimento(): Date | undefined;

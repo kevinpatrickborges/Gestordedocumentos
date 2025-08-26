@@ -15,6 +15,10 @@ import {
   Desarquivamento,
   StatusDesarquivamento,
 } from './entities/desarquivamento.entity';
+import {
+  TipoDesarquivamento,
+  TipoDesarquivamentoEnum,
+} from './domain/value-objects/tipo-desarquivamento.vo';
 import { TipoSolicitacaoEnum } from './domain/value-objects/tipo-solicitacao.vo';
 import * as PDFDocument from 'pdfkit';
 import { User } from '../users/entities/user.entity';
@@ -80,13 +84,12 @@ export class NugecidService {
       );
     }
 
-    // Salva auditoria
-    await this.saveAudit(
+    // Salva auditoria detalhada
+    await this.saveDesarquivamentoAudit(
       currentUser.id,
       'CREATE',
-      'DESARQUIVAMENTO',
-      `Desarquivamento criado: ${saved.codigoBarras}`,
-      { desarquivamentoId: saved.id },
+      saved,
+      null, // sem mudanças na criação
     );
 
     this.logger.log(
@@ -125,7 +128,6 @@ export class NugecidService {
     if (search) {
       queryBuilder.andWhere(
         '(desarquivamento.nomeSolicitante ILIKE :search OR ' +
-          'desarquivamento.nomeVitima ILIKE :search OR ' +
           'desarquivamento.numeroRegistro ILIKE :search OR ' +
           'desarquivamento.codigoBarras ILIKE :search)',
         { search: `%${search}%` },
@@ -170,7 +172,6 @@ export class NugecidService {
     const validSortFields = [
       'createdAt',
       'nomeSolicitante',
-      'nomeVitima',
       'status',
       'tipo',
       'prazoAtendimento',
@@ -273,8 +274,15 @@ export class NugecidService {
       try {
         const createDto: CreateDesarquivamentoDto = {
           numeroRegistro: importDto.numero_processo,
+          numeroProcesso: importDto.numero_processo || '',
           nomeSolicitante: importDto.requerente,
-          tipoSolicitacao: TipoSolicitacaoEnum.DESARQUIVAMENTO, // Adicionado tipo padrão
+          requerente: importDto.requerente,
+          tipoSolicitacao: TipoSolicitacaoEnum.DESARQUIVAMENTO,
+          tipoDesarquivamento: TipoDesarquivamentoEnum.FISICO, // Valor padrão
+          tipoDocumento: importDto.assunto || 'Não especificado',
+          setorDemandante: 'A verificar', // Placeholder
+          servidorResponsavel: 'A verificar', // Placeholder
+          finalidadeDesarquivamento: importDto.assunto || 'Não especificado',
         };
 
         await this.create(createDto, currentUser);
@@ -347,13 +355,12 @@ export class NugecidService {
 
     const updated = await this.desarquivamentoRepository.save(desarquivamento);
 
-    // Salva auditoria
-    await this.saveAudit(
+    // Salva auditoria detalhada
+    await this.saveDesarquivamentoAudit(
       currentUser.id,
       'UPDATE',
-      'DESARQUIVAMENTO',
-      `Desarquivamento atualizado: ${updated.codigoBarras}`,
-      { desarquivamentoId: updated.id, changes: updateDesarquivamentoDto },
+      updated,
+      updateDesarquivamentoDto,
     );
 
     this.logger.log(
@@ -447,13 +454,18 @@ export class NugecidService {
         const createDto: CreateDesarquivamentoDto = {
           tipoSolicitacao: TipoSolicitacaoEnum.DESARQUIVAMENTO,
           nomeSolicitante: importDto.nomeCompleto,
-          nomeVitima: importDto.nomeCompleto, // Usando o mesmo nome
-          numeroRegistro: importDto.numDocumento,
+          requerente: importDto.nomeCompleto,
+          numeroRegistro: importDto.numProcesso,
+          numeroProcesso: importDto.numProcesso || '',
+          numeroNicLaudoAuto: importDto.numDocumento,
           tipoDocumento: importDto.tipoDocumento,
-          dataFato: importDto.dataSolicitacao
-            ? new Date(importDto.dataSolicitacao)
-            : undefined,
-          observacoes: `Finalidade: ${importDto.finalidade || 'N/A'} | Setor: ${importDto.setorDemandante || 'N/A'} | Servidor: ${importDto.servidorResponsavel || 'N/A'}`,
+          tipoDesarquivamento: this.mapTipoDesarquivamentoFromExcel(
+            importDto.desarquivamentoTipo,
+          ) as TipoDesarquivamentoEnum,
+          setorDemandante: importDto.setorDemandante,
+          servidorResponsavel: importDto.servidorResponsavel,
+          finalidadeDesarquivamento: importDto.finalidade,
+          solicitacaoProrrogacao: importDto.prorrogacao,
         };
 
         await this.create(createDto, currentUser);
@@ -656,14 +668,25 @@ export class NugecidService {
     const data: CreateDesarquivamentoDto = {
       tipoSolicitacao: this.mapTipoFromExcel(row['Tipo'] || row['tipo']),
       nomeSolicitante: row['Nome Requerente'] || row['nome_requerente'] || '',
-      nomeVitima: row['Nome Vítima'] || row['nome_vitima'] || '',
+      requerente:
+        row['Requerente'] ||
+        row['requerente'] ||
+        row['Nome Requerente'] ||
+        row['nome_requerente'] ||
+        '',
       numeroRegistro: row['Número Registro'] || row['numero_registro'] || '',
+      numeroProcesso:
+        row['Número Processo'] ||
+        row['numero_processo'] ||
+        row['numeroRegistro'] ||
+        row['numero_registro'] ||
+        '',
       tipoDocumento: row['Tipo Documento'] || row['tipo_documento'] || '',
-      dataFato: row['Data Fato'] ? new Date(row['Data Fato']) : null,
-      finalidade: row['Finalidade'] || row['finalidade'] || '',
-      observacoes: row['Observações'] || row['observacoes'] || '',
+      finalidadeDesarquivamento: row['Finalidade'] || row['finalidade'] || '',
       urgente: this.parseBooleanFromExcel(row['Urgente'] || row['urgente']),
-      localizacaoFisica: row['Localização'] || row['localizacao_fisica'] || '',
+      tipoDesarquivamento: TipoDesarquivamentoEnum.FISICO, // Valor padrão
+      setorDemandante: 'A verificar', // Placeholder
+      servidorResponsavel: 'A verificar', // Placeholder
     };
 
     // Validações básicas
@@ -695,6 +718,18 @@ export class NugecidService {
       return TipoSolicitacaoEnum.CERTIDAO;
 
     return TipoSolicitacaoEnum.DESARQUIVAMENTO;
+  }
+
+  /**
+   * Mapeia tipo de desarquivamento da planilha para enum
+   */
+  private mapTipoDesarquivamentoFromExcel(
+    tipo: string,
+  ): TipoDesarquivamentoEnum {
+    if (!tipo) return TipoDesarquivamentoEnum.FISICO;
+    const tipoLower = tipo.toLowerCase().trim();
+    if (tipoLower.includes('digital')) return TipoDesarquivamentoEnum.DIGITAL;
+    return TipoDesarquivamentoEnum.FISICO;
   }
 
   /**
@@ -836,7 +871,7 @@ export class NugecidService {
   }
 
   /**
-   * Salva auditoria
+   * Salva auditoria com informações detalhadas
    */
   private async saveAudit(
     userId: number,
@@ -844,21 +879,122 @@ export class NugecidService {
     resource: string,
     details: string,
     data?: any,
+    resourceId?: number,
+    ipAddress?: string,
+    userAgent?: string,
   ): Promise<void> {
     try {
+      // Enriquece os dados de auditoria com informações contextuais
+      const enrichedData = {
+        details,
+        originalData: data,
+        timestamp: new Date().toISOString(),
+        action,
+        resource,
+        userId,
+        resourceId: resourceId || data?.desarquivamentoId || 0,
+        metadata: {
+          environment: process.env.NODE_ENV || 'development',
+          version: process.env.npm_package_version || '1.0.0',
+          service: 'nugecid-service',
+        },
+      };
+
       const auditData = Auditoria.createResourceAudit(
         userId,
         action as any,
         resource as any,
-        0, // resourceId - usando 0 como padrão
-        { details, data }, // details como objeto
-        'unknown', // ipAddress - usando 'unknown' como padrão
-        'unknown', // userAgent - usando 'unknown' como padrão
+        resourceId || data?.desarquivamentoId || 0,
+        enrichedData,
+        ipAddress || 'system',
+        userAgent || 'nugecid-service',
       );
+
       const audit = this.auditoriaRepository.create(auditData);
       await this.auditoriaRepository.save(audit);
+
+      this.logger.debug(
+        `Auditoria salva: ${action} em ${resource} por usuário ${userId}`,
+        { enrichedData },
+      );
     } catch (error) {
-      this.logger.error(`Erro ao salvar auditoria: ${error.message}`);
+      this.logger.error(
+        `Erro ao salvar auditoria: ${error.message}`,
+        error.stack,
+      );
+      // Não propaga o erro para não interromper o fluxo principal
     }
+  }
+
+  /**
+   * Salva auditoria específica para desarquivamentos com mais contexto
+   */
+  private async saveDesarquivamentoAudit(
+    userId: number,
+    action: 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE' | 'VIEW',
+    desarquivamento: Partial<Desarquivamento>,
+    changes?: any,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<void> {
+    const details = this.buildAuditDetails(action, desarquivamento, changes);
+
+    const auditData = {
+      desarquivamentoId: desarquivamento.id,
+      codigoBarras: desarquivamento.codigoBarras,
+      numeroRegistro: desarquivamento.numeroRegistro,
+      nomeSolicitante: desarquivamento.nomeSolicitante,
+      tipoSolicitacao: desarquivamento.tipoSolicitacao,
+      status: desarquivamento.status,
+      changes,
+      previousValues: changes ? this.extractPreviousValues(changes) : null,
+    };
+
+    await this.saveAudit(
+      userId,
+      action,
+      'DESARQUIVAMENTO',
+      details,
+      auditData,
+      desarquivamento.id,
+      ipAddress,
+      userAgent,
+    );
+  }
+
+  /**
+   * Constrói detalhes específicos da auditoria baseado na ação
+   */
+  private buildAuditDetails(
+    action: string,
+    desarquivamento: Partial<Desarquivamento>,
+    changes?: any,
+  ): string {
+    const baseInfo = `${desarquivamento.codigoBarras || 'N/A'} - ${desarquivamento.nomeSolicitante || 'N/A'}`;
+
+    switch (action) {
+      case 'CREATE':
+        return `Novo desarquivamento criado: ${baseInfo} (Tipo: ${desarquivamento.tipoSolicitacao}, Status: ${desarquivamento.status})`;
+      case 'UPDATE':
+        const changedFields = changes ? Object.keys(changes).join(', ') : 'N/A';
+        return `Desarquivamento atualizado: ${baseInfo} (Campos alterados: ${changedFields})`;
+      case 'DELETE':
+        return `Desarquivamento removido: ${baseInfo}`;
+      case 'RESTORE':
+        return `Desarquivamento restaurado: ${baseInfo}`;
+      case 'VIEW':
+        return `Desarquivamento visualizado: ${baseInfo}`;
+      default:
+        return `Ação ${action} executada em desarquivamento: ${baseInfo}`;
+    }
+  }
+
+  /**
+   * Extrai valores anteriores para auditoria de mudanças
+   */
+  private extractPreviousValues(changes: any): any {
+    // Esta função seria implementada para capturar valores anteriores
+    // Por enquanto, retorna null, mas pode ser expandida conforme necessário
+    return null;
   }
 }

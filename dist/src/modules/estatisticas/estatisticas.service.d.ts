@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Desarquivamento } from '../nugecid/entities/desarquivamento.entity';
+import { DesarquivamentoTypeOrmEntity } from '../nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
 export interface CardData {
     totalAtendimentos: number;
     totalDesarquivamentos: number;
@@ -13,7 +13,7 @@ export interface ChartData {
 }
 export declare class EstatisticasService {
     private readonly desarquivamentoRepo;
-    constructor(desarquivamentoRepo: Repository<Desarquivamento>);
+    constructor(desarquivamentoRepo: Repository<DesarquivamentoTypeOrmEntity>);
     getCardData(): Promise<CardData>;
     getAtendimentosPorMes(): Promise<ChartData[]>;
     getStatusDistribuicao(): Promise<ChartData[]>;

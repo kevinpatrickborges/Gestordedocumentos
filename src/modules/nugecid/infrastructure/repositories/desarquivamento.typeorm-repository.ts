@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, In } from 'typeorm';
+import { Repository, SelectQueryBuilder, In, Brackets } from 'typeorm';
 import { DesarquivamentoTypeOrmEntity } from '../entities/desarquivamento.typeorm-entity';
 import {
   IDesarquivamentoRepository,
@@ -53,7 +53,13 @@ export class DesarquivamentoTypeOrmRepository
     const { page = 1, limit = 10, sortBy, sortOrder, filters } = options;
     const queryBuilder = this.repository.createQueryBuilder('d');
 
-    this.applyFilters(queryBuilder, filters);
+    // Garantir que registros soft deleted não sejam incluídos por padrão
+    const filtersWithDefaults = {
+      ...filters,
+      incluirExcluidos: filters?.incluirExcluidos ?? false
+    };
+
+    this.applyFilters(queryBuilder, filtersWithDefaults);
 
     if (sortBy) {
       queryBuilder.orderBy(`d.${sortBy}`, sortOrder || 'ASC');
@@ -64,7 +70,6 @@ export class DesarquivamentoTypeOrmRepository
     const [entities, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
-      .leftJoinAndSelect('d.responsavel', 'responsavel')
       .getManyAndCount();
 
     return {
@@ -132,6 +137,7 @@ export class DesarquivamentoTypeOrmRepository
       .where(
         "d.prazoAtendimento < NOW() AND d.status NOT IN ('CONCLUIDO', 'CANCELADO')",
       )
+      .andWhere('d.deletedAt IS NULL')
       .getMany();
     return entities.map(e => this.mapper.toDomain(e));
   }
@@ -148,8 +154,11 @@ export class DesarquivamentoTypeOrmRepository
   ): Promise<DashboardStats> {
     const qb = this.repository.createQueryBuilder('d');
 
+    // Excluir registros soft deleted das estatísticas
+    qb.where('d.deletedAt IS NULL');
+
     if (dateRange) {
-      qb.where('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
+      qb.andWhere('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
     }
 
     if (userId && userRoles && !userRoles.includes('ADMIN')) {
@@ -194,8 +203,10 @@ export class DesarquivamentoTypeOrmRepository
 
     const createFilteredQuery = () => {
       const queryBuilder = this.repository.createQueryBuilder('d');
+      // Excluir registros soft deleted
+      queryBuilder.where('d.deletedAt IS NULL');
       if (dateRange) {
-        queryBuilder.where(
+        queryBuilder.andWhere(
           'd.createdAt BETWEEN :startDate AND :endDate',
           dateRange,
         );
@@ -236,6 +247,7 @@ export class DesarquivamentoTypeOrmRepository
         )
         .leftJoin('d.responsavel', 'u')
         .where('d.responsavelId IS NOT NULL')
+        .andWhere('d.deletedAt IS NULL')
         .groupBy('d.responsavelId, u.nome')
         .getRawMany();
     }
@@ -353,8 +365,13 @@ export class DesarquivamentoTypeOrmRepository
 
     if (search) {
       qb.andWhere(
-        '(d.nomeSolicitante ILIKE :search OR d.nomeVitima ILIKE :search OR d.numeroRegistro ILIKE :search OR d.codigoBarras ILIKE :search)',
-        { search: `%${search}%` },
+        new Brackets(qb => {
+          qb.where('d.nomeSolicitante ILIKE :search', { search: `%${search}%` })
+            .orWhere('d.numeroRegistro ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('d.codigoBarras ILIKE :search', { search: `%${search}%` });
+        }),
       );
     }
 

@@ -47,21 +47,71 @@ let NugecidController = NugecidController_1 = class NugecidController {
         this.logger = new common_1.Logger(NugecidController_1.name);
     }
     async create(createDesarquivamentoDto, currentUser, req, res) {
-        const result = await this.createDesarquivamentoUseCase.execute({
-            ...createDesarquivamentoDto,
-            urgente: createDesarquivamentoDto.urgente || false,
-            criadoPorId: currentUser.id,
-        });
-        this.logger.log(`Desarquivamento criado: ${result.id} por ${currentUser.usuario}`);
-        if (req.headers.accept?.includes('application/json')) {
-            return res.status(common_1.HttpStatus.CREATED).json({
-                success: true,
-                message: 'Desarquivamento criado com sucesso',
-                data: result,
+        try {
+            if (!currentUser || !currentUser.id) {
+                this.logger.error('Tentativa de criação sem usuário válido');
+                throw new common_1.ForbiddenException('Usuário não identificado');
+            }
+            this.logger.log(`Iniciando criação de desarquivamento por ${currentUser.usuario} (ID: ${currentUser.id})`);
+            const result = await this.createDesarquivamentoUseCase.execute({
+                ...createDesarquivamentoDto,
+                numeroProcesso: createDesarquivamentoDto.numeroProcesso,
+                requerente: createDesarquivamentoDto.requerente,
+                urgente: createDesarquivamentoDto.urgente ?? false,
+                criadoPorId: currentUser.id,
             });
+            this.logger.log(`Desarquivamento criado com sucesso: ${result.id} por ${currentUser.usuario}`);
+            if (req.headers.accept?.includes('application/json')) {
+                return res.status(common_1.HttpStatus.CREATED).json({
+                    success: true,
+                    message: 'Desarquivamento criado com sucesso',
+                    data: result,
+                    timestamp: new Date().toISOString(),
+                });
+            }
+            else {
+                return res.redirect(`/nugecid/${result.id}?created=true`);
+            }
         }
-        else {
-            return res.redirect(`/nugecid/${result.id}?created=true`);
+        catch (error) {
+            this.logger.error(`Erro ao criar desarquivamento para usuário ${currentUser?.usuario || 'desconhecido'}: ${error.message}`, error.stack);
+            if (error.message?.includes('já existe') ||
+                error.message?.includes('duplicado')) {
+                throw new common_1.BadRequestException({
+                    success: false,
+                    message: 'Registro já existe no sistema',
+                    error: 'DUPLICATE_RECORD',
+                    timestamp: new Date().toISOString(),
+                });
+            }
+            if (error.message?.includes('não encontrado') ||
+                error.message?.includes('inválido')) {
+                throw new common_1.BadRequestException({
+                    success: false,
+                    message: error.message || 'Dados fornecidos são inválidos',
+                    error: 'VALIDATION_ERROR',
+                    timestamp: new Date().toISOString(),
+                });
+            }
+            if (error.message?.includes('permissão') ||
+                error.message?.includes('autorizado')) {
+                throw new common_1.ForbiddenException({
+                    success: false,
+                    message: 'Você não tem permissão para realizar esta operação',
+                    error: 'PERMISSION_DENIED',
+                    timestamp: new Date().toISOString(),
+                });
+            }
+            if (error instanceof common_1.BadRequestException ||
+                error instanceof common_1.ForbiddenException) {
+                throw error;
+            }
+            throw new common_1.InternalServerErrorException({
+                success: false,
+                message: 'Erro interno do servidor. Tente novamente mais tarde.',
+                error: 'INTERNAL_ERROR',
+                timestamp: new Date().toISOString(),
+            });
         }
     }
     async importDesarquivamentos(file, currentUser, res) {
@@ -146,7 +196,7 @@ let NugecidController = NugecidController_1 = class NugecidController {
         if (req.headers.accept?.includes('application/json')) {
             return res.json({
                 success: true,
-                data: result,
+                data: result.data,
                 meta: {
                     page: result.page,
                     limit: result.limit,
@@ -336,21 +386,29 @@ let NugecidController = NugecidController_1 = class NugecidController {
         }
     }
     async remove(id, currentUser, req, res) {
-        await this.deleteDesarquivamentoUseCase.execute({
-            id,
-            userId: currentUser.id,
-            userRoles: [currentUser.role?.name || 'USER'],
-            permanent: false,
-        });
-        this.logger.log(`Desarquivamento removido: ${id} por ${currentUser.usuario}`);
-        if (req.headers.accept?.includes('application/json')) {
-            return res.json({
-                success: true,
-                message: 'Desarquivamento removido com sucesso',
+        this.logger.log(`[EXCLUSÃO] Iniciando exclusão do desarquivamento ID: ${id} por usuário: ${currentUser.usuario} (ID: ${currentUser.id})`);
+        try {
+            await this.deleteDesarquivamentoUseCase.execute({
+                id,
+                userId: currentUser.id,
+                userRoles: [currentUser.role?.name || 'USER'],
+                permanent: false,
             });
+            this.logger.log(`[EXCLUSÃO] ✅ Desarquivamento ID: ${id} foi EXCLUÍDO com sucesso (soft delete) por ${currentUser.usuario}`);
+            this.logger.log(`[EXCLUSÃO] ✅ Registro ID: ${id} agora possui deletedAt definido e não aparecerá mais nas listagens`);
+            if (req.headers.accept?.includes('application/json')) {
+                return res.json({
+                    success: true,
+                    message: 'Desarquivamento removido com sucesso',
+                });
+            }
+            else {
+                return res.redirect('/nugecid?deleted=true');
+            }
         }
-        else {
-            return res.redirect('/nugecid?deleted=true');
+        catch (error) {
+            this.logger.error(`[EXCLUSÃO] ❌ Erro ao excluir desarquivamento ID: ${id} - ${error.message}`);
+            throw error;
         }
     }
     async restore(id, currentUser, req, res) {
@@ -421,6 +479,9 @@ __decorate([
     }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Não autorizado' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Acesso negado' }),
+    (0, swagger_1.ApiResponse)({ status: 409, description: 'Conflito - registro já existe' }),
+    (0, swagger_1.ApiResponse)({ status: 500, description: 'Erro interno do servidor' }),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Body)()),

@@ -84,18 +84,17 @@ export interface Desarquivamento {
 
 // DTOs
 export interface CreateDesarquivamentoDto {
-  tipo: TipoSolicitacao
-  nomeRequerente: string
-  nomeVitima?: string
+  tipoSolicitacao: TipoSolicitacao
+  tipoDesarquivamento: TipoDesarquivamento
+  nomeSolicitante: string
+  numeroNicLaudoAuto?: string
   numeroRegistro: string
-  tipoDocumento?: string
-  dataFato?: string
-  finalidade?: string
-  observacoes?: string
+  tipoDocumento: string
+  setorDemandante: string
+  servidorResponsavel: string
+  finalidadeDesarquivamento: string
+  solicitacaoProrrogacao: boolean
   urgente?: boolean
-  localizacaoFisica?: string
-  prazoAtendimento?: string
-  responsavelId?: number
 }
 
 export interface UpdateDesarquivamentoDto extends Partial<CreateDesarquivamentoDto> {

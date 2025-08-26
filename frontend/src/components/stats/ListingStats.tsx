@@ -16,8 +16,7 @@ interface StatsData {
   pendente: number
   emAnalise: number
   aprovado: number
-  rejeitado: number
-  vencidos: number
+  expirados: number
 }
 
 interface ListingStatsProps {
@@ -65,15 +64,7 @@ const ListingStats: React.FC<ListingStatsProps> = ({
       borderColor: 'border-green-200'
     },
     {
-      label: 'Rejeitados',
-      value: stats.rejeitado,
-      icon: XCircle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-      borderColor: 'border-red-200'
-    },
-    {
-      label: 'Vencidos',
+      label: 'Expirados',
       value: stats.vencidos,
       icon: AlertTriangle,
       color: 'text-red-600',

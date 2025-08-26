@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Desarquivamento, StatusDesarquivamento, TipoSolicitacao } from '@/types'
-import { formatDate, formatStatus, formatTipo } from '@/utils/format'
+import { formatDate, getStatusLabel, getTipoLabel } from '@/utils/format'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/utils/cn'
 
@@ -80,7 +80,7 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
         return 'bg-blue-100 text-blue-800 border-blue-200'
       case TipoSolicitacao.VISTA:
         return 'bg-orange-100 text-orange-800 border-orange-200'
-      case TipoSolicitacao.CERTIDAO:
+      case TipoSolicitacao.PRONTUÁRIO_CIVIL:
         return 'bg-gray-100 text-gray-800 border-gray-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
@@ -248,7 +248,7 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
                         variant="outline" 
                         className={cn("text-xs", getTipoColor(item.tipo || TipoSolicitacao.DESARQUIVAMENTO))}
                       >
-                        {formatTipo(item.tipo)}
+                        {getTipoLabel(item.tipo)}
                       </Badge>
                     </TableCell>
                     
@@ -264,7 +264,7 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
                         variant="outline" 
                         className={cn("text-xs", getStatusColor(item.status))}
                       >
-                        {formatStatus(item.status)}
+                        {getStatusLabel(item.status)}
                       </Badge>
                     </TableCell>
                     

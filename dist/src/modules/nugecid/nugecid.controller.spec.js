@@ -6,6 +6,7 @@ const nugecid_controller_1 = require("./nugecid.controller");
 const use_cases_1 = require("./application/use-cases");
 const desarquivamento_entity_1 = require("./entities/desarquivamento.entity");
 const role_type_enum_1 = require("../users/enums/role-type.enum");
+const tipo_desarquivamento_vo_1 = require("./domain/value-objects/tipo-desarquivamento.vo");
 const tipo_solicitacao_vo_1 = require("./domain/value-objects/tipo-solicitacao.vo");
 describe('NugecidController', () => {
     let controller;
@@ -180,7 +181,14 @@ describe('NugecidController', () => {
         const createDto = {
             tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
             nomeSolicitante: 'João Silva',
+            requerente: 'João Silva',
             numeroRegistro: '12345',
+            numeroProcesso: '12345-PROC',
+            tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+            tipoDocumento: 'Laudo',
+            setorDemandante: 'Delegacia',
+            servidorResponsavel: 'Servidor Teste',
+            finalidadeDesarquivamento: 'Para processo',
         };
         it('should create a new desarquivamento successfully', async () => {
             mockCreateDesarquivamentoUseCase.execute.mockResolvedValue(mockDesarquivamento);

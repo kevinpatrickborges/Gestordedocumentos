@@ -48,8 +48,12 @@ export declare class NugecidService {
     getDashboardStats(): Promise<DashboardStats>;
     private createFromExcelRow;
     private mapTipoFromExcel;
+    private mapTipoDesarquivamentoFromExcel;
     private parseBooleanFromExcel;
     private getStatusColor;
     generatePdf(desarquivamento: Desarquivamento): Promise<Buffer>;
     private saveAudit;
+    private saveDesarquivamentoAudit;
+    private buildAuditDetails;
+    private extractPreviousValues;
 }

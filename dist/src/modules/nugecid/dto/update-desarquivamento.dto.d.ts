@@ -1,9 +1,19 @@
 import { StatusDesarquivamento } from '../entities/desarquivamento.entity';
 import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
+import { TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
 export declare class UpdateDesarquivamentoDto {
     tipo?: TipoSolicitacaoEnum;
+    tipoSolicitacao?: TipoSolicitacaoEnum;
+    tipoDesarquivamento?: TipoDesarquivamentoEnum;
+    requerente?: string;
+    numeroNicLaudoAuto?: string;
+    numeroProcesso?: string;
+    setorDemandante?: string;
+    servidorResponsavel?: string;
+    finalidadeDesarquivamento?: string;
+    solicitacaoProrrogacao?: boolean;
     status?: StatusDesarquivamento;
-    nomeRequerente?: string;
+    nomeSolicitante?: string;
     nomeVitima?: string;
     numeroRegistro?: string;
     tipoDocumento?: string;

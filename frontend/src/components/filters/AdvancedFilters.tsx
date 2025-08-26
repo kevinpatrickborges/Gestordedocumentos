@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { StatusDesarquivamento, TipoSolicitacao } from '@/types'
-import { formatStatus, formatTipo } from '@/utils/format'
+import { getStatusLabel, getTipoLabel } from '@/utils/format'
 
 interface FilterState {
   search: string
@@ -251,7 +251,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               )}
               {filters.status && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Status: {formatStatus(filters.status)}
+                  Status: {getStatusLabel(filters.status)}
                   <X 
                     className="h-3 w-3 cursor-pointer" 
                     onClick={() => handleFilterChange('status', '')}
@@ -260,7 +260,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               )}
               {filters.tipo && (
                 <Badge variant="secondary" className="flex items-center gap-1">
-                  Tipo: {formatTipo(filters.tipo)}
+                  Tipo: {getTipoLabel(filters.tipo)}
                   <X 
                     className="h-3 w-3 cursor-pointer" 
                     onClick={() => handleFilterChange('tipo', '')}

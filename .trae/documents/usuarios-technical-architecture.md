@@ -105,11 +105,11 @@ POST /api/users
 
 Request:
 
-| Nome do Parâmetro | Tipo     | Obrigatório | Descrição                                      |
-| ----------------- | -------- | ----------- | ---------------------------------------------- |
-| nome              | string   | true        | Nome completo do usuário                       |                     |
-| senha             | string   | true        | Senha do usuário (será hasheada no backend)    |
-| role              | UserRole | true        | Papel do usuário (ADMIN, COORDENADOR, USUARIO) |
+| Nome do Parâmetro | Tipo     | Obrigatório | Descrição                                      | <br /> |
+| ----------------- | -------- | ----------- | ---------------------------------------------- | ------ |
+| nome              | string   | true        | Nome completo do usuário                       | <br /> |
+| senha             | string   | true        | Senha do usuário (será hasheada no backend)    | <br /> |
+| role              | UserRole | true        | Papel do usuário (ADMIN, COORDENADOR, USUARIO) | <br /> |
 
 Response:
 
@@ -137,12 +137,12 @@ PATCH /api/users/:id
 
 Request:
 
-| Nome do Parâmetro | Tipo     | Obrigatório | Descrição                            |
-| ----------------- | -------- | ----------- | ------------------------------------ |
-| nome              | string   | false       | Nome completo do usuário             |                  |
-| senha             | string   | false       | Nova senha (opcional, será hasheada) |
-| role              | UserRole | false       | Papel do usuário                     |
-| ativo             | boolean  | false       | Status ativo do usuário              |
+| Nome do Parâmetro | Tipo     | Obrigatório | Descrição                            | <br /> |
+| ----------------- | -------- | ----------- | ------------------------------------ | ------ |
+| nome              | string   | false       | Nome completo do usuário             | <br /> |
+| senha             | string   | false       | Nova senha (opcional, será hasheada) | <br /> |
+| role              | UserRole | false       | Papel do usuário                     | <br /> |
+| ativo             | boolean  | false       | Status ativo do usuário              | <br /> |
 
 Response:
 

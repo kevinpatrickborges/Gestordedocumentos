@@ -18,7 +18,7 @@ import {
   XCircle,
   Eye
 } from 'lucide-react'
-import { formatDate, formatStatus, formatTipo } from '@/utils/format'
+import { formatDate, getStatusLabel, getTipoLabel } from '@/utils/format'
 import { StatusDesarquivamento } from '@/types'
 
 const DetalhesDesarquivamentoPage: React.FC = () => {
@@ -131,7 +131,7 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
               </div>
             </div>
             <Badge variant={getStatusColor(desarquivamento.status)}>
-              {formatStatus(desarquivamento.status)}
+              {getStatusLabel(desarquivamento.status)}
             </Badge>
           </div>
         </CardHeader>
@@ -183,7 +183,7 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Tipo de Solicitação</p>
               <Badge variant="outline" className="mt-1">
-                {formatTipo(desarquivamento.tipo)}
+                {getTipoLabel(desarquivamento.tipo)}
               </Badge>
             </div>
             <div>
@@ -293,7 +293,7 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <p className="font-medium">
-                      Status alterado para {formatStatus(desarquivamento.status)}
+                      Status alterado para {getStatusLabel(desarquivamento.status)}
                     </p>
                     <span className="text-sm text-gray-500">
                       {formatDate(desarquivamento.updatedAt)}

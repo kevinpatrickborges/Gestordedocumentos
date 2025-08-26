@@ -14,8 +14,10 @@ export interface DesarquivamentoDomainProps {
   tipoSolicitacao: TipoSolicitacao;
   status: StatusDesarquivamento;
   nomeSolicitante: string;
+  requerente: string;
   nomeVitima?: string;
   numeroRegistro: NumeroRegistro;
+  numeroProcesso?: string;
   tipoDocumento?: string;
   dataFato?: Date;
   prazoAtendimento?: Date;
@@ -39,8 +41,10 @@ export class DesarquivamentoDomain {
     private readonly _tipoSolicitacao: TipoSolicitacao,
     private _status: StatusDesarquivamento,
     private readonly _nomeSolicitante: string,
+    private readonly _requerente: string,
     private readonly _nomeVitima: string | undefined,
     private readonly _numeroRegistro: NumeroRegistro,
+    private readonly _numeroProcesso: string | undefined,
     private readonly _tipoDocumento: string | undefined,
     private readonly _dataFato: Date | undefined,
     private _prazoAtendimento: Date | undefined,
@@ -71,8 +75,10 @@ export class DesarquivamentoDomain {
       props.tipoSolicitacao,
       props.status || StatusDesarquivamento.createPendente(),
       props.nomeSolicitante,
+      props.requerente,
       props.nomeVitima,
       props.numeroRegistro,
+      props.numeroProcesso,
       props.tipoDocumento,
       props.dataFato,
       props.prazoAtendimento ||
@@ -102,8 +108,10 @@ export class DesarquivamentoDomain {
       props.tipoSolicitacao,
       props.status,
       props.nomeSolicitante,
+      props.requerente,
       props.nomeVitima,
       props.numeroRegistro,
+      props.numeroProcesso,
       props.tipoDocumento,
       props.dataFato,
       props.prazoAtendimento,
@@ -142,12 +150,20 @@ export class DesarquivamentoDomain {
     return this._nomeSolicitante;
   }
 
+  get requerente(): string {
+    return this._requerente;
+  }
+
   get nomeVitima(): string | undefined {
     return this._nomeVitima;
   }
 
   get numeroRegistro(): NumeroRegistro {
     return this._numeroRegistro;
+  }
+
+  get numeroProcesso(): string | undefined {
+    return this._numeroProcesso;
   }
 
   get tipoDocumento(): string | undefined {
@@ -232,7 +248,11 @@ export class DesarquivamentoDomain {
       throw new Error('ID do usuário criador deve ser válido');
     }
 
-    if (this._responsavelId !== undefined && this._responsavelId <= 0) {
+    if (
+      this._responsavelId !== undefined &&
+      this._responsavelId !== null &&
+      this._responsavelId < 0
+    ) {
       throw new Error('ID do responsável deve ser válido');
     }
   }
@@ -356,7 +376,7 @@ export class DesarquivamentoDomain {
 
   // Atribui responsável
   assignResponsible(responsavelId: number): void {
-    if (responsavelId <= 0) {
+    if (responsavelId < 0) {
       throw new Error('ID do responsável deve ser válido');
     }
 

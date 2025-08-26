@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  Desarquivamento,
-  StatusDesarquivamento,
-} from '../nugecid/entities/desarquivamento.entity';
+import { DesarquivamentoTypeOrmEntity } from '../nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
+import { StatusDesarquivamento } from '../nugecid/entities/desarquivamento.entity';
 
 export interface CardData {
   totalAtendimentos: number;
@@ -22,8 +20,8 @@ export interface ChartData {
 @Injectable()
 export class EstatisticasService {
   constructor(
-    @InjectRepository(Desarquivamento)
-    private readonly desarquivamentoRepo: Repository<Desarquivamento>,
+    @InjectRepository(DesarquivamentoTypeOrmEntity)
+    private readonly desarquivamentoRepo: Repository<DesarquivamentoTypeOrmEntity>,
   ) {}
 
   async getCardData(): Promise<CardData> {

@@ -28,11 +28,15 @@ let DeleteDesarquivamentoUseCase = class DeleteDesarquivamentoUseCase {
             throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
         }
         if (desarquivamento.isDeleted() && !request.permanent) {
-            throw new Error('Desarquivamento já foi excluído');
+            return {
+                success: true,
+                message: 'Desarquivamento já estava excluído',
+                deletedAt: desarquivamento.deletedAt,
+            };
         }
         this.checkPermissions(desarquivamento, request.userId, request.userRoles, request.permanent);
         if (request.permanent) {
-            return await this.performHardDelete(desarquivamentoId);
+            return await this.performHardDelete(desarquivamento);
         }
         else {
             return await this.performSoftDelete(desarquivamento);
@@ -67,28 +71,28 @@ let DeleteDesarquivamentoUseCase = class DeleteDesarquivamentoUseCase {
     }
     async performSoftDelete(desarquivamento) {
         try {
-            desarquivamento.delete();
-            await this.desarquivamentoRepository.update(desarquivamento);
+            await this.desarquivamentoRepository.softDelete(desarquivamento.id);
             return {
                 success: true,
                 message: 'Desarquivamento excluído com sucesso',
-                deletedAt: desarquivamento.deletedAt,
+                deletedAt: new Date(),
             };
         }
         catch (error) {
             throw new Error(`Erro ao excluir desarquivamento: ${error.message}`);
         }
     }
-    async performHardDelete(desarquivamentoId) {
+    async performHardDelete(desarquivamento) {
         try {
-            await this.desarquivamentoRepository.delete(desarquivamentoId);
+            await this.desarquivamentoRepository.delete(desarquivamento.id);
             return {
                 success: true,
                 message: 'Desarquivamento excluído permanentemente',
+                deletedAt: new Date(),
             };
         }
         catch (error) {
-            throw new Error(`Erro ao excluir permanentemente o desarquivamento: ${error.message}`);
+            throw new Error(`Erro ao excluir desarquivamento: ${error.message}`);
         }
     }
 };

@@ -78,7 +78,10 @@ export class UsersController {
   // This prevents browsers from returning 304 Not Modified for the users list
   // which was causing the frontend to mis-handle the response.
   // Using no-store and no-cache guarantees fresh data.
-  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
   @ApiOperation({ summary: 'Lista todos os usuários' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -101,8 +104,8 @@ export class UsersController {
         data: items,
         meta: {
           total: pag.total || items.length,
-          page: pag.page || (query.page || 1),
-          limit: pag.limit || (query.limit || items.length),
+          page: pag.page || query.page || 1,
+          limit: pag.limit || query.limit || items.length,
           totalPages: pag.totalPages || 1,
           hasNext: (pag.page || 1) < (pag.totalPages || 1),
           hasPrev: (pag.page || 1) > 1,
@@ -128,7 +131,10 @@ export class UsersController {
 
   @Get('api')
   @Roles('admin', 'coordenador')
-  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
   @ApiOperation({ summary: 'Lista usuários com paginação e filtros' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -154,8 +160,8 @@ export class UsersController {
         data: items,
         meta: {
           total: pag.total || items.length,
-          page: pag.page || (query.page || 1),
-          limit: pag.limit || (query.limit || items.length),
+          page: pag.page || query.page || 1,
+          limit: pag.limit || query.limit || items.length,
           totalPages: pag.totalPages || 1,
           hasNext: (pag.page || 1) < (pag.totalPages || 1),
           hasPrev: (pag.page || 1) > 1,

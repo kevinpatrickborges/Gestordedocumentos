@@ -15,6 +15,7 @@ const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
 const desarquivamento_entity_1 = require("../entities/desarquivamento.entity");
 const tipo_solicitacao_vo_1 = require("../domain/value-objects/tipo-solicitacao.vo");
+const tipo_desarquivamento_vo_1 = require("../domain/value-objects/tipo-desarquivamento.vo");
 class UpdateDesarquivamentoDto {
 }
 exports.UpdateDesarquivamentoDto = UpdateDesarquivamentoDto;
@@ -30,6 +31,119 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], UpdateDesarquivamentoDto.prototype, "tipo", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Tipo de solicitação',
+        enum: tipo_solicitacao_vo_1.TipoSolicitacaoEnum,
+        example: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.COPIA,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(tipo_solicitacao_vo_1.TipoSolicitacaoEnum),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "tipoSolicitacao", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Tipo de desarquivamento (Físico ou Digital)',
+        enum: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum,
+        example: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum, {
+        message: 'Tipo de desarquivamento deve ser FÍSICO ou DIGITAL',
+    }),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "tipoDesarquivamento", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Requerente',
+        example: 'João da Silva',
+        minLength: 3,
+        maxLength: 255,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(255),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "requerente", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Número do NIC, Laudo, Auto ou Informação Técnica',
+        example: 'NIC 123456',
+        maxLength: 100,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "numeroNicLaudoAuto", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Número do processo',
+        example: '2025.001.123456',
+        minLength: 3,
+        maxLength: 50,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(50),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "numeroProcesso", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Setor que está solicitando o desarquivamento',
+        example: 'Delegacia de Plantão da Zona Sul',
+        minLength: 2,
+        maxLength: 100,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(2),
+    (0, class_validator_1.MaxLength)(100),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "setorDemandante", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Servidor do ITEP responsável pela solicitação (Nome e Matrícula)',
+        example: 'Maria Oliveira (mat. 654321)',
+        minLength: 3,
+        maxLength: 255,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(3),
+    (0, class_validator_1.MaxLength)(255),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "servidorResponsavel", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Finalidade e justificativa para o desarquivamento',
+        example: 'Para instrução em processo judicial.',
+        minLength: 10,
+        maxLength: 1000,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(10),
+    (0, class_validator_1.MaxLength)(1000),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
+    __metadata("design:type", String)
+], UpdateDesarquivamentoDto.prototype, "finalidadeDesarquivamento", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Indica se há uma solicitação de prorrogação de prazo',
+        default: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateDesarquivamentoDto.prototype, "solicitacaoProrrogacao", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Status da solicitação',
@@ -59,7 +173,7 @@ __decorate([
     }),
     (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
-], UpdateDesarquivamentoDto.prototype, "nomeRequerente", void 0);
+], UpdateDesarquivamentoDto.prototype, "nomeSolicitante", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Nome da vítima (quando aplicável)',

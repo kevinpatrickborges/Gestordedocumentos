@@ -1,13 +1,12 @@
-# SGC-ITEP v2.0 - Sistema de Gestão de Conteúdo
+# SGC-ITEP v1.0 - Sistema de Gestão de Conteúdo
 
 ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
-![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
 
 ## 📋 Sobre o Projeto
 
-O SGC-ITEP v2.0 é um sistema moderno de gestão de conteúdo desenvolvido para o Instituto Técnico-Científico de Perícia (ITEP/RN). Esta versão representa uma evolução completa do sistema anterior, implementando uma arquitetura de microserviços com foco em:
+O SGC-ITEP v1.0 é um sistema moderno de gestão de conteúdo desenvolvido para o Instituto Técnico-Científico de Perícia (ITEP/RN). Esta versão representa uma evolução completa do sistema anterior, implementando uma arquitetura de microserviços com foco em:
 
 - **Gestão de Desarquivamentos (NUGECID)**
 - **Controle de Acesso Baseado em Funções (RBAC)**
@@ -20,7 +19,7 @@ O SGC-ITEP v2.0 é um sistema moderno de gestão de conteúdo desenvolvido para 
 ### Stack Tecnológica
 
 - **Backend**: Node.js + NestJS + TypeScript
-- **Banco de Dados**: SQLite (desenvolvimento) / PostgreSQL (produção)
+- **Banco de Dados**: PostgreSQL (produção)
 - **Autenticação**: JWT + Passport.js
 - **Documentação**: Swagger/OpenAPI 3.0
 - **Testes**: Jest
@@ -69,11 +68,16 @@ Edite o arquivo `.env` com suas configurações:
 # Aplicação
 NODE_ENV=development
 PORT=3000
-APP_NAME="SGC-ITEP v2.0"
+APP_NAME="SGC-ITEP v1.0"
 
 # Banco de Dados
-DATABASE_TYPE=sqlite
-DATABASE_PATH=./data/nugecid_itep.sqlite
+DATABASE_TYPE=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=@Sanfona1
+DATABASE_NAME=sgc_itep
+DATABASE_SSL=false
 
 # Autenticação
 JWT_SECRET=your-super-secret-jwt-key
@@ -261,7 +265,7 @@ CMD ["node", "dist/main"]
 
 ## 📝 Changelog
 
-### v2.0.0 (2024)
+### v1.0.0 (2025)
 
 - ✨ Reescrita completa em NestJS + TypeScript
 - 🏗️ Implementação de arquitetura hexagonal
@@ -277,9 +281,8 @@ CMD ["node", "dist/main"]
 
 Para suporte técnico ou dúvidas:
 
-- **Email**: suporte@itep.rn.gov.br
+- **Email**: arquivo@itep.rn.gov.br
 - **Documentação**: http://localhost:3000/api/docs
-- **Issues**: [GitHub Issues](link-para-issues)
 
 ## 📄 Licença
 
@@ -287,4 +290,4 @@ Este projeto é propriedade do Instituto Técnico-Científico de Perícia (ITEP/
 
 ---
 
-**Desenvolvido com ❤️ para o ITEP/RN**
+**Desenvolvido para o ITEP/RN**

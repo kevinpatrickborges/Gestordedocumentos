@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
@@ -21,12 +21,12 @@ import {
 import UsuariosPage from '@/pages/usuarios/UsuariosPage'
 import NovoUsuarioPage from '@/pages/usuarios/NovoUsuarioPage'
 import EditarUsuarioPage from '@/pages/usuarios/EditarUsuarioPage'
+import ConfiguracoesPage from '@/pages/ConfiguracoesPage'
 import { UserRole } from '@/types'
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="min-h-screen bg-gray-50">
           <Routes>
             {/* Rota de Login - Não requer autenticação */}
@@ -155,6 +155,9 @@ const App: React.FC = () => {
                 />
               </Route>
 
+              {/* Rota de Configurações */}
+              <Route path="configuracoes" element={<ConfiguracoesPage />} />
+
               {/* Rota de fallback para rotas não encontradas dentro do layout */}
               <Route
                 path="*"
@@ -197,7 +200,6 @@ const App: React.FC = () => {
             }}
           />
         </div>
-      </Router>
     </AuthProvider>
   )
 }

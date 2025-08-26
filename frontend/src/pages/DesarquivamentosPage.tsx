@@ -1,31 +1,53 @@
 import React, { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { useDesarquivamentos, useDeleteDesarquivamento } from '@/hooks/useDesarquivamentos'
+import {
+  useDesarquivamentos,
+  useDeleteDesarquivamento,
+} from '@/hooks/useDesarquivamentos'
 import { useDesarquivamentosImport } from '@/hooks/useDesarquivamentosImport'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table'
 import { Badge } from '@/components/ui/Badge'
-import { TableLoading } from '@/components/ui/Loading'
-import { ImportModal } from '@/components/ImportModal'
 import { 
-  Plus, 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/Select'
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/Table'
+// Modal customizado será implementado inline
+import { 
   Search, 
-  Filter, 
+  Plus, 
   Eye, 
   Edit, 
   Trash2, 
-  RefreshCw,
-  AlertTriangle,
+  RefreshCw, 
+  Upload,
   FileText,
-  Upload
+  Calendar,
+  User,
+  AlertCircle,
+  Filter,
+  X
 } from 'lucide-react'
-import { formatDate, formatStatus, formatTipo, getTipoDesarquivamentoLabel } from '@/utils/format'
-import { TipoSolicitacao, StatusDesarquivamento, TipoDesarquivamento } from '@/types'
+import { StatusDesarquivamento, TipoSolicitacao, TipoDesarquivamento, CreateDesarquivamentoDto } from '@/types'
+import { formatDate, getStatusLabel, getTipoLabel, getTipoDesarquivamentoLabel } from '@/utils/format'
 import { toast } from 'sonner'
+import { Pagination } from '@/components/ui/Pagination'
+import { TableLoading } from '@/components/ui/Loading'
+import { ImportModal } from '@/components/desarquivamentos/ImportModal'
 
 const DesarquivamentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -84,14 +106,14 @@ const DesarquivamentosPage: React.FC = () => {
     setCurrentPage(1)
   }
 
-  const canEdit = user?.role === 'admin' || user?.role === 'coordenador'
-  const canDelete = user?.role === 'admin'
+  const canEdit = user?.role?.name === 'admin' || user?.role?.name === 'coordenador'
+  const canDelete = user?.role?.name === 'admin'
 
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Erro ao carregar dados
           </h3>
@@ -137,7 +159,7 @@ const DesarquivamentosPage: React.FC = () => {
               <Button asChild>
                 <Link to="/desarquivamentos/novo">
                   <Plus className="h-4 w-4 mr-2" />
-                  Nova Solicitação
+                  Adicionar Registro
                 </Link>
               </Button>
             </>
@@ -181,25 +203,25 @@ const DesarquivamentosPage: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value={StatusDesarquivamento.FINALIZADO}>
-                    {formatStatus(StatusDesarquivamento.FINALIZADO)}
+                    {getStatusLabel(StatusDesarquivamento.FINALIZADO)}
                   </SelectItem>
                   <SelectItem value={StatusDesarquivamento.DESARQUIVADO}>
-                    {formatStatus(StatusDesarquivamento.DESARQUIVADO)}
+                    {getStatusLabel(StatusDesarquivamento.DESARQUIVADO)}
                   </SelectItem>
                   <SelectItem value={StatusDesarquivamento.NAO_COLETADO}>
-                    {formatStatus(StatusDesarquivamento.NAO_COLETADO)}
+                    {getStatusLabel(StatusDesarquivamento.NAO_COLETADO)}
                   </SelectItem>
                   <SelectItem value={StatusDesarquivamento.SOLICITADO}>
-                    {formatStatus(StatusDesarquivamento.SOLICITADO)}
+                    {getStatusLabel(StatusDesarquivamento.SOLICITADO)}
                   </SelectItem>
                   <SelectItem value={StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO}>
-                    {formatStatus(StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO)}
+                    {getStatusLabel(StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO)}
                   </SelectItem>
                   <SelectItem value={StatusDesarquivamento.RETIRADO_PELO_SETOR}>
-                    {formatStatus(StatusDesarquivamento.RETIRADO_PELO_SETOR)}
+                    {getStatusLabel(StatusDesarquivamento.RETIRADO_PELO_SETOR)}
                   </SelectItem>
                   <SelectItem value={StatusDesarquivamento.NAO_LOCALIZADO}>
-                    {formatStatus(StatusDesarquivamento.NAO_LOCALIZADO)}
+                    {getStatusLabel(StatusDesarquivamento.NAO_LOCALIZADO)}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -213,16 +235,16 @@ const DesarquivamentosPage: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">Todos os tipos</SelectItem>
                   <SelectItem value={TipoSolicitacao.DESARQUIVAMENTO}>
-                    {formatTipo(TipoSolicitacao.DESARQUIVAMENTO)}
+                    {getTipoLabel(TipoSolicitacao.DESARQUIVAMENTO)}
                   </SelectItem>
                   <SelectItem value={TipoSolicitacao.COPIA}>
-                    {formatTipo(TipoSolicitacao.COPIA)}
+                    {getTipoLabel(TipoSolicitacao.COPIA)}
                   </SelectItem>
                   <SelectItem value={TipoSolicitacao.VISTA}>
-                    {formatTipo(TipoSolicitacao.VISTA)}
+                    {getTipoLabel(TipoSolicitacao.VISTA)}
                   </SelectItem>
                   <SelectItem value={TipoSolicitacao.CERTIDAO}>
-                    {formatTipo(TipoSolicitacao.CERTIDAO)}
+                    {getTipoLabel(TipoSolicitacao.CERTIDAO)}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -306,7 +328,7 @@ const DesarquivamentosPage: React.FC = () => {
                                 'outline'
                               }
                             >
-                              {formatStatus(item.status)}
+                              {getStatusLabel(item.status)}
                             </Badge>
                           </TableCell>
                           <TableCell>{item.nomeCompleto || item.nomeRequerente || '-'}</TableCell>

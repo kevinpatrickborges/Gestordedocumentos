@@ -76,14 +76,18 @@ export class UpdateDesarquivamentoUseCase {
     }
 
     // Aplicar atualizações
-    await this.applyUpdates(desarquivamento, request);
+    const updatedDesarquivamento = await this.applyUpdates(
+      desarquivamento,
+      request,
+    );
 
     // Salvar no repositório
-    const updatedDesarquivamento =
-      await this.desarquivamentoRepository.update(desarquivamento);
+    const savedDesarquivamento = await this.desarquivamentoRepository.update(
+      updatedDesarquivamento,
+    );
 
     // Retornar resposta
-    return this.mapToResponse(updatedDesarquivamento);
+    return this.mapToResponse(savedDesarquivamento);
   }
 
   private validateRequest(request: UpdateDesarquivamentoRequest): void {
@@ -166,47 +170,77 @@ export class UpdateDesarquivamentoUseCase {
   private async applyUpdates(
     desarquivamento: DesarquivamentoDomain,
     request: UpdateDesarquivamentoRequest,
-  ): Promise<void> {
-    // Atualizar localização física
-    if (request.localizacaoFisica !== undefined) {
-      desarquivamento.setPhysicalLocation(request.localizacaoFisica);
-    }
-
-    // Atribuir responsável
-    if (request.responsavelId !== undefined) {
-      desarquivamento.assignResponsible(request.responsavelId);
-    }
-
-    // Atualizar status
-    if (request.status !== undefined) {
-      await this.updateStatus(
-        desarquivamento,
-        request.status,
-        request.resultadoAtendimento,
-      );
-    }
-
-    // Outras atualizações que requerem reconstrução da entidade
+  ): Promise<DesarquivamentoDomain> {
+    // Verificar se precisa de reconstrução da entidade
     if (this.requiresReconstruction(request)) {
-      // Para campos que não têm métodos específicos na entidade,
-      // seria necessário reconstruir a entidade com os novos valores
-      // Isso pode ser implementado criando um método de atualização na entidade
-      // ou reconstruindo a entidade com os novos valores
+      // Obter dados atuais da entidade
+      const currentData = desarquivamento.toPlainObject();
 
-      // Por enquanto, vamos lançar um erro indicando que essas atualizações
-      // precisam ser implementadas de forma diferente
-      if (
-        request.nomeVitima !== undefined ||
-        request.tipoDocumento !== undefined ||
-        request.dataFato !== undefined ||
-        request.prazoAtendimento !== undefined ||
-        request.finalidade !== undefined ||
-        request.observacoes !== undefined
-      ) {
-        throw new Error(
-          'Atualização de campos específicos ainda não implementada. Use a reconstrução da entidade.',
+      // Criar novos dados com os valores atualizados
+      const updatedData = {
+        ...currentData,
+        // Atualizar apenas os campos que foram fornecidos na requisição
+        ...(request.nomeVitima !== undefined && {
+          nomeVitima: request.nomeVitima,
+        }),
+        ...(request.tipoDocumento !== undefined && {
+          tipoDocumento: request.tipoDocumento,
+        }),
+        ...(request.dataFato !== undefined && { dataFato: request.dataFato }),
+        ...(request.prazoAtendimento !== undefined && {
+          prazoAtendimento: request.prazoAtendimento,
+        }),
+        ...(request.finalidade !== undefined && {
+          finalidade: request.finalidade,
+        }),
+        ...(request.observacoes !== undefined && {
+          observacoes: request.observacoes,
+        }),
+        ...(request.localizacaoFisica !== undefined && {
+          localizacaoFisica: request.localizacaoFisica,
+        }),
+        ...(request.responsavelId !== undefined && {
+          responsavelId: request.responsavelId,
+        }),
+        updatedAt: new Date(),
+      };
+
+      // Reconstruir a entidade com os novos dados
+      const reconstructedEntity =
+        DesarquivamentoDomain.reconstruct(updatedData);
+
+      // Atualizar status se necessário
+      if (request.status !== undefined) {
+        await this.updateStatus(
+          reconstructedEntity,
+          request.status,
+          request.resultadoAtendimento,
         );
       }
+
+      return reconstructedEntity;
+    } else {
+      // Para atualizações simples que não requerem reconstrução
+      // Atualizar localização física
+      if (request.localizacaoFisica !== undefined) {
+        desarquivamento.setPhysicalLocation(request.localizacaoFisica);
+      }
+
+      // Atribuir responsável
+      if (request.responsavelId !== undefined) {
+        desarquivamento.assignResponsible(request.responsavelId);
+      }
+
+      // Atualizar status
+      if (request.status !== undefined) {
+        await this.updateStatus(
+          desarquivamento,
+          request.status,
+          request.resultadoAtendimento,
+        );
+      }
+
+      return desarquivamento;
     }
   }
 

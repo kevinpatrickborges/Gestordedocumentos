@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("module-alias/register");
 const core_1 = require("@nestjs/core");
 const common_1 = require("@nestjs/common");
+const typeorm_1 = require("typeorm");
 const config_1 = require("@nestjs/config");
 const swagger_1 = require("@nestjs/swagger");
 const path_1 = require("path");
@@ -161,6 +162,36 @@ async function bootstrap() {
     logger.log(`📊 Health check: http://localhost:${port}/health`);
     if (environment !== 'production') {
         logger.log(`📚 Documentação da API: http://localhost:${port}/api/docs`);
+    }
+    const dbHost = process.env.DATABASE_HOST ||
+        configService.get('DATABASE_HOST') ||
+        configService.get('database.host');
+    const dbName = process.env.DATABASE_NAME ||
+        configService.get('DATABASE_NAME') ||
+        configService.get('database.name');
+    try {
+        const dataSource = app.get(typeorm_1.DataSource);
+        if (dataSource && dataSource.isInitialized) {
+            const sql = `SELECT table_name, last_update FROM (
+        SELECT 'auditorias' as table_name, MAX(timestamp) as last_update FROM auditorias
+        UNION ALL
+        SELECT 'desarquivamentos' as table_name, MAX(updated_at) as last_update FROM desarquivamentos
+      ) t WHERE last_update IS NOT NULL ORDER BY last_update DESC LIMIT 1`;
+            const res = await dataSource.query(sql);
+            if (res && res.length > 0) {
+                const row = res[0];
+                logger.log(`🔁 Conectado ao DB: ${dbHost}/${dbName} — Última alteração em ${row.table_name}: ${row.last_update}`);
+            }
+            else {
+                logger.log(`🔁 Conectado ao DB: ${dbHost}/${dbName} — Nenhuma alteração encontrada nas tabelas auditadas.`);
+            }
+        }
+        else {
+            logger.warn('DataSource do TypeORM não está inicializado; não foi possível verificar última alteração no banco.');
+        }
+    }
+    catch (err) {
+        logger.warn(`Não foi possível determinar última alteração do DB: ${err?.message || err}`);
     }
 }
 bootstrap();

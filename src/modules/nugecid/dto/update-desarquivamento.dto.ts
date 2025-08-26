@@ -13,6 +13,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { StatusDesarquivamento } from '../entities/desarquivamento.entity';
 import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
+import { TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
 
 export class UpdateDesarquivamentoDto {
   @ApiPropertyOptional({
@@ -26,6 +27,111 @@ export class UpdateDesarquivamentoDto {
       'Tipo deve ser um dos valores válidos: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
   })
   tipo?: TipoSolicitacaoEnum;
+
+  @ApiPropertyOptional({
+    description: 'Tipo de solicitação',
+    enum: TipoSolicitacaoEnum,
+    example: TipoSolicitacaoEnum.COPIA,
+  })
+  @IsOptional()
+  @IsEnum(TipoSolicitacaoEnum)
+  tipoSolicitacao?: TipoSolicitacaoEnum;
+
+  @ApiPropertyOptional({
+    description: 'Tipo de desarquivamento (Físico ou Digital)',
+    enum: TipoDesarquivamentoEnum,
+    example: TipoDesarquivamentoEnum.FISICO,
+  })
+  @IsOptional()
+  @IsEnum(TipoDesarquivamentoEnum, {
+    message: 'Tipo de desarquivamento deve ser FÍSICO ou DIGITAL',
+  })
+  tipoDesarquivamento?: TipoDesarquivamentoEnum;
+
+  @ApiPropertyOptional({
+    description: 'Requerente',
+    example: 'João da Silva',
+    minLength: 3,
+    maxLength: 255,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(255)
+  @Transform(({ value }) => value?.trim())
+  requerente?: string;
+
+  @ApiPropertyOptional({
+    description: 'Número do NIC, Laudo, Auto ou Informação Técnica',
+    example: 'NIC 123456',
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => value?.trim())
+  numeroNicLaudoAuto?: string;
+
+  @ApiPropertyOptional({
+    description: 'Número do processo',
+    example: '2025.001.123456',
+    minLength: 3,
+    maxLength: 50,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
+  @Transform(({ value }) => value?.trim())
+  numeroProcesso?: string;
+
+  @ApiPropertyOptional({
+    description: 'Setor que está solicitando o desarquivamento',
+    example: 'Delegacia de Plantão da Zona Sul',
+    minLength: 2,
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  @Transform(({ value }) => value?.trim())
+  setorDemandante?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Servidor do ITEP responsável pela solicitação (Nome e Matrícula)',
+    example: 'Maria Oliveira (mat. 654321)',
+    minLength: 3,
+    maxLength: 255,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(255)
+  @Transform(({ value }) => value?.trim())
+  servidorResponsavel?: string;
+
+  @ApiPropertyOptional({
+    description: 'Finalidade e justificativa para o desarquivamento',
+    example: 'Para instrução em processo judicial.',
+    minLength: 10,
+    maxLength: 1000,
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  @MaxLength(1000)
+  @Transform(({ value }) => value?.trim())
+  finalidadeDesarquivamento?: string;
+
+  @ApiPropertyOptional({
+    description: 'Indica se há uma solicitação de prorrogação de prazo',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  solicitacaoProrrogacao?: boolean;
 
   @ApiPropertyOptional({
     description: 'Status da solicitação',
@@ -54,7 +160,7 @@ export class UpdateDesarquivamentoDto {
     message: 'Nome do requerente deve ter no máximo 255 caracteres',
   })
   @Transform(({ value }) => value?.trim())
-  nomeRequerente?: string;
+  nomeSolicitante?: string;
 
   @ApiPropertyOptional({
     description: 'Nome da vítima (quando aplicável)',

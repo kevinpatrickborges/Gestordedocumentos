@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { apiService } from '@/services/api'
+import { api, apiService } from '@/services/api'
 import {
   User,
   UsersQueryParams,
@@ -20,7 +20,7 @@ export const QUERY_KEYS = {
 
 // Hook para listar usuários com filtros e paginação
 export function useUsers(params?: UsersQueryParams) {
-  return useQuery({
+  return useQuery<UsersResponse, Error>({
     queryKey: [...QUERY_KEYS.users, params],
     queryFn: () => apiService.getUsers(params),
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -63,7 +63,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUserDto }) =>
+    mutationFn: ({ id, data }: { id: number; data: UpdateUserDto }) => 
       apiService.updateUser(id, data),
     onSuccess: (response: UserResponse, { id }) => {
       // Invalidar cache da lista de usuários
@@ -119,11 +119,6 @@ export function useReactivateUser() {
 }
 
 // Hook personalizado para verificar permissões de usuário
-/**
- * Determina permissões do usuário autenticado a partir do AuthContext e/ou localStorage.
- * Normaliza a role para o enum UserRole para evitar inconsistências (string vs objeto { name }).
- * Retorna flags canManageUsers e canViewUsers além do usuário atual.
- */
 export function useUserPermissions() {
   const { user: authUser } = useAuth()
   const localUser = safelyParseUser(localStorage.getItem('user'))
@@ -148,11 +143,6 @@ function safelyParseUser(raw: string | null): User | null {
   }
 }
 
-/**
- * Normaliza diferentes formatos de role para o enum UserRole.
- * Aceita: string ('admin', 'coordenador', 'usuario', 'nugecid_operator')
- * ou objeto { name: string }. Retorna undefined para valores inválidos.
- */
 function normalizeUserRole(role: unknown): UserRole | undefined {
   if (!role) return undefined
 

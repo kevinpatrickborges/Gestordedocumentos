@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { api as apiService } from '@/services/api'
+import { apiService } from '@/services/api'
 import { 
   Desarquivamento, 
   CreateDesarquivamentoDto, 

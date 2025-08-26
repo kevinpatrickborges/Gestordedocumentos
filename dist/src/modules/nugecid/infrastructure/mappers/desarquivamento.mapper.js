@@ -23,7 +23,9 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
         entity.status = domain.status.value;
         entity.numeroRegistro = domain.numeroRegistro.value;
         entity.nomeSolicitante = domain.nomeSolicitante;
+        entity.requerente = domain.requerente;
         entity.nomeVitima = domain.nomeVitima;
+        entity.numeroProcesso = domain.numeroProcesso;
         entity.tipoDocumento = domain.tipoDocumento;
         entity.dataFato = domain.dataFato;
         entity.prazoAtendimento = domain.prazoAtendimento;
@@ -52,8 +54,10 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
             tipoSolicitacao,
             status,
             nomeSolicitante: entity.nomeSolicitante,
+            requerente: entity.requerente,
             nomeVitima: entity.nomeVitima,
             numeroRegistro,
+            numeroProcesso: entity.numeroProcesso,
             tipoDocumento: entity.tipoDocumento,
             dataFato: entity.dataFato,
             prazoAtendimento: entity.prazoAtendimento,
@@ -83,6 +87,7 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
             tipoSolicitacao: domain.tipoSolicitacao.value,
             status: domain.status.value,
             nomeSolicitante: domain.nomeSolicitante,
+            requerente: domain.requerente,
             nomeVitima: domain.nomeVitima,
             numeroRegistro: domain.numeroRegistro.value,
             tipoDocumento: domain.tipoDocumento,
@@ -116,6 +121,7 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
             tipoSolicitacao,
             status,
             nomeSolicitante: dto.nomeSolicitante,
+            requerente: dto.requerente,
             nomeVitima: dto.nomeVitima,
             numeroRegistro,
             tipoDocumento: dto.tipoDocumento,
@@ -130,6 +136,9 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
         const updates = {};
         if (dto.nomeSolicitante !== undefined) {
             updates.nomeSolicitante = dto.nomeSolicitante;
+        }
+        if (dto.requerente !== undefined) {
+            updates.requerente = dto.requerente;
         }
         if (dto.nomeVitima !== undefined) {
             updates.nomeVitima = dto.nomeVitima;

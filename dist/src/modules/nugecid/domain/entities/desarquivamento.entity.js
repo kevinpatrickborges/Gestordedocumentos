@@ -3,14 +3,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DesarquivamentoDomain = void 0;
 const value_objects_1 = require("../value-objects");
 class DesarquivamentoDomain {
-    constructor(_id, _codigoBarras, _tipoSolicitacao, _status, _nomeSolicitante, _nomeVitima, _numeroRegistro, _tipoDocumento, _dataFato, _prazoAtendimento, _dataAtendimento, _resultadoAtendimento, _finalidade, _observacoes, _urgente, _localizacaoFisica, _criadoPorId, _responsavelId, _createdAt, _updatedAt, _deletedAt) {
+    constructor(_id, _codigoBarras, _tipoSolicitacao, _status, _nomeSolicitante, _requerente, _nomeVitima, _numeroRegistro, _numeroProcesso, _tipoDocumento, _dataFato, _prazoAtendimento, _dataAtendimento, _resultadoAtendimento, _finalidade, _observacoes, _urgente, _localizacaoFisica, _criadoPorId, _responsavelId, _createdAt, _updatedAt, _deletedAt) {
         this._id = _id;
         this._codigoBarras = _codigoBarras;
         this._tipoSolicitacao = _tipoSolicitacao;
         this._status = _status;
         this._nomeSolicitante = _nomeSolicitante;
+        this._requerente = _requerente;
         this._nomeVitima = _nomeVitima;
         this._numeroRegistro = _numeroRegistro;
+        this._numeroProcesso = _numeroProcesso;
         this._tipoDocumento = _tipoDocumento;
         this._dataFato = _dataFato;
         this._prazoAtendimento = _prazoAtendimento;
@@ -29,11 +31,11 @@ class DesarquivamentoDomain {
     }
     static create(props) {
         const now = new Date();
-        return new DesarquivamentoDomain(undefined, props.codigoBarras, props.tipoSolicitacao, props.status || value_objects_1.StatusDesarquivamento.createPendente(), props.nomeSolicitante, props.nomeVitima, props.numeroRegistro, props.tipoDocumento, props.dataFato, props.prazoAtendimento ||
+        return new DesarquivamentoDomain(undefined, props.codigoBarras, props.tipoSolicitacao, props.status || value_objects_1.StatusDesarquivamento.createPendente(), props.nomeSolicitante, props.requerente, props.nomeVitima, props.numeroRegistro, props.numeroProcesso, props.tipoDocumento, props.dataFato, props.prazoAtendimento ||
             DesarquivamentoDomain.calculateDefaultDeadline(props.tipoSolicitacao, props.urgente), props.dataAtendimento, props.resultadoAtendimento, props.finalidade, props.observacoes, props.urgente, props.localizacaoFisica, props.criadoPorId, props.responsavelId, now, now, props.deletedAt);
     }
     static reconstruct(props) {
-        return new DesarquivamentoDomain(props.id, props.codigoBarras, props.tipoSolicitacao, props.status, props.nomeSolicitante, props.nomeVitima, props.numeroRegistro, props.tipoDocumento, props.dataFato, props.prazoAtendimento, props.dataAtendimento, props.resultadoAtendimento, props.finalidade, props.observacoes, props.urgente, props.localizacaoFisica, props.criadoPorId, props.responsavelId, props.createdAt, props.updatedAt, props.deletedAt);
+        return new DesarquivamentoDomain(props.id, props.codigoBarras, props.tipoSolicitacao, props.status, props.nomeSolicitante, props.requerente, props.nomeVitima, props.numeroRegistro, props.numeroProcesso, props.tipoDocumento, props.dataFato, props.prazoAtendimento, props.dataAtendimento, props.resultadoAtendimento, props.finalidade, props.observacoes, props.urgente, props.localizacaoFisica, props.criadoPorId, props.responsavelId, props.createdAt, props.updatedAt, props.deletedAt);
     }
     get id() {
         return this._id;
@@ -50,11 +52,17 @@ class DesarquivamentoDomain {
     get nomeSolicitante() {
         return this._nomeSolicitante;
     }
+    get requerente() {
+        return this._requerente;
+    }
     get nomeVitima() {
         return this._nomeVitima;
     }
     get numeroRegistro() {
         return this._numeroRegistro;
+    }
+    get numeroProcesso() {
+        return this._numeroProcesso;
     }
     get tipoDocumento() {
         return this._tipoDocumento;
@@ -117,7 +125,9 @@ class DesarquivamentoDomain {
         if (this._criadoPorId <= 0) {
             throw new Error('ID do usuário criador deve ser válido');
         }
-        if (this._responsavelId !== undefined && this._responsavelId <= 0) {
+        if (this._responsavelId !== undefined &&
+            this._responsavelId !== null &&
+            this._responsavelId < 0) {
             throw new Error('ID do responsável deve ser válido');
         }
     }
@@ -193,7 +203,7 @@ class DesarquivamentoDomain {
         }
     }
     assignResponsible(responsavelId) {
-        if (responsavelId <= 0) {
+        if (responsavelId < 0) {
             throw new Error('ID do responsável deve ser válido');
         }
         this._responsavelId = responsavelId;

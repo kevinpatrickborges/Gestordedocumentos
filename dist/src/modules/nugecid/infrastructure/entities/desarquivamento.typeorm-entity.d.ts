@@ -5,8 +5,10 @@ export declare class DesarquivamentoTypeOrmEntity {
     tipoSolicitacao: string;
     status: string;
     nomeSolicitante: string;
+    requerente: string;
     nomeVitima?: string;
     numeroRegistro: string;
+    numeroProcesso: string;
     tipoDocumento?: string;
     dataFato?: Date;
     prazoAtendimento?: Date;

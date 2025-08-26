@@ -29,7 +29,10 @@ import { User } from '../users/entities/user.entity';
 import { Role } from '../users/entities/role.entity';
 import { ImportResultDto } from './dto/import-result.dto';
 import { RoleType } from '../users/enums/role-type.enum';
-import { TipoDesarquivamento } from '../../../frontend/src/types';
+import {
+  TipoDesarquivamento,
+  TipoDesarquivamentoEnum,
+} from './domain/value-objects/tipo-desarquivamento.vo';
 import { TipoSolicitacaoEnum } from './domain/value-objects/tipo-solicitacao.vo';
 
 describe('NugecidController', () => {
@@ -228,7 +231,14 @@ describe('NugecidController', () => {
     const createDto: CreateDesarquivamentoDto = {
       tipoSolicitacao: TipoSolicitacaoEnum.DESARQUIVAMENTO,
       nomeSolicitante: 'João Silva',
+      requerente: 'João Silva',
       numeroRegistro: '12345',
+      numeroProcesso: '12345-PROC',
+      tipoDesarquivamento: TipoDesarquivamentoEnum.FISICO,
+      tipoDocumento: 'Laudo',
+      setorDemandante: 'Delegacia',
+      servidorResponsavel: 'Servidor Teste',
+      finalidadeDesarquivamento: 'Para processo',
     };
 
     it('should create a new desarquivamento successfully', async () => {

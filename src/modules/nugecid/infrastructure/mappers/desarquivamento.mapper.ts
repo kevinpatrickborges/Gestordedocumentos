@@ -31,7 +31,9 @@ export class DesarquivamentoMapper {
 
     // Propriedades simples
     entity.nomeSolicitante = domain.nomeSolicitante;
+    entity.requerente = domain.requerente;
     entity.nomeVitima = domain.nomeVitima;
+    entity.numeroProcesso = domain.numeroProcesso;
     entity.tipoDocumento = domain.tipoDocumento;
     entity.dataFato = domain.dataFato;
     entity.prazoAtendimento = domain.prazoAtendimento;
@@ -72,8 +74,10 @@ export class DesarquivamentoMapper {
       tipoSolicitacao,
       status,
       nomeSolicitante: entity.nomeSolicitante,
+      requerente: entity.requerente,
       nomeVitima: entity.nomeVitima,
       numeroRegistro,
+      numeroProcesso: entity.numeroProcesso,
       tipoDocumento: entity.tipoDocumento,
       dataFato: entity.dataFato,
       prazoAtendimento: entity.prazoAtendimento,
@@ -119,6 +123,7 @@ export class DesarquivamentoMapper {
       tipoSolicitacao: domain.tipoSolicitacao.value,
       status: domain.status.value,
       nomeSolicitante: domain.nomeSolicitante,
+      requerente: domain.requerente,
       nomeVitima: domain.nomeVitima,
       numeroRegistro: domain.numeroRegistro.value,
       tipoDocumento: domain.tipoDocumento,
@@ -164,6 +169,7 @@ export class DesarquivamentoMapper {
       tipoSolicitacao,
       status,
       nomeSolicitante: dto.nomeSolicitante,
+      requerente: dto.requerente,
       nomeVitima: dto.nomeVitima,
       numeroRegistro,
       tipoDocumento: dto.tipoDocumento,
@@ -187,6 +193,9 @@ export class DesarquivamentoMapper {
     // Campos que podem ser atualizados
     if (dto.nomeSolicitante !== undefined) {
       updates.nomeSolicitante = dto.nomeSolicitante;
+    }
+    if (dto.requerente !== undefined) {
+      updates.requerente = dto.requerente;
     }
     if (dto.nomeVitima !== undefined) {
       updates.nomeVitima = dto.nomeVitima;

@@ -1,15 +1,17 @@
+import { TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
 import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
 export declare class CreateDesarquivamentoDto {
     tipoSolicitacao: TipoSolicitacaoEnum;
     nomeSolicitante: string;
-    nomeVitima?: string;
+    requerente: string;
     numeroRegistro: string;
-    tipoDocumento?: string;
-    dataFato?: Date;
-    finalidade?: string;
-    observacoes?: string;
+    numeroProcesso: string;
+    tipoDesarquivamento: TipoDesarquivamentoEnum;
+    numeroNicLaudoAuto?: string;
+    tipoDocumento: string;
+    setorDemandante: string;
+    servidorResponsavel: string;
+    finalidadeDesarquivamento: string;
+    solicitacaoProrrogacao?: boolean;
     urgente?: boolean;
-    localizacaoFisica?: string;
-    prazoAtendimento?: Date;
-    responsavelId?: number;
 }

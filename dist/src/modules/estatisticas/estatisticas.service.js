@@ -16,6 +16,7 @@ exports.EstatisticasService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const desarquivamento_typeorm_entity_1 = require("../nugecid/infrastructure/entities/desarquivamento.typeorm-entity");
 const desarquivamento_entity_1 = require("../nugecid/entities/desarquivamento.entity");
 let EstatisticasService = class EstatisticasService {
     constructor(desarquivamentoRepo) {
@@ -91,7 +92,7 @@ let EstatisticasService = class EstatisticasService {
 exports.EstatisticasService = EstatisticasService;
 exports.EstatisticasService = EstatisticasService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(desarquivamento_entity_1.Desarquivamento)),
+    __param(0, (0, typeorm_1.InjectRepository)(desarquivamento_typeorm_entity_1.DesarquivamentoTypeOrmEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
 ], EstatisticasService);
 //# sourceMappingURL=estatisticas.service.js.map

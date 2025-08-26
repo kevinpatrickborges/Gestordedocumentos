@@ -43,7 +43,11 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
     async findAll(options) {
         const { page = 1, limit = 10, sortBy, sortOrder, filters } = options;
         const queryBuilder = this.repository.createQueryBuilder('d');
-        this.applyFilters(queryBuilder, filters);
+        const filtersWithDefaults = {
+            ...filters,
+            incluirExcluidos: filters?.incluirExcluidos ?? false
+        };
+        this.applyFilters(queryBuilder, filtersWithDefaults);
         if (sortBy) {
             queryBuilder.orderBy(`d.${sortBy}`, sortOrder || 'ASC');
         }
@@ -53,7 +57,6 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
         const [entities, total] = await queryBuilder
             .skip((page - 1) * limit)
             .take(limit)
-            .leftJoinAndSelect('d.responsavel', 'responsavel')
             .getManyAndCount();
         return {
             data: entities.map(e => this.mapper.toDomain(e)),
@@ -100,6 +103,7 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
         const qb = this.repository.createQueryBuilder('d');
         const entities = await qb
             .where("d.prazoAtendimento < NOW() AND d.status NOT IN ('CONCLUIDO', 'CANCELADO')")
+            .andWhere('d.deletedAt IS NULL')
             .getMany();
         return entities.map(e => this.mapper.toDomain(e));
     }
@@ -109,8 +113,9 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
     }
     async getDashboardStats(userId, userRoles, dateRange) {
         const qb = this.repository.createQueryBuilder('d');
+        qb.where('d.deletedAt IS NULL');
         if (dateRange) {
-            qb.where('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
+            qb.andWhere('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
         }
         if (userId && userRoles && !userRoles.includes('ADMIN')) {
             qb.andWhere('d.criadoPorId = :userId', { userId });
@@ -128,8 +133,9 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
             .getRawOne();
         const createFilteredQuery = () => {
             const queryBuilder = this.repository.createQueryBuilder('d');
+            queryBuilder.where('d.deletedAt IS NULL');
             if (dateRange) {
-                queryBuilder.where('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
+                queryBuilder.andWhere('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
             }
             if (userId && userRoles && !userRoles.includes('ADMIN')) {
                 queryBuilder.andWhere('d.criadoPorId = :userId', { userId });
@@ -158,6 +164,7 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
                 .addSelect('AVG(EXTRACT(EPOCH FROM (d.dataAtendimento - d.createdAt)))', 'tempoMedio')
                 .leftJoin('d.responsavel', 'u')
                 .where('d.responsavelId IS NOT NULL')
+                .andWhere('d.deletedAt IS NULL')
                 .groupBy('d.responsavelId, u.nome')
                 .getRawMany();
         }
@@ -236,7 +243,13 @@ let DesarquivamentoTypeOrmRepository = class DesarquivamentoTypeOrmRepository {
                 dataFim,
             });
         if (search) {
-            qb.andWhere('(d.nomeSolicitante ILIKE :search OR d.nomeVitima ILIKE :search OR d.numeroRegistro ILIKE :search OR d.codigoBarras ILIKE :search)', { search: `%${search}%` });
+            qb.andWhere(new typeorm_2.Brackets(qb => {
+                qb.where('d.nomeSolicitante ILIKE :search', { search: `%${search}%` })
+                    .orWhere('d.numeroRegistro ILIKE :search', {
+                    search: `%${search}%`,
+                })
+                    .orWhere('d.codigoBarras ILIKE :search', { search: `%${search}%` });
+            }));
         }
         if (!incluirExcluidos) {
             qb.andWhere('d.deletedAt IS NULL');
