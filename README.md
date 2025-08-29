@@ -60,29 +60,6 @@ npm run migration:run
 npm run seed
 ```
 
-### Configuração do Ambiente
-
-Edite o arquivo `.env` com suas configurações:
-
-```env
-# Aplicação
-NODE_ENV=development
-PORT=3000
-APP_NAME="SGC-ITEP v1.0"
-
-# Banco de Dados
-DATABASE_TYPE=postgres
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=@Sanfona1
-DATABASE_NAME=sgc_itep
-DATABASE_SSL=false
-
-# Autenticação
-JWT_SECRET=your-super-secret-jwt-key
-SESSION_SECRET=your-super-secret-session-key
-
 # ... outras configurações
 ```
 
