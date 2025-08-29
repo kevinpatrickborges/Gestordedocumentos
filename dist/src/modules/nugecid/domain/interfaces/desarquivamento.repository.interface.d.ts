@@ -9,7 +9,7 @@ export interface FindAllOptions {
     filters?: {
         search?: string;
         status?: string;
-        tipoSolicitacao?: string;
+        tipoDesarquivamento?: string;
         nomeSolicitante?: string;
         numeroRegistro?: string;
         codigoBarras?: string;
@@ -33,6 +33,7 @@ export interface DashboardStats {
     pendentes: number;
     emAndamento: number;
     concluidos: number;
+    naoLocalizados: number;
     cancelados: number;
     vencidos: number;
     urgentes: number;
@@ -50,6 +51,7 @@ export interface DashboardStats {
 export interface IDesarquivamentoRepository {
     create(desarquivamento: DesarquivamentoDomain): Promise<DesarquivamentoDomain>;
     findById(id: DesarquivamentoId): Promise<DesarquivamentoDomain | null>;
+    findByIdWithDeleted(id: DesarquivamentoId): Promise<DesarquivamentoDomain | null>;
     findAll(options?: FindAllOptions): Promise<FindAllResult>;
     update(desarquivamento: DesarquivamentoDomain): Promise<DesarquivamentoDomain>;
     delete(id: DesarquivamentoId): Promise<void>;

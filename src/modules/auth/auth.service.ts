@@ -26,7 +26,8 @@ export interface JwtPayload {
 export interface LoginResponse {
   user: Omit<User, 'senha'>;
   accessToken: string;
-  refreshToken?: string;
+  refreshToken: string;
+  expiresIn: string;
 }
 
 export interface LoginV2Response {
@@ -148,6 +149,14 @@ export class AuthService {
 
     // Força expiração de 50 minutos
     const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
+    
+    // Gera refresh token com expiração maior
+    const refreshPayload = {
+      sub: user.id,
+      usuario: user.usuario,
+      type: 'refresh'
+    };
+    const refreshToken = this.jwtService.sign(refreshPayload, { expiresIn: '7d' });
 
     // Salva auditoria de login bem-sucedido
     await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
@@ -157,6 +166,8 @@ export class AuthService {
     return {
       user: this.sanitizeUser(user),
       accessToken,
+      refreshToken,
+      expiresIn: '50m',
     };
   }
 
@@ -205,6 +216,49 @@ export class AuthService {
       accessToken,
       expiresIn: '50m',
     };
+  }
+
+  /**
+   * Renovar token JWT usando refresh token
+   */
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; expiresIn: string }> {
+    try {
+      // Verifica se o refresh token é válido
+      const decoded = this.jwtService.verify(refreshToken) as any;
+      
+      if (decoded.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid refresh token type');
+      }
+
+      // Busca o usuário
+      const user = await this.userRepository.findOne({
+        where: { id: decoded.sub },
+        relations: ['role'],
+      });
+
+      if (!user || !user.ativo) {
+        throw new UnauthorizedException('Usuário não encontrado ou inativo');
+      }
+
+      // Gera novo access token
+      const payload: JwtPayload = {
+        sub: user.id,
+        usuario: user.usuario,
+        role: user.role?.name || 'user',
+      };
+
+      const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
+
+      this.logger.log(`Token renovado para usuário: ${user.usuario}`);
+
+      return {
+        accessToken,
+        expiresIn: '50m',
+      };
+    } catch (error) {
+      this.logger.warn(`Falha ao renovar token: ${error.message}`);
+      throw new UnauthorizedException('Token de refresh inválido ou expirado');
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder, In, Brackets } from 'typeorm';
+import { Logger } from '@nestjs/common';
 import { DesarquivamentoTypeOrmEntity } from '../entities/desarquivamento.typeorm-entity';
 import {
   IDesarquivamentoRepository,
@@ -19,6 +20,8 @@ import {
 export class DesarquivamentoTypeOrmRepository
   implements IDesarquivamentoRepository
 {
+  private readonly logger = new Logger(DesarquivamentoTypeOrmRepository.name);
+
   constructor(
     @InjectRepository(DesarquivamentoTypeOrmEntity)
     private readonly repository: Repository<DesarquivamentoTypeOrmEntity>,
@@ -45,6 +48,15 @@ export class DesarquivamentoTypeOrmRepository
     const entity = await this.repository.findOne({
       where: { id: id.value },
       relations: ['criadoPor', 'responsavel'],
+    });
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
+
+  async findByIdWithDeleted(id: DesarquivamentoId): Promise<DesarquivamentoDomain | null> {
+    const entity = await this.repository.findOne({
+      where: { id: id.value },
+      relations: ['criadoPor', 'responsavel'],
+      withDeleted: true, // Include soft-deleted records
     });
     return entity ? this.mapper.toDomain(entity) : null;
   }
@@ -86,27 +98,72 @@ export class DesarquivamentoTypeOrmRepository
   }
 
   async softDelete(id: DesarquivamentoId): Promise<void> {
-    await this.repository.softDelete(id.value);
+    this.logger.log(`[REPOSITORY] Iniciando soft delete para ID: ${id.value}`);
+    
+    try {
+      // Primeiro, verificar se o registro existe
+      const exists = await this.repository.findOne({
+        where: { id: id.value },
+        withDeleted: true // Incluir registros já deletados para verificar se existe
+      });
+      
+      if (!exists) {
+        this.logger.error(`[REPOSITORY] Registro com ID ${id.value} não encontrado para soft delete`);
+        throw new Error(`Registro com ID ${id.value} não encontrado`);
+      }
+      
+      this.logger.log(`[REPOSITORY] Registro encontrado, executando softDelete para ID: ${id.value}`);
+      
+      // Executar o soft delete
+      const result = await this.repository.softDelete(id.value);
+      
+      this.logger.log(`[REPOSITORY] Resultado do softDelete:`, {
+        affected: result.affected,
+        raw: result.raw
+      });
+      
+      if (result.affected === 0) {
+        this.logger.warn(`[REPOSITORY] ⚠️ Soft delete não afetou nenhum registro para ID: ${id.value}`);
+      } else {
+        this.logger.log(`[REPOSITORY] ✅ Soft delete executado com SUCESSO para ID: ${id.value}, ${result.affected} registro(s) afetado(s)`);
+      }
+      
+      // Verificar se o registro foi realmente soft deleted
+      const afterDelete = await this.repository.findOne({
+        where: { id: id.value },
+        withDeleted: true
+      });
+      
+      if (afterDelete && afterDelete.deletedAt) {
+        this.logger.log(`[REPOSITORY] ✅ CONFIRMAÇÃO: Registro ID ${id.value} possui deletedAt = ${afterDelete.deletedAt}`);
+      } else {
+        this.logger.error(`[REPOSITORY] ❌ ERRO: Registro ID ${id.value} NÃO possui deletedAt após soft delete!`);
+      }
+      
+    } catch (error) {
+      this.logger.error(`[REPOSITORY] ❌ ERRO durante soft delete para ID ${id.value}: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   async restore(id: DesarquivamentoId): Promise<void> {
     await this.repository.restore(id.value);
   }
 
-  async findByCodigoBarras(
-    codigoBarras: string,
+  async findByNumeroNicLaudoAuto(
+    numeroNicLaudoAuto: string,
   ): Promise<DesarquivamentoDomain | null> {
     const entity = await this.repository.findOneBy({
-      codigoBarras: codigoBarras,
+      numeroNicLaudoAuto: numeroNicLaudoAuto,
     });
     return entity ? this.mapper.toDomain(entity) : null;
   }
 
-  async findByNumeroRegistro(
-    numeroRegistro: string,
+  async findByNumeroProcesso(
+    numeroProcesso: string,
   ): Promise<DesarquivamentoDomain[]> {
     const entities = await this.repository.findBy({
-      numeroRegistro: numeroRegistro,
+      numeroProcesso: numeroProcesso,
     });
     return entities.map(e => this.mapper.toDomain(e));
   }
@@ -135,9 +192,8 @@ export class DesarquivamentoTypeOrmRepository
     const qb = this.repository.createQueryBuilder('d');
     const entities = await qb
       .where(
-        "d.prazoAtendimento < NOW() AND d.status NOT IN ('CONCLUIDO', 'CANCELADO')",
+        "d.dataSolicitacao + INTERVAL '30 days' < NOW() AND d.status NOT IN ('FINALIZADO', 'CANCELADO')",
       )
-      .andWhere('d.deletedAt IS NULL')
       .getMany();
     return entities.map(e => this.mapper.toDomain(e));
   }
@@ -154,127 +210,100 @@ export class DesarquivamentoTypeOrmRepository
   ): Promise<DashboardStats> {
     const qb = this.repository.createQueryBuilder('d');
 
-    // Excluir registros soft deleted das estatísticas
-    qb.where('d.deletedAt IS NULL');
+    // TypeORM automaticamente exclui registros soft-deleted devido ao @DeleteDateColumn
 
+    // Date range filter
     if (dateRange) {
       qb.andWhere('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
     }
 
+    // User-specific filter (non-admins see their own data)
     if (userId && userRoles && !userRoles.includes('ADMIN')) {
       qb.andWhere('d.criadoPorId = :userId', { userId });
     }
 
-    const stats = await qb
+    // Main statistics query
+    const statsPromise = qb
       .select('COUNT(d.id)', 'totalRegistros')
-      .addSelect(
-        "SUM(CASE WHEN d.status = 'PENDENTE' THEN 1 ELSE 0 END)",
-        'pendentes',
-      )
-      .addSelect(
-        "SUM(CASE WHEN d.status = 'EM_ANDAMENTO' THEN 1 ELSE 0 END)",
-        'emAndamento',
-      )
-      .addSelect(
-        "SUM(CASE WHEN d.status = 'CONCLUIDO' THEN 1 ELSE 0 END)",
-        'concluidos',
-      )
-      .addSelect(
-        "SUM(CASE WHEN d.status = 'CANCELADO' THEN 1 ELSE 0 END)",
-        'cancelados',
-      )
-      .addSelect(
-        "SUM(CASE WHEN d.prazoAtendimento < NOW() AND d.status NOT IN ('CONCLUIDO', 'CANCELADO') THEN 1 ELSE 0 END)",
-        'vencidos',
-      )
-      .addSelect(
-        'SUM(CASE WHEN d.urgente = TRUE THEN 1 ELSE 0 END)',
-        'urgentes',
-      )
-      .addSelect(
-        "AVG(CASE WHEN d.status = 'CONCLUIDO' THEN EXTRACT(EPOCH FROM (d.dataAtendimento - d.createdAt)) ELSE NULL END)",
-        'tempoMedioAtendimentoSegundos',
-      )
-      .addSelect(
-        "SUM(CASE WHEN d.prazoAtendimento BETWEEN NOW() AND NOW() + INTERVAL '7 days' THEN 1 ELSE 0 END)",
-        'registrosVencendoEm7Dias',
-      )
+      .addSelect("SUM(CASE WHEN d.status = 'SOLICITADO' THEN 1 ELSE 0 END)", 'pendentes')
+      .addSelect("SUM(CASE WHEN d.status = 'DESARQUIVADO' THEN 1 ELSE 0 END)", 'emAndamento')
+      .addSelect("SUM(CASE WHEN d.status = 'FINALIZADO' THEN 1 ELSE 0 END)", 'concluidos')
+      .addSelect("SUM(CASE WHEN d.status = 'NAO_LOCALIZADO' THEN 1 ELSE 0 END)", 'naoLocalizados')
+      .addSelect("SUM(CASE WHEN d.dataSolicitacao + INTERVAL '30 days' < NOW() AND d.status NOT IN ('FINALIZADO', 'NAO_LOCALIZADO') THEN 1 ELSE 0 END)", 'vencidos')
+      .addSelect('SUM(CASE WHEN d.urgente = TRUE THEN 1 ELSE 0 END)', 'urgentes')
+      .addSelect("AVG(CASE WHEN d.status = 'FINALIZADO' THEN EXTRACT(EPOCH FROM (d.dataDesarquivamentoSAG - d.dataSolicitacao)) ELSE NULL END)", 'tempoMedioAtendimentoSegundos')
+      .addSelect("SUM(CASE WHEN d.dataSolicitacao + INTERVAL '30 days' BETWEEN NOW() AND NOW() + INTERVAL '7 days' THEN 1 ELSE 0 END)", 'registrosVencendoEm7Dias')
       .getRawOne();
 
+    // Helper for creating filtered queries for secondary stats
     const createFilteredQuery = () => {
       const queryBuilder = this.repository.createQueryBuilder('d');
-      // Excluir registros soft deleted
-      queryBuilder.where('d.deletedAt IS NULL');
+      // TypeORM automaticamente exclui registros soft-deleted devido ao @DeleteDateColumn
       if (dateRange) {
-        queryBuilder.andWhere(
-          'd.createdAt BETWEEN :startDate AND :endDate',
-          dateRange,
-        );
+        queryBuilder.where('d.createdAt BETWEEN :startDate AND :endDate', dateRange);
       }
       if (userId && userRoles && !userRoles.includes('ADMIN')) {
-        queryBuilder.andWhere('d.criadoPorId = :userId', { userId });
+        const condition = dateRange ? 'andWhere' : 'where';
+        queryBuilder[condition]('d.criadoPorId = :userId', { userId });
       }
       return queryBuilder;
     };
 
-    const porTipo = await createFilteredQuery()
-      .select('d.tipoSolicitacao', 'tipo')
+    // Secondary statistics queries
+    const porTipoPromise = createFilteredQuery()
+      .select('d.tipoDesarquivamento', 'tipo')
       .addSelect('COUNT(d.id)', 'count')
-      .groupBy('d.tipoSolicitacao')
+      .groupBy('d.tipoDesarquivamento')
       .getRawMany();
 
-    const porMes = await createFilteredQuery()
+    const porMesPromise = createFilteredQuery()
       .select("TO_CHAR(d.createdAt, 'YYYY-MM')", 'mes')
       .addSelect('COUNT(d.id)', 'count')
       .groupBy("TO_CHAR(d.createdAt, 'YYYY-MM')")
       .orderBy("TO_CHAR(d.createdAt, 'YYYY-MM')")
       .getRawMany();
 
-    let eficienciaPorResponsavel: any;
+    let eficienciaPorResponsavelPromise: Promise<any[]> = Promise.resolve([]);
     if (userRoles?.includes('ADMIN')) {
-      eficienciaPorResponsavel = await this.repository
+      eficienciaPorResponsavelPromise = this.repository
         .createQueryBuilder('d')
         .select('d.responsavelId', 'responsavelId')
         .addSelect('u.nome', 'responsavelNome')
         .addSelect('COUNT(d.id)', 'total')
-        .addSelect(
-          "SUM(CASE WHEN d.status = 'CONCLUIDO' THEN 1 ELSE 0 END)",
-          'concluidos',
-        )
-        .addSelect(
-          'AVG(EXTRACT(EPOCH FROM (d.dataAtendimento - d.createdAt)))',
-          'tempoMedio',
-        )
+        .addSelect("SUM(CASE WHEN d.status = 'FINALIZADO' THEN 1 ELSE 0 END)", 'concluidos')
+        .addSelect('AVG(EXTRACT(EPOCH FROM (d.dataDesarquivamentoSAG - d.createdAt)))', 'tempoMedio')
         .leftJoin('d.responsavel', 'u')
         .where('d.responsavelId IS NOT NULL')
-        .andWhere('d.deletedAt IS NULL')
+        // TypeORM automaticamente exclui registros soft-deleted devido ao @DeleteDateColumn
         .groupBy('d.responsavelId, u.nome')
         .getRawMany();
     }
 
+    // Await all promises
+    const [stats, porTipo, porMes, eficienciaPorResponsavel] = await Promise.all([
+      statsPromise,
+      porTipoPromise,
+      porMesPromise,
+      eficienciaPorResponsavelPromise,
+    ]);
+
+    // Process results
     const totalRegistros = Number(stats.totalRegistros) || 0;
     const concluidos = Number(stats.concluidos) || 0;
-    const taxaConclusao =
-      totalRegistros > 0 ? (concluidos / totalRegistros) * 100 : 0;
-    const tempoMedioAtendimento =
-      (stats.tempoMedioAtendimentoSegundos || 0) / (24 * 60 * 60);
+    const taxaConclusao = totalRegistros > 0 ? (concluidos / totalRegistros) * 100 : 0;
+    const tempoMedioAtendimento = (stats.tempoMedioAtendimentoSegundos || 0) / (24 * 60 * 60);
 
     return {
       totalRegistros,
       pendentes: Number(stats.pendentes) || 0,
       emAndamento: Number(stats.emAndamento) || 0,
       concluidos,
-      cancelados: Number(stats.cancelados) || 0,
+      naoLocalizados: Number(stats.naoLocalizados) || 0,
+      cancelados: 0,
       vencidos: Number(stats.vencidos) || 0,
       urgentes: Number(stats.urgentes) || 0,
-      porTipo: porTipo.reduce(
-        (acc, item) => ({ ...acc, [item.tipo]: Number(item.count) }),
-        {},
-      ),
-      porMes: porMes.reduce(
-        (acc, item) => ({ ...acc, [item.mes]: Number(item.count) }),
-        {},
-      ),
+      porTipo: porTipo.reduce((acc, item) => ({ ...acc, [item.tipo]: Number(item.count) }), {}),
+      porMes: porMes.reduce((acc, item) => ({ ...acc, [item.mes]: Number(item.count) }), {}),
       taxaConclusao: Math.round(taxaConclusao * 100) / 100,
       tempoMedioAtendimento: Math.round(tempoMedioAtendimento * 100) / 100,
       registrosVencendoEm7Dias: Number(stats.registrosVencendoEm7Dias) || 0,
@@ -284,9 +313,7 @@ export class DesarquivamentoTypeOrmRepository
           [item.responsavelNome || `ID: ${item.responsavelId}`]: {
             total: Number(item.total),
             concluidos: Number(item.concluidos),
-            tempoMedio:
-              Math.round((Number(item.tempoMedio) / (24 * 60 * 60)) * 100) /
-              100,
+            tempoMedio: Math.round((Number(item.tempoMedio) / (24 * 60 * 60)) * 100) / 100,
           },
         }),
         {},
@@ -299,11 +326,37 @@ export class DesarquivamentoTypeOrmRepository
   }
 
   async countByTipo(tipo: string): Promise<number> {
-    return this.repository.count({ where: { tipoSolicitacao: tipo } });
+    return this.repository.count({ where: { tipoDesarquivamento: tipo } });
+  }
+
+  async findByCodigoBarras(
+    codigoBarras: string,
+  ): Promise<DesarquivamentoDomain | null> {
+    // Note: Usando numeroNicLaudoAuto como identificador único já que codigoBarras não existe no novo modelo
+    const entity = await this.repository.findOne({
+      where: { numeroNicLaudoAuto: codigoBarras },
+      relations: ['criadoPor', 'responsavel'],
+    });
+    return entity ? this.mapper.toDomain(entity) : null;
+  }
+
+  async findByNumeroRegistro(
+    numeroRegistro: string,
+  ): Promise<DesarquivamentoDomain[]> {
+    const entities = await this.repository.findBy({
+      numeroProcesso: numeroRegistro,
+    });
+    return entities.map(e => this.mapper.toDomain(e));
   }
 
   async existsByCodigoBarras(codigoBarras: string): Promise<boolean> {
-    return this.repository.exist({ where: { codigoBarras: codigoBarras } });
+    // Note: Usando numeroNicLaudoAuto como identificador único já que codigoBarras não existe no novo modelo
+    const count = await this.repository.count({ where: { numeroNicLaudoAuto: codigoBarras } });
+    return count > 0;
+  }
+
+  async existsByNumeroNicLaudoAuto(numeroNicLaudoAuto: string): Promise<boolean> {
+    return this.repository.exist({ where: { numeroNicLaudoAuto: numeroNicLaudoAuto } });
   }
 
   async getNextSequenceNumber(): Promise<number> {
@@ -339,7 +392,7 @@ export class DesarquivamentoTypeOrmRepository
 
     const {
       status,
-      tipoSolicitacao,
+      tipoDesarquivamento,
       search,
       criadoPorId,
       responsavelId,
@@ -350,8 +403,8 @@ export class DesarquivamentoTypeOrmRepository
     } = filters;
 
     if (status) qb.andWhere('d.status = :status', { status });
-    if (tipoSolicitacao)
-      qb.andWhere('d.tipoSolicitacao = :tipoSolicitacao', { tipoSolicitacao });
+    if (tipoDesarquivamento)
+      qb.andWhere('d.tipoDesarquivamento = :tipoDesarquivamento', { tipoDesarquivamento });
     if (criadoPorId)
       qb.andWhere('d.criadoPorId = :criadoPorId', { criadoPorId });
     if (responsavelId)
@@ -366,17 +419,19 @@ export class DesarquivamentoTypeOrmRepository
     if (search) {
       qb.andWhere(
         new Brackets(qb => {
-          qb.where('d.nomeSolicitante ILIKE :search', { search: `%${search}%` })
-            .orWhere('d.numeroRegistro ILIKE :search', {
+          qb.where('d.nomeCompleto ILIKE :search', { search: `%${search}%` })
+            .orWhere('d.numeroProcesso ILIKE :search', {
               search: `%${search}%`,
             })
-            .orWhere('d.codigoBarras ILIKE :search', { search: `%${search}%` });
+            .orWhere('d.numeroNicLaudoAuto ILIKE :search', { search: `%${search}%` });
         }),
       );
     }
 
-    if (!incluirExcluidos) {
-      qb.andWhere('d.deletedAt IS NULL');
+    // O TypeORM automaticamente aplica o filtro 'deleted_at IS NULL' devido ao @DeleteDateColumn
+    // Apenas aplicamos o filtro manualmente quando queremos incluir registros excluídos
+    if (incluirExcluidos) {
+      qb.withDeleted();
     }
   }
 }

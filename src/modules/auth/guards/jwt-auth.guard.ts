@@ -31,10 +31,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
     if (err || !user) {
-      const message =
-        (err && err.message) ||
-        (info && (info.message || info)) ||
-        'Token JWT inválido ou expirado';
+      let message = 'Token JWT inválido ou expirado';
+      
+      // Provide more specific error messages
+      if (info) {
+        if (info.name === 'TokenExpiredError') {
+          message = 'jwt expired';
+        } else if (info.name === 'JsonWebTokenError') {
+          message = 'jwt malformed';
+        } else if (info.message) {
+          message = info.message;
+        }
+      } else if (err && err.message) {
+        message = err.message;
+      }
+      
       throw new UnauthorizedException(message);
     }
     return user;

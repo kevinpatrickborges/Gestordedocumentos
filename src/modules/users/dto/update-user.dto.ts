@@ -45,13 +45,14 @@ export class UpdateUserDto {
   senha?: string;
 
   @ApiProperty({
-    description: 'ID da role do usuário',
-    example: 2,
+    description: 'Role do usuário',
+    example: 'admin',
+    enum: ['admin', 'coordenador', 'usuario'],
     required: false,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'Role ID deve ser um número' })
-  roleId?: number;
+  @IsString({ message: 'Role deve ser uma string' })
+  role?: string;
 
   @ApiProperty({
     description: 'Se o usuário está ativo',

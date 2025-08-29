@@ -53,14 +53,15 @@ __decorate([
 ], UpdateUserDto.prototype, "senha", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'ID da role do usuário',
-        example: 2,
+        description: 'Role do usuário',
+        example: 'admin',
+        enum: ['admin', 'coordenador', 'usuario'],
         required: false,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsNumber)({}, { message: 'Role ID deve ser um número' }),
-    __metadata("design:type", Number)
-], UpdateUserDto.prototype, "roleId", void 0);
+    (0, class_validator_1.IsString)({ message: 'Role deve ser uma string' }),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "role", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Se o usuário está ativo',

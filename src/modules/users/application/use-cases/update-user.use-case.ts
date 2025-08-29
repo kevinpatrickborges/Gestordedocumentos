@@ -48,12 +48,12 @@ export class UpdateUserUseCase {
     }
 
     // Atualizar role se fornecida
-    if (dto.roleId !== undefined) {
-      const roleId = new RoleId(dto.roleId);
-      const role = await this.roleRepository.findById(roleId);
+    if (dto.role !== undefined) {
+      const role = await this.roleRepository.findByName(dto.role);
       if (!role) {
         throw new Error('Role não encontrada');
       }
+      const roleId = role.id;
       user.updateRole(roleId, role);
     }
 

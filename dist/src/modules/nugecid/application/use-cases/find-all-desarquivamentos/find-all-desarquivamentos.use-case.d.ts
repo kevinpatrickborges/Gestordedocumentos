@@ -6,7 +6,7 @@ export interface FindAllDesarquivamentosRequest {
     sortOrder?: 'ASC' | 'DESC';
     filters?: {
         status?: string;
-        tipoSolicitacao?: string;
+        tipoDesarquivamento?: string;
         nomeSolicitante?: string;
         numeroRegistro?: string;
         codigoBarras?: string;
@@ -23,21 +23,21 @@ export interface FindAllDesarquivamentosRequest {
 export interface FindAllDesarquivamentosResponse {
     data: {
         id: number;
-        codigoBarras: string;
-        tipoSolicitacao: string;
+        codigoBarras?: string;
+        tipoDesarquivamento: string;
         status: string;
-        nomeSolicitante: string;
-        nomeVitima?: string;
-        numeroRegistro: string;
+        nomeCompleto: string;
+        numeroNicLaudoAuto: string;
+        numeroProcesso: string;
         tipoDocumento?: string;
-        dataFato?: Date;
-        prazoAtendimento?: Date;
-        dataAtendimento?: Date;
-        resultadoAtendimento?: string;
-        finalidade?: string;
-        observacoes?: string;
-        urgente: boolean;
-        localizacaoFisica?: string;
+        dataSolicitacao: Date;
+        dataDesarquivamentoSAG?: Date;
+        dataDevolucaoSetor?: Date;
+        setorDemandante: string;
+        servidorResponsavel: string;
+        finalidadeDesarquivamento: string;
+        solicitacaoProrrogacao: boolean;
+        urgente?: boolean;
         criadoPorId: number;
         responsavelId?: number;
         createdAt: Date;

@@ -23,24 +23,22 @@ let DesarquivamentoTypeOrmEntity = DesarquivamentoTypeOrmEntity_1 = class Desarq
     static fromDomain(domain) {
         const entity = new DesarquivamentoTypeOrmEntity_1();
         if (domain.id) {
-            entity.id = domain.id.value;
+            entity.id = domain.id.value || domain.id;
         }
-        entity.codigoBarras = domain.codigoBarras.value;
-        entity.tipoSolicitacao = domain.tipoSolicitacao.value;
-        entity.status = domain.status.value;
-        entity.nomeSolicitante = domain.nomeSolicitante;
-        entity.nomeVitima = domain.nomeVitima;
-        entity.numeroRegistro = domain.numeroRegistro.value;
+        entity.tipoDesarquivamento = domain.tipoDesarquivamento;
+        entity.status = domain.status.value || domain.status;
+        entity.nomeCompleto = domain.nomeCompleto;
+        entity.numeroNicLaudoAuto = domain.numeroNicLaudoAuto;
         entity.numeroProcesso = domain.numeroProcesso;
         entity.tipoDocumento = domain.tipoDocumento;
-        entity.dataFato = domain.dataFato;
-        entity.prazoAtendimento = domain.prazoAtendimento;
-        entity.dataAtendimento = domain.dataAtendimento;
-        entity.resultadoAtendimento = domain.resultadoAtendimento;
-        entity.finalidade = domain.finalidade;
-        entity.observacoes = domain.observacoes;
+        entity.dataSolicitacao = domain.dataSolicitacao;
+        entity.dataDesarquivamentoSAG = domain.dataDesarquivamentoSAG;
+        entity.dataDevolucaoSetor = domain.dataDevolucaoSetor;
+        entity.setorDemandante = domain.setorDemandante;
+        entity.servidorResponsavel = domain.servidorResponsavel;
+        entity.finalidadeDesarquivamento = domain.finalidadeDesarquivamento;
+        entity.solicitacaoProrrogacao = domain.solicitacaoProrrogacao;
         entity.urgente = domain.urgente;
-        entity.localizacaoFisica = domain.localizacaoFisica;
         entity.criadoPorId = domain.criadoPorId;
         entity.responsavelId = domain.responsavelId;
         entity.createdAt = domain.createdAt;
@@ -51,22 +49,20 @@ let DesarquivamentoTypeOrmEntity = DesarquivamentoTypeOrmEntity_1 = class Desarq
     toDomain() {
         return {
             id: this.id,
-            codigoBarras: this.codigoBarras,
-            tipoSolicitacao: this.tipoSolicitacao,
+            tipoDesarquivamento: this.tipoDesarquivamento,
             status: this.status,
-            nomeSolicitante: this.nomeSolicitante,
-            nomeVitima: this.nomeVitima,
-            numeroRegistro: this.numeroRegistro,
+            nomeCompleto: this.nomeCompleto,
+            numeroNicLaudoAuto: this.numeroNicLaudoAuto,
             numeroProcesso: this.numeroProcesso,
             tipoDocumento: this.tipoDocumento,
-            dataFato: this.dataFato,
-            prazoAtendimento: this.prazoAtendimento,
-            dataAtendimento: this.dataAtendimento,
-            resultadoAtendimento: this.resultadoAtendimento,
-            finalidade: this.finalidade,
-            observacoes: this.observacoes,
+            dataSolicitacao: this.dataSolicitacao,
+            dataDesarquivamentoSAG: this.dataDesarquivamentoSAG,
+            dataDevolucaoSetor: this.dataDevolucaoSetor,
+            setorDemandante: this.setorDemandante,
+            servidorResponsavel: this.servidorResponsavel,
+            finalidadeDesarquivamento: this.finalidadeDesarquivamento,
+            solicitacaoProrrogacao: this.solicitacaoProrrogacao,
             urgente: this.urgente,
-            localizacaoFisica: this.localizacaoFisica,
             criadoPorId: this.criadoPorId,
             responsavelId: this.responsavelId,
             createdAt: this.createdAt,
@@ -81,77 +77,61 @@ __decorate([
     __metadata("design:type", Number)
 ], DesarquivamentoTypeOrmEntity.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'codigo_barras', unique: true, length: 20 }),
+    (0, typeorm_1.Column)({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false }),
     __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "codigoBarras", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "tipoDesarquivamento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({
-        name: 'tipo_solicitacao',
-        type: 'varchar',
-        default: 'DESARQUIVAMENTO',
-    }),
-    __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "tipoSolicitacao", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', default: 'PENDENTE' }),
+    (0, typeorm_1.Column)({ type: 'varchar', default: 'SOLICITADO' }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "status", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'nome_solicitante', length: 255, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'nome_completo', length: 255, nullable: false }),
     __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "nomeSolicitante", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "nomeCompleto", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'requerente', length: 255, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'numero_nic_laudo_auto', length: 100, nullable: false, unique: true }),
     __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "requerente", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'nome_vitima', length: 255, nullable: true }),
-    __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "nomeVitima", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'numero_registro', length: 50, nullable: false }),
-    __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "numeroRegistro", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "numeroNicLaudoAuto", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'numero_processo', length: 50, nullable: false }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "numeroProcesso", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'tipo_documento', length: 100, nullable: true }),
+    (0, typeorm_1.Column)({ name: 'tipo_documento', length: 100, nullable: false }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "tipoDocumento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'data_fato', type: 'date', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_solicitacao', type: 'timestamptz', nullable: false }),
     __metadata("design:type", Date)
-], DesarquivamentoTypeOrmEntity.prototype, "dataFato", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "dataSolicitacao", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'prazo_atendimento', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true }),
     __metadata("design:type", Date)
-], DesarquivamentoTypeOrmEntity.prototype, "prazoAtendimento", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "dataDesarquivamentoSAG", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'data_atendimento', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true }),
     __metadata("design:type", Date)
-], DesarquivamentoTypeOrmEntity.prototype, "dataAtendimento", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "dataDevolucaoSetor", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'resultado_atendimento', type: 'text', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'setor_demandante', length: 255, nullable: false }),
     __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "resultadoAtendimento", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "setorDemandante", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'finalidade', type: 'text', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'servidor_responsavel', length: 255, nullable: false }),
     __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "finalidade", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "servidorResponsavel", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'observacoes', type: 'text', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'finalidade_desarquivamento', type: 'text', nullable: false }),
     __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "observacoes", void 0);
+], DesarquivamentoTypeOrmEntity.prototype, "finalidadeDesarquivamento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'urgente', type: 'boolean', default: false }),
+    (0, typeorm_1.Column)({ name: 'solicitacao_prorrogacao', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], DesarquivamentoTypeOrmEntity.prototype, "solicitacaoProrrogacao", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'urgente', type: 'boolean', nullable: true, default: false }),
     __metadata("design:type", Boolean)
 ], DesarquivamentoTypeOrmEntity.prototype, "urgente", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ name: 'localizacao_fisica', length: 255, nullable: true }),
-    __metadata("design:type", String)
-], DesarquivamentoTypeOrmEntity.prototype, "localizacaoFisica", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'created_by', nullable: false }),
     __metadata("design:type", Number)
@@ -184,11 +164,11 @@ __decorate([
 ], DesarquivamentoTypeOrmEntity.prototype, "responsavel", void 0);
 exports.DesarquivamentoTypeOrmEntity = DesarquivamentoTypeOrmEntity = DesarquivamentoTypeOrmEntity_1 = __decorate([
     (0, typeorm_1.Entity)('desarquivamentos'),
-    (0, typeorm_1.Index)(['codigoBarras'], { unique: true }),
-    (0, typeorm_1.Index)(['numeroRegistro']),
+    (0, typeorm_1.Index)(['numeroNicLaudoAuto'], { unique: true }),
+    (0, typeorm_1.Index)(['numeroProcesso']),
     (0, typeorm_1.Index)(['status']),
-    (0, typeorm_1.Index)(['tipoSolicitacao']),
-    (0, typeorm_1.Index)(['createdAt']),
+    (0, typeorm_1.Index)(['tipoDesarquivamento']),
+    (0, typeorm_1.Index)(['dataSolicitacao']),
     (0, typeorm_1.Index)(['criadoPorId']),
     (0, typeorm_1.Index)(['responsavelId'])
 ], DesarquivamentoTypeOrmEntity);

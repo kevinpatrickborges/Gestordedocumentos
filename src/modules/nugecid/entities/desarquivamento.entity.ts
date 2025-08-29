@@ -12,27 +12,23 @@ import {
   Index,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Exclude, Transform } from 'class-transformer';
+import { Exclude } from 'class-transformer';
 
 import { User } from '../../users/entities/user.entity';
 import { RoleType } from '../../users/enums/role-type.enum';
-import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
 
-export enum StatusDesarquivamento {
-  PENDENTE = 'PENDENTE',
-  EM_ANDAMENTO = 'EM_ANDAMENTO',
-  CONCLUIDO = 'CONCLUIDO',
-  CANCELADO = 'CANCELADO',
-}
-
-// Removido enum local - usando o do domínio
+// Legacy exports for backward compatibility
+export { StatusDesarquivamento, StatusDesarquivamentoEnum } from '../domain/value-objects/status-desarquivamento.vo';
+export { TipoSolicitacao, TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
+export { TipoDesarquivamento, TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
 
 @Entity('desarquivamentos')
-@Index(['codigoBarras'], { unique: true })
-@Index(['numeroRegistro'])
+@Index(['numeroNicLaudoAuto'], { unique: true })
+@Index(['numeroProcesso'])
 @Index(['status'])
-@Index(['tipoSolicitacao'])
-@Index(['createdAt'])
+@Index(['tipoDesarquivamento'])
+@Index(['dataSolicitacao'])
+@Index(['createdBy'])
 export class Desarquivamento {
   @ApiProperty({
     description: 'ID único do desarquivamento',
@@ -42,122 +38,108 @@ export class Desarquivamento {
   id: number;
 
   @ApiProperty({
-    description: 'Código de barras único gerado automaticamente',
-    example: 'DES202401150001',
+    description: 'Tipo do desarquivamento',
+    example: 'FISICO',
+    enum: ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'],
   })
-  @Column({ name: 'codigo_barras', unique: true, length: 20 })
-  codigoBarras: string;
-
-  @ApiProperty({
-    description: 'Tipo da solicitação',
-    enum: TipoSolicitacaoEnum,
-    example: TipoSolicitacaoEnum.DESARQUIVAMENTO,
-  })
-  @Column({
-    name: 'tipo_solicitacao',
-    type: 'varchar',
-    default: TipoSolicitacaoEnum.DESARQUIVAMENTO,
-  })
-  tipoSolicitacao: TipoSolicitacaoEnum;
+  @Column({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false })
+  tipoDesarquivamento: string;
 
   @ApiProperty({
     description: 'Status atual da solicitação',
-    enum: StatusDesarquivamento,
-    example: StatusDesarquivamento.PENDENTE,
+    enum: ['FINALIZADO', 'DESARQUIVADO', 'NAO_COLETADO', 'SOLICITADO', 'REARQUIVAMENTO_SOLICITADO', 'RETIRADO_PELO_SETOR', 'NAO_LOCALIZADO'],
+    example: 'SOLICITADO',
   })
-  @Column({ type: 'varchar', default: StatusDesarquivamento.PENDENTE })
-  status: StatusDesarquivamento;
+  @Column({ type: 'varchar', default: 'SOLICITADO' })
+  status: string;
 
   @ApiProperty({
-    description: 'Nome completo do requerente',
+    description: 'Nome completo do solicitante',
     example: 'João Silva Santos',
   })
-  @Column({ name: 'nome_solicitante', length: 255, nullable: false })
-  nomeSolicitante: string;
-
-  @ApiPropertyOptional({
-    description: 'Nome da vítima (quando aplicável)',
-    example: 'Maria Oliveira',
-  })
-  @Column({ name: 'nome_vitima', length: 255, nullable: true })
-  nomeVitima?: string;
+  @Column({ name: 'nome_completo', length: 255, nullable: false })
+  nomeCompleto: string;
 
   @ApiProperty({
-    description: 'Número do registro/processo',
+    description: 'Número do NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA',
     example: '2024.001.123456',
   })
-  @Column({ name: 'numero_registro', length: 50, nullable: false })
-  numeroRegistro: string;
+  @Column({ name: 'numero_nic_laudo_auto', length: 100, nullable: false, unique: true })
+  numeroNicLaudoAuto: string;
 
-  @ApiPropertyOptional({
-    description: 'Tipo do documento solicitado',
+  @ApiProperty({
+    description: 'Número do processo',
+    example: '2024.001.123456',
+  })
+  @Column({ name: 'numero_processo', length: 100, nullable: false })
+  numeroProcesso: string;
+
+  @ApiProperty({
+    description: 'Tipo do documento',
     example: 'Laudo Pericial',
   })
-  @Column({ name: 'tipo_documento', length: 100, nullable: true })
-  tipoDocumento?: string;
+  @Column({ name: 'tipo_documento', length: 100, nullable: false })
+  tipoDocumento: string;
 
-  @ApiPropertyOptional({
-    description: 'Data do fato/ocorrência',
-    example: '2024-01-15',
-    type: 'string',
-    format: 'date',
+  @ApiProperty({
+    description: 'Data de solicitação',
+    example: '2024-01-15T08:30:00Z',
   })
-  @Column({ name: 'data_fato', type: 'date', nullable: true })
-  @Transform(({ value }) => (value ? value.toISOString().split('T')[0] : null))
-  dataFato?: Date;
+  @Column({ name: 'data_solicitacao', type: 'timestamptz', nullable: false })
+  dataSolicitacao: Date;
 
   @ApiPropertyOptional({
-    description: 'Data limite para atendimento',
-    example: '2024-02-15T10:00:00Z',
-    type: 'string',
-    format: 'date-time',
-  })
-  @Column({ name: 'prazo_atendimento', type: 'timestamptz', nullable: true })
-  prazoAtendimento?: Date;
-
-  @ApiPropertyOptional({
-    description: 'Data de conclusão da solicitação',
+    description: 'Data do desarquivamento - SAG',
     example: '2024-02-10T14:30:00Z',
     type: 'string',
     format: 'date-time',
   })
-  @Column({ name: 'data_atendimento', type: 'timestamptz', nullable: true })
-  dataAtendimento?: Date;
+  @Column({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true })
+  dataDesarquivamentoSAG?: Date;
 
   @ApiPropertyOptional({
-    description: 'Resultado ou observações do atendimento',
-    example: 'Documento localizado e disponibilizado',
+    description: 'Data da devolução pelo setor',
+    example: '2024-02-15T10:00:00Z',
+    type: 'string',
+    format: 'date-time',
   })
-  @Column({ name: 'resultado_atendimento', type: 'text', nullable: true })
-  resultadoAtendimento?: string;
-
-  @ApiPropertyOptional({
-    description: 'Finalidade da solicitação',
-    example: 'Processo judicial em andamento',
-  })
-  @Column({ name: 'finalidade', type: 'text', nullable: true })
-  finalidade?: string;
-
-  @ApiPropertyOptional({
-    description: 'Observações adicionais',
-    example: 'Solicitação urgente para audiência',
-  })
-  @Column({ name: 'observacoes', type: 'text', nullable: true })
-  observacoes?: string;
+  @Column({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true })
+  dataDevolucaoSetor?: Date;
 
   @ApiProperty({
+    description: 'Setor demandante',
+    example: 'Perícia Criminal',
+  })
+  @Column({ name: 'setor_demandante', length: 255, nullable: false })
+  setorDemandante: string;
+
+  @ApiProperty({
+    description: 'Servidor do ITEP responsável (matrícula)',
+    example: '12345',
+  })
+  @Column({ name: 'servidor_responsavel', length: 255, nullable: false })
+  servidorResponsavel: string;
+
+  @ApiProperty({
+    description: 'Finalidade do desarquivamento',
+    example: 'Processo judicial em andamento',
+  })
+  @Column({ name: 'finalidade_desarquivamento', type: 'text', nullable: false })
+  finalidadeDesarquivamento: string;
+
+  @ApiProperty({
+    description: 'Solicitação de prorrogação de prazo',
+    example: false,
+  })
+  @Column({ name: 'solicitacao_prorrogacao', type: 'boolean', default: false })
+  solicitacaoProrrogacao: boolean;
+
+  @ApiPropertyOptional({
     description: 'Indica se a solicitação é urgente',
     example: false,
   })
-  @Column({ name: 'urgente', type: 'boolean', default: false })
-  urgente: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Localização física do documento/processo',
-    example: 'Arquivo Central - Estante 15, Prateleira 3',
-  })
-  @Column({ name: 'localizacao_fisica', length: 255, nullable: true })
-  localizacaoFisica?: string;
+  @Column({ name: 'urgente', type: 'boolean', nullable: true, default: false })
+  urgente?: boolean;
 
   @ApiPropertyOptional({
     description: 'ID do usuário responsável pelo atendimento',
@@ -172,6 +154,15 @@ export class Desarquivamento {
   })
   @Column({ name: 'created_by', nullable: false })
   createdBy: number;
+
+  // Alias para compatibilidade
+  get criadoPorId(): number {
+    return this.createdBy;
+  }
+
+  set criadoPorId(value: number) {
+    this.createdBy = value;
+  }
 
   @ApiProperty({
     description: 'Data de criação do registro',
@@ -215,48 +206,27 @@ export class Desarquivamento {
   // Hooks
   @BeforeInsert()
   setDefaultValues() {
-    if (!this.codigoBarras) {
-      this.codigoBarras = this.generateBarcode();
-    }
+    // Set default values if needed
   }
 
   @BeforeUpdate()
   updateTimestamp() {
-    // Atualiza automaticamente o timestamp de atualização
-  }
-
-  // Métodos de negócio
-  generateBarcode(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const timestamp = now.getTime().toString().slice(-4);
-
-    return `DES${year}${month}${day}${timestamp}`;
+    // Update timestamp automatically
   }
 
   /**
-   * Verifica se a solicitação está em atraso
+   * Verifica se a solicitação está finalizada
    */
-  isOverdue(): boolean {
-    if (!this.prazoAtendimento) return false;
-    return (
-      new Date() > this.prazoAtendimento &&
-      this.status !== StatusDesarquivamento.CONCLUIDO &&
-      this.status !== StatusDesarquivamento.CANCELADO
-    );
+  isFinalized(): boolean {
+    return this.status === 'FINALIZADO';
   }
 
   /**
    * Verifica se o usuário pode acessar esta solicitação
    */
   canBeAccessedBy(user: User): boolean {
-    // Administradores e coordenadores podem acessar tudo
-    if (
-      user.role?.name === RoleType.ADMIN ||
-      user.role?.name === RoleType.COORDENADOR
-    ) {
+    // Administradores podem acessar tudo
+    if (user.role?.name === RoleType.ADMIN) {
       return true;
     }
 
@@ -273,34 +243,28 @@ export class Desarquivamento {
    * Verifica se o usuário pode editar esta solicitação
    */
   canBeEditedBy(user: User): boolean {
-    // Administradores e coordenadores podem editar tudo
-    if (
-      user.role?.name === RoleType.ADMIN ||
-      user.role?.name === RoleType.COORDENADOR
-    ) {
+    // Administradores podem editar tudo
+    if (user.role?.name === RoleType.ADMIN) {
       return true;
     }
 
-    // Solicitações concluídas ou canceladas não podem ser editadas
-    if (
-      this.status === StatusDesarquivamento.CONCLUIDO ||
-      this.status === StatusDesarquivamento.CANCELADO
-    ) {
+    // Solicitações finalizadas não podem ser editadas
+    if (this.status === 'FINALIZADO') {
       return false;
     }
 
-    // Criador pode editar se ainda estiver pendente
+    // Criador pode editar se ainda estiver solicitado
     if (
       this.criadoPor.id === user.id &&
-      this.status === StatusDesarquivamento.PENDENTE
+      this.status === 'SOLICITADO'
     ) {
       return true;
     }
 
-    // Responsável pode editar se estiver em andamento
+    // Responsável pode editar se estiver desarquivado
     if (
       this.responsavelId === user.id &&
-      this.status === StatusDesarquivamento.EM_ANDAMENTO
+      this.status === 'DESARQUIVADO'
     ) {
       return true;
     }
@@ -317,10 +281,13 @@ export class Desarquivamento {
    */
   getStatusDisplay(): string {
     const statusMap = {
-      [StatusDesarquivamento.PENDENTE]: 'Pendente',
-      [StatusDesarquivamento.EM_ANDAMENTO]: 'Em Andamento',
-      [StatusDesarquivamento.CONCLUIDO]: 'Concluído',
-      [StatusDesarquivamento.CANCELADO]: 'Cancelado',
+      'FINALIZADO': 'Finalizado',
+      'DESARQUIVADO': 'Desarquivado',
+      'NAO_COLETADO': 'Não Coletado',
+      'SOLICITADO': 'Solicitado',
+      'REARQUIVAMENTO_SOLICITADO': 'Rearquivamento Solicitado',
+      'RETIRADO_PELO_SETOR': 'Retirado pelo Setor',
+      'NAO_LOCALIZADO': 'Não Localizado',
     };
 
     return statusMap[this.status] || this.status;
@@ -328,70 +295,43 @@ export class Desarquivamento {
 
   getStatusColor(): string {
     const colors = {
-      [StatusDesarquivamento.PENDENTE]: 'warning',
-      [StatusDesarquivamento.EM_ANDAMENTO]: 'info',
-      [StatusDesarquivamento.CONCLUIDO]: 'success',
-      [StatusDesarquivamento.CANCELADO]: 'danger',
+      'FINALIZADO': 'success',
+      'DESARQUIVADO': 'info',
+      'NAO_COLETADO': 'warning',
+      'SOLICITADO': 'primary',
+      'REARQUIVAMENTO_SOLICITADO': 'secondary',
+      'RETIRADO_PELO_SETOR': 'info',
+      'NAO_LOCALIZADO': 'danger',
     };
     return colors[this.status] || 'secondary';
   }
 
   getStatusLabel(): string {
-    const labels = {
-      [StatusDesarquivamento.PENDENTE]: 'Pendente',
-      [StatusDesarquivamento.EM_ANDAMENTO]: 'Em Andamento',
-      [StatusDesarquivamento.CONCLUIDO]: 'Concluído',
-      [StatusDesarquivamento.CANCELADO]: 'Cancelado',
-    };
-    return labels[this.status] || 'Desconhecido';
+    return this.getStatusDisplay();
   }
 
   /**
    * Verifica se é possível transicionar para um novo status
    */
-  canTransitionTo(newStatus: StatusDesarquivamento): boolean {
+  canTransitionTo(newStatus: string): boolean {
     const transitions = {
-      [StatusDesarquivamento.PENDENTE]: [
-        StatusDesarquivamento.EM_ANDAMENTO,
-        StatusDesarquivamento.CANCELADO,
-      ],
-      [StatusDesarquivamento.EM_ANDAMENTO]: [
-        StatusDesarquivamento.CONCLUIDO,
-        StatusDesarquivamento.CANCELADO,
-      ],
-      [StatusDesarquivamento.CONCLUIDO]: [],
-      [StatusDesarquivamento.CANCELADO]: [],
+      'SOLICITADO': ['DESARQUIVADO', 'NAO_LOCALIZADO'],
+      'DESARQUIVADO': ['RETIRADO_PELO_SETOR', 'NAO_COLETADO', 'REARQUIVAMENTO_SOLICITADO'],
+      'RETIRADO_PELO_SETOR': ['FINALIZADO'],
+      'NAO_COLETADO': ['REARQUIVAMENTO_SOLICITADO'],
+      'REARQUIVAMENTO_SOLICITADO': ['FINALIZADO'],
+      'NAO_LOCALIZADO': [],
+      'FINALIZADO': [],
     };
 
     return transitions[this.status]?.includes(newStatus) || false;
   }
 
   /**
-   * Calcula os dias restantes até o prazo
-   */
-  getDaysUntilDeadline(): number | null {
-    if (!this.prazoAtendimento) return null;
-
-    const now = new Date();
-    const deadline = new Date(this.prazoAtendimento);
-    const diffTime = deadline.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
-  }
-
-  /**
-   * Retorna a prioridade baseada na urgência e prazo
+   * Retorna a prioridade baseada na urgência
    */
   getPriority(): 'ALTA' | 'MEDIA' | 'BAIXA' {
     if (this.urgente) return 'ALTA';
-
-    const daysUntilDeadline = this.getDaysUntilDeadline();
-    if (daysUntilDeadline === null) return 'BAIXA';
-
-    if (daysUntilDeadline <= 3) return 'ALTA';
-    if (daysUntilDeadline <= 7) return 'MEDIA';
-
-    return 'BAIXA';
+    return 'MEDIA';
   }
 }

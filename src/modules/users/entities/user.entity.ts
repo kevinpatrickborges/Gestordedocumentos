@@ -14,7 +14,6 @@ import {
 import * as bcrypt from 'bcryptjs';
 
 import { Role } from './role.entity';
-import { Desarquivamento } from '../../nugecid/entities/desarquivamento.entity';
 import { Auditoria } from '../../audit/entities/auditoria.entity';
 
 @Entity('usuarios')
@@ -65,12 +64,9 @@ export class User {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt: Date;
 
-  // Relacionamentos
-  @OneToMany(
-    () => Desarquivamento,
-    desarquivamento => desarquivamento.criadoPor,
-  )
-  desarquivamentos: Desarquivamento[];
+  // Legacy relationship removed - use proper infrastructure entities
+  // @OneToMany(() => DesarquivamentoTypeOrmEntity, desarquivamento => desarquivamento.criadoPor)
+  // desarquivamentos: DesarquivamentoTypeOrmEntity[];
 
   @OneToMany(() => Auditoria, auditoria => auditoria.user)
   auditorias: Auditoria[];

@@ -1,20 +1,30 @@
 import { IDesarquivamentoRepository } from '../../../domain';
 export interface CreateDesarquivamentoRequest {
-    tipoSolicitacao: string;
-    nomeSolicitante: string;
-    requerente: string;
-    nomeVitima?: string;
-    numeroRegistro: string;
+    tipoDesarquivamento: string;
+    nomeCompleto: string;
+    numeroNicLaudoAuto: string;
     numeroProcesso: string;
-    tipoDocumento?: string;
+    tipoDocumento: string;
+    dataSolicitacao: string;
+    dataDesarquivamentoSAG?: string;
+    dataDevolucaoSetor?: string;
+    setorDemandante: string;
+    servidorResponsavel: string;
+    finalidadeDesarquivamento: string;
+    solicitacaoProrrogacao: boolean;
+    urgente?: boolean;
+    criadoPorId: number;
+    responsavelId?: number;
+    nomeSolicitante?: string;
+    numeroRegistro?: string;
+    tipoSolicitacao?: string;
+    nomeVitima?: string;
     dataFato?: Date;
     prazoAtendimento?: Date;
     finalidade?: string;
     observacoes?: string;
-    urgente: boolean;
     localizacaoFisica?: string;
-    criadoPorId: number;
-    responsavelId?: number;
+    requerente?: string;
 }
 export interface CreateDesarquivamentoResponse {
     id: number;

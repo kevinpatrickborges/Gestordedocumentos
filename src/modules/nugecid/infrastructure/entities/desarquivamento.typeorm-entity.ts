@@ -12,71 +12,58 @@ import {
 import { User } from '../../../users/entities/user.entity';
 
 @Entity('desarquivamentos')
-@Index(['codigoBarras'], { unique: true })
-@Index(['numeroRegistro'])
+@Index(['numeroNicLaudoAuto'], { unique: true })
+@Index(['numeroProcesso'])
 @Index(['status'])
-@Index(['tipoSolicitacao'])
-@Index(['createdAt'])
+@Index(['tipoDesarquivamento'])
+@Index(['dataSolicitacao'])
 @Index(['criadoPorId'])
 @Index(['responsavelId'])
 export class DesarquivamentoTypeOrmEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ name: 'codigo_barras', unique: true, length: 20 })
-  codigoBarras: string;
+  @Column({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false })
+  tipoDesarquivamento: string;
 
-  @Column({
-    name: 'tipo_solicitacao',
-    type: 'varchar',
-    default: 'DESARQUIVAMENTO',
-  })
-  tipoSolicitacao: string;
-
-  @Column({ type: 'varchar', default: 'PENDENTE' })
+  @Column({ type: 'varchar', default: 'SOLICITADO' })
   status: string;
 
-  @Column({ name: 'nome_solicitante', length: 255, nullable: false })
-  nomeSolicitante: string;
+  @Column({ name: 'nome_completo', length: 255, nullable: false })
+  nomeCompleto: string;
 
-  @Column({ name: 'requerente', length: 255, nullable: false })
-  requerente: string;
-
-  @Column({ name: 'nome_vitima', length: 255, nullable: true })
-  nomeVitima?: string;
-
-  @Column({ name: 'numero_registro', length: 50, nullable: false })
-  numeroRegistro: string;
+  @Column({ name: 'numero_nic_laudo_auto', length: 100, nullable: false, unique: true })
+  numeroNicLaudoAuto: string;
 
   @Column({ name: 'numero_processo', length: 50, nullable: false })
   numeroProcesso: string;
 
-  @Column({ name: 'tipo_documento', length: 100, nullable: true })
-  tipoDocumento?: string;
+  @Column({ name: 'tipo_documento', length: 100, nullable: false })
+  tipoDocumento: string;
 
-  @Column({ name: 'data_fato', type: 'date', nullable: true })
-  dataFato?: Date;
+  @Column({ name: 'data_solicitacao', type: 'timestamptz', nullable: false })
+  dataSolicitacao: Date;
 
-  @Column({ name: 'prazo_atendimento', type: 'timestamptz', nullable: true })
-  prazoAtendimento?: Date;
+  @Column({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true })
+  dataDesarquivamentoSAG?: Date;
 
-  @Column({ name: 'data_atendimento', type: 'timestamptz', nullable: true })
-  dataAtendimento?: Date;
+  @Column({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true })
+  dataDevolucaoSetor?: Date;
 
-  @Column({ name: 'resultado_atendimento', type: 'text', nullable: true })
-  resultadoAtendimento?: string;
+  @Column({ name: 'setor_demandante', length: 255, nullable: false })
+  setorDemandante: string;
 
-  @Column({ name: 'finalidade', type: 'text', nullable: true })
-  finalidade?: string;
+  @Column({ name: 'servidor_responsavel', length: 255, nullable: false })
+  servidorResponsavel: string;
 
-  @Column({ name: 'observacoes', type: 'text', nullable: true })
-  observacoes?: string;
+  @Column({ name: 'finalidade_desarquivamento', type: 'text', nullable: false })
+  finalidadeDesarquivamento: string;
 
-  @Column({ name: 'urgente', type: 'boolean', default: false })
-  urgente: boolean;
+  @Column({ name: 'solicitacao_prorrogacao', type: 'boolean', default: false })
+  solicitacaoProrrogacao: boolean;
 
-  @Column({ name: 'localizacao_fisica', length: 255, nullable: true })
-  localizacaoFisica?: string;
+  @Column({ name: 'urgente', type: 'boolean', nullable: true, default: false })
+  urgente?: boolean;
 
   @Column({ name: 'created_by', nullable: false })
   criadoPorId: number;
@@ -116,25 +103,23 @@ export class DesarquivamentoTypeOrmEntity {
     const entity = new DesarquivamentoTypeOrmEntity();
 
     if (domain.id) {
-      entity.id = domain.id.value;
+      entity.id = domain.id.value || domain.id;
     }
 
-    entity.codigoBarras = domain.codigoBarras.value;
-    entity.tipoSolicitacao = domain.tipoSolicitacao.value;
-    entity.status = domain.status.value;
-    entity.nomeSolicitante = domain.nomeSolicitante;
-    entity.nomeVitima = domain.nomeVitima;
-    entity.numeroRegistro = domain.numeroRegistro.value;
+    entity.tipoDesarquivamento = domain.tipoDesarquivamento;
+    entity.status = domain.status.value || domain.status;
+    entity.nomeCompleto = domain.nomeCompleto;
+    entity.numeroNicLaudoAuto = domain.numeroNicLaudoAuto;
     entity.numeroProcesso = domain.numeroProcesso;
     entity.tipoDocumento = domain.tipoDocumento;
-    entity.dataFato = domain.dataFato;
-    entity.prazoAtendimento = domain.prazoAtendimento;
-    entity.dataAtendimento = domain.dataAtendimento;
-    entity.resultadoAtendimento = domain.resultadoAtendimento;
-    entity.finalidade = domain.finalidade;
-    entity.observacoes = domain.observacoes;
+    entity.dataSolicitacao = domain.dataSolicitacao;
+    entity.dataDesarquivamentoSAG = domain.dataDesarquivamentoSAG;
+    entity.dataDevolucaoSetor = domain.dataDevolucaoSetor;
+    entity.setorDemandante = domain.setorDemandante;
+    entity.servidorResponsavel = domain.servidorResponsavel;
+    entity.finalidadeDesarquivamento = domain.finalidadeDesarquivamento;
+    entity.solicitacaoProrrogacao = domain.solicitacaoProrrogacao;
     entity.urgente = domain.urgente;
-    entity.localizacaoFisica = domain.localizacaoFisica;
     entity.criadoPorId = domain.criadoPorId;
     entity.responsavelId = domain.responsavelId;
     entity.createdAt = domain.createdAt;
@@ -147,22 +132,20 @@ export class DesarquivamentoTypeOrmEntity {
   toDomain(): any {
     return {
       id: this.id,
-      codigoBarras: this.codigoBarras,
-      tipoSolicitacao: this.tipoSolicitacao,
+      tipoDesarquivamento: this.tipoDesarquivamento,
       status: this.status,
-      nomeSolicitante: this.nomeSolicitante,
-      nomeVitima: this.nomeVitima,
-      numeroRegistro: this.numeroRegistro,
+      nomeCompleto: this.nomeCompleto,
+      numeroNicLaudoAuto: this.numeroNicLaudoAuto,
       numeroProcesso: this.numeroProcesso,
       tipoDocumento: this.tipoDocumento,
-      dataFato: this.dataFato,
-      prazoAtendimento: this.prazoAtendimento,
-      dataAtendimento: this.dataAtendimento,
-      resultadoAtendimento: this.resultadoAtendimento,
-      finalidade: this.finalidade,
-      observacoes: this.observacoes,
+      dataSolicitacao: this.dataSolicitacao,
+      dataDesarquivamentoSAG: this.dataDesarquivamentoSAG,
+      dataDevolucaoSetor: this.dataDevolucaoSetor,
+      setorDemandante: this.setorDemandante,
+      servidorResponsavel: this.servidorResponsavel,
+      finalidadeDesarquivamento: this.finalidadeDesarquivamento,
+      solicitacaoProrrogacao: this.solicitacaoProrrogacao,
       urgente: this.urgente,
-      localizacaoFisica: this.localizacaoFisica,
       criadoPorId: this.criadoPorId,
       responsavelId: this.responsavelId,
       createdAt: this.createdAt,

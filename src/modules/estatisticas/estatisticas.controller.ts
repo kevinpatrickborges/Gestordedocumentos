@@ -8,12 +8,13 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { RoleType } from '../users/enums/role-type.enum';
 import { EstatisticasService } from './estatisticas.service';
 
 @ApiTags('Estatísticas')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles(RoleType.ADMIN, RoleType.USUARIO)
 @Controller('estatisticas')
 export class EstatisticasController {
   constructor(private readonly estatisticasService: EstatisticasService) {}

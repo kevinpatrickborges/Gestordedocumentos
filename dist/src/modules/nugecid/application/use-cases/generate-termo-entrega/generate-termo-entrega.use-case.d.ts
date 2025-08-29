@@ -23,15 +23,15 @@ export interface GenerateTermoEntregaResponse {
 export interface TermoEntregaData {
     desarquivamento: {
         id: number;
-        codigoBarras: string;
-        numeroRegistro: string;
-        tipoSolicitacao: string;
-        nomeSolicitante: string;
-        nomeVitima?: string;
-        dataFato?: Date;
-        finalidade?: string;
-        observacoes?: string;
-        localizacaoFisica?: string;
+        numeroNicLaudoAuto: string;
+        numeroProcesso: string;
+        tipoDesarquivamento: string;
+        nomeCompleto: string;
+        tipoDocumento: string;
+        dataSolicitacao: Date;
+        finalidadeDesarquivamento: string;
+        setorDemandante: string;
+        servidorResponsavel: string;
         urgente: boolean;
     };
     entrega: {

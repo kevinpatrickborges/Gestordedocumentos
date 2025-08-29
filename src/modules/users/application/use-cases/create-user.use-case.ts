@@ -22,12 +22,12 @@ export class CreateUserUseCase {
       throw new Error('Usuário já está em uso');
     }
 
-    // Validar se a role existe
-    const roleId = new RoleId(dto.roleId);
-    const role = await this.roleRepository.findById(roleId);
+    // Validar se a role existe e obter o ID
+    const role = await this.roleRepository.findByName(dto.role);
     if (!role) {
       throw new Error('Role não encontrada');
     }
+    const roleId = role.id;
 
     // Criar senha hash
     const password = await Password.create(dto.senha);

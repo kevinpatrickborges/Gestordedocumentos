@@ -52,12 +52,46 @@ export class ApiService {
     // Response interceptor
     this.api.interceptors.response.use(
       (response) => response,
-      (error) => {
+      async (error) => {
+        const originalRequest = error.config
+
+        // Não fazer logout em caso de falha no login
+        if (originalRequest.url === '/auth/login') {
+          return Promise.reject(error)
+        }
+        
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true
+          
+          try {
+            const refreshToken = localStorage.getItem('refreshToken')
+            if (refreshToken) {
+              const response = await this.api.post('/auth/refresh', { refreshToken })
+              const { accessToken } = response.data // Direct access since backend returns { accessToken, expiresIn }
+              
+              localStorage.setItem('accessToken', accessToken)
+              
+              // Retry the original request with the new token
+              originalRequest.headers.Authorization = `Bearer ${accessToken}`
+              return this.api(originalRequest)
+            }
+          } catch (refreshError) {
+            // Refresh failed, logout user
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
+            localStorage.removeItem('user')
+            window.location.href = '/login'
+            return Promise.reject(refreshError)
+          }
+        }
+        
         if (error.response?.status === 401) {
           localStorage.removeItem('accessToken')
+          localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
           window.location.href = '/login'
         }
+        
         return Promise.reject(error)
       }
     )
@@ -78,6 +112,14 @@ export class ApiService {
     return response.data
   }
 
+  async refreshToken(refreshToken: string): Promise<ApiResponse<{ accessToken: string; expiresIn: string }>> {
+    const response: AxiosResponse<{ accessToken: string; expiresIn: string }> = await this.api.post('/auth/refresh', { refreshToken })
+    return {
+      success: true,
+      data: response.data
+    }
+  }
+
   // Dashboard endpoints
   async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
     const response: AxiosResponse<ApiResponse<DashboardStats>> = await this.api.get('/nugecid/dashboard')
@@ -86,8 +128,30 @@ export class ApiService {
 
   // NUGECID endpoints
   async getDesarquivamentos(params?: QueryDesarquivamentoDto): Promise<PaginatedResponse<Desarquivamento>> {
-    const response: AxiosResponse<PaginatedResponse<Desarquivamento>> = await this.api.get('/nugecid', { params })
-    return response.data
+    try {
+      const response: AxiosResponse<PaginatedResponse<Desarquivamento>> = await this.api.get('/nugecid', { params })
+      return response.data
+    } catch (error: any) {
+      // Log for debugging and return a safe fallback so UI can render gracefully
+      // without showing the generic error screen when transient caching/network
+      // issues occur (304/Not Modified handled by proxy/browser can surface
+      // as errors in some setups).
+      // eslint-disable-next-line no-console
+      console.error('[ApiService] getDesarquivamentos error:', error?.message || error)
+
+      return {
+        success: false,
+        data: [],
+        meta: {
+          total: 0,
+          page: params?.page || 1,
+          limit: params?.limit || 10,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        },
+      } as PaginatedResponse<Desarquivamento>
+    }
   }
 
   async getDesarquivamento(id: number): Promise<ApiResponse<Desarquivamento>> {

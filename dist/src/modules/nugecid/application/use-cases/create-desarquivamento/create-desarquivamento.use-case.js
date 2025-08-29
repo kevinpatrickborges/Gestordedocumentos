@@ -22,27 +22,22 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
     }
     async execute(request) {
         await this.validateRequest(request);
-        const codigoBarras = await this.generateUniqueCodigoBarras();
-        const codigoBarrasVO = domain_1.CodigoBarras.create(codigoBarras);
-        const numeroRegistroVO = domain_1.NumeroRegistro.create(request.numeroRegistro);
-        const tipoSolicitacaoVO = domain_1.TipoSolicitacao.create(request.tipoSolicitacao);
-        const statusVO = domain_1.StatusDesarquivamento.createPendente();
+        const statusVO = domain_1.StatusDesarquivamento.createSolicitado();
         const desarquivamento = domain_1.DesarquivamentoDomain.create({
-            codigoBarras: codigoBarrasVO,
-            tipoSolicitacao: tipoSolicitacaoVO,
+            tipoDesarquivamento: request.tipoDesarquivamento,
             status: statusVO,
-            nomeSolicitante: request.nomeSolicitante,
-            requerente: request.requerente,
-            nomeVitima: request.nomeVitima,
-            numeroRegistro: numeroRegistroVO,
+            nomeCompleto: request.nomeCompleto,
+            numeroNicLaudoAuto: request.numeroNicLaudoAuto,
             numeroProcesso: request.numeroProcesso,
             tipoDocumento: request.tipoDocumento,
-            dataFato: request.dataFato,
-            prazoAtendimento: request.prazoAtendimento,
-            finalidade: request.finalidade,
-            observacoes: request.observacoes,
+            dataSolicitacao: new Date(request.dataSolicitacao),
+            dataDesarquivamentoSAG: request.dataDesarquivamentoSAG ? new Date(request.dataDesarquivamentoSAG) : undefined,
+            dataDevolucaoSetor: request.dataDevolucaoSetor ? new Date(request.dataDevolucaoSetor) : undefined,
+            setorDemandante: request.setorDemandante,
+            servidorResponsavel: request.servidorResponsavel,
+            finalidadeDesarquivamento: request.finalidadeDesarquivamento,
+            solicitacaoProrrogacao: request.solicitacaoProrrogacao,
             urgente: request.urgente,
-            localizacaoFisica: request.localizacaoFisica,
             criadoPorId: request.criadoPorId,
             responsavelId: request.responsavelId,
         });
@@ -50,12 +45,12 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         return this.mapToResponse(savedDesarquivamento);
     }
     async validateRequest(request) {
-        if (!request.nomeSolicitante ||
-            request.nomeSolicitante.trim().length === 0) {
-            throw new Error('Nome do solicitante é obrigatório');
+        if (!request.nomeCompleto ||
+            request.nomeCompleto.trim().length === 0) {
+            throw new Error('Nome completo é obrigatório');
         }
-        if (!request.numeroRegistro || request.numeroRegistro.trim().length === 0) {
-            throw new Error('Número do registro é obrigatório');
+        if (!request.numeroNicLaudoAuto || request.numeroNicLaudoAuto.trim().length === 0) {
+            throw new Error('Número NIC/Laudo/Auto é obrigatório');
         }
         if (!request.numeroProcesso || request.numeroProcesso.trim().length === 0) {
             throw new Error('Número do processo é obrigatório');
@@ -63,47 +58,39 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         if (!request.criadoPorId || request.criadoPorId <= 0) {
             throw new Error('ID do usuário criador é obrigatório e deve ser válido');
         }
-        const existingByNumero = await this.desarquivamentoRepository.findByNumeroRegistro(request.numeroRegistro);
+        const existingByNumero = await this.desarquivamentoRepository.findByNumeroRegistro(request.numeroProcesso);
         if (existingByNumero.length > 0) {
-            throw new Error(`Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`);
+            throw new Error(`Já existe um desarquivamento com o número de processo: ${request.numeroProcesso}`);
         }
-        const tiposValidos = ['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO'];
-        if (!tiposValidos.includes(request.tipoSolicitacao)) {
-            throw new Error(`Tipo de solicitação inválido. Valores aceitos: ${tiposValidos.join(', ')}`);
+        const tiposValidos = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
+        if (!tiposValidos.includes(request.tipoDesarquivamento)) {
+            throw new Error(`Tipo de desarquivamento inválido. Valores aceitos: ${tiposValidos.join(', ')}`);
         }
         if (request.responsavelId && request.responsavelId <= 0) {
             throw new Error('ID do responsável deve ser válido');
         }
-        if (request.nomeSolicitante.length > 255) {
-            throw new Error('Nome do solicitante deve ter no máximo 255 caracteres');
+        if (request.nomeCompleto.length > 255) {
+            throw new Error('Nome completo deve ter no máximo 255 caracteres');
         }
         if (request.numeroProcesso.length > 50) {
             throw new Error('Número do processo deve ter no máximo 50 caracteres');
         }
-        if (request.nomeVitima && request.nomeVitima.length > 255) {
-            throw new Error('Nome da vítima deve ter no máximo 255 caracteres');
+        if (request.setorDemandante && request.setorDemandante.length > 255) {
+            throw new Error('Setor demandante deve ter no máximo 255 caracteres');
         }
         if (request.tipoDocumento && request.tipoDocumento.length > 100) {
             throw new Error('Tipo do documento deve ter no máximo 100 caracteres');
         }
-        if (request.localizacaoFisica && request.localizacaoFisica.length > 255) {
-            throw new Error('Localização física deve ter no máximo 255 caracteres');
+        if (request.servidorResponsavel && request.servidorResponsavel.length > 255) {
+            throw new Error('Servidor responsável deve ter no máximo 255 caracteres');
         }
-        if (request.finalidade && request.finalidade.length > 500) {
+        if (request.finalidadeDesarquivamento && request.finalidadeDesarquivamento.length > 500) {
             throw new Error('Finalidade deve ter no máximo 500 caracteres');
         }
-        if (request.observacoes && request.observacoes.length > 1000) {
-            throw new Error('Observações deve ter no máximo 1000 caracteres');
-        }
-        if (request.dataFato && request.dataFato > new Date()) {
-            throw new Error('Data do fato não pode ser futura');
-        }
-        if (request.prazoAtendimento && request.prazoAtendimento <= new Date()) {
-            throw new Error('Prazo de atendimento deve ser futuro');
-        }
-        if (request.dataFato && request.prazoAtendimento) {
-            if (request.dataFato >= request.prazoAtendimento) {
-                throw new Error('Prazo de atendimento deve ser posterior à data do fato');
+        if (request.dataSolicitacao) {
+            const dataSolicitacao = new Date(request.dataSolicitacao);
+            if (dataSolicitacao > new Date()) {
+                throw new Error('Data de solicitação não pode ser futura');
             }
         }
     }
@@ -121,29 +108,28 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         throw new Error('Não foi possível gerar um código de barras único após várias tentativas');
     }
     mapToResponse(desarquivamento) {
-        const plainObject = desarquivamento.toPlainObject();
         return {
-            id: plainObject.id,
-            codigoBarras: plainObject.codigoBarras,
-            tipoSolicitacao: plainObject.tipoSolicitacao,
-            status: plainObject.status,
-            nomeSolicitante: plainObject.nomeSolicitante,
-            nomeVitima: plainObject.nomeVitima,
-            numeroRegistro: plainObject.numeroRegistro,
-            numeroProcesso: plainObject.numeroProcesso,
-            tipoDocumento: plainObject.tipoDocumento,
-            dataFato: plainObject.dataFato,
-            prazoAtendimento: plainObject.prazoAtendimento,
-            dataAtendimento: plainObject.dataAtendimento,
-            resultadoAtendimento: plainObject.resultadoAtendimento,
-            finalidade: plainObject.finalidade,
-            observacoes: plainObject.observacoes,
-            urgente: plainObject.urgente,
-            localizacaoFisica: plainObject.localizacaoFisica,
-            criadoPorId: plainObject.criadoPorId,
-            responsavelId: plainObject.responsavelId,
-            createdAt: plainObject.createdAt,
-            updatedAt: plainObject.updatedAt,
+            id: desarquivamento.id?.value || 0,
+            codigoBarras: desarquivamento.numeroNicLaudoAuto,
+            tipoSolicitacao: desarquivamento.tipoDesarquivamento,
+            status: desarquivamento.status.value,
+            nomeSolicitante: desarquivamento.nomeCompleto,
+            nomeVitima: undefined,
+            numeroRegistro: desarquivamento.numeroProcesso,
+            numeroProcesso: desarquivamento.numeroProcesso,
+            tipoDocumento: desarquivamento.tipoDocumento,
+            dataFato: undefined,
+            prazoAtendimento: undefined,
+            dataAtendimento: desarquivamento.dataDesarquivamentoSAG,
+            resultadoAtendimento: undefined,
+            finalidade: desarquivamento.finalidadeDesarquivamento,
+            observacoes: undefined,
+            urgente: desarquivamento.urgente || false,
+            localizacaoFisica: undefined,
+            criadoPorId: desarquivamento.criadoPorId,
+            responsavelId: desarquivamento.responsavelId,
+            createdAt: desarquivamento.createdAt,
+            updatedAt: desarquivamento.updatedAt,
         };
     }
 };

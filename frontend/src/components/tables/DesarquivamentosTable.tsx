@@ -11,7 +11,7 @@ import {
   TableRow 
 } from '@/components/ui/Table'
 import { TableLoading } from '@/components/ui/Loading'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { AdminConfirmDialog } from '@/components/ui/AdminConfirmDialog'
 import { 
   Eye, 
   Edit, 
@@ -54,16 +54,16 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
     isOpen: false,
     item: null
   })
-  const canEdit = user?.role === 'admin' || user?.role === 'coordenador'
-  const canDelete = user?.role === 'admin'
+  const canEdit = user?.role?.name === 'admin' || user?.role?.name === 'coordenador'
+  const canDelete = user?.role?.name === 'admin'
 
   const getStatusColor = (status: StatusDesarquivamento) => {
     switch (status) {
-      case 'PENDENTE':
+      case StatusDesarquivamento.SOLICITADO:
         return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      case 'EM_ANDAMENTO':
+      case StatusDesarquivamento.EM_ANDAMENTO:
         return 'bg-blue-100 text-blue-800 border-blue-200'
-      case StatusDesarquivamento.CONCLUIDO:
+      case StatusDesarquivamento.FINALIZADO:
         return 'bg-green-100 text-green-800 border-green-200'
       case StatusDesarquivamento.CANCELADO:
         return 'bg-red-100 text-red-800 border-red-200'
@@ -80,21 +80,25 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
         return 'bg-blue-100 text-blue-800 border-blue-200'
       case TipoSolicitacao.VISTA:
         return 'bg-orange-100 text-orange-800 border-orange-200'
-      case TipoSolicitacao.PRONTUÁRIO_CIVIL:
+      case TipoSolicitacao.CERTIDAO:
         return 'bg-gray-100 text-gray-800 border-gray-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
-  const isExpired = (prazoAtendimento: string) => {
-    return new Date(prazoAtendimento) < new Date()
+  const isExpired = (dataSolicitacao: string) => {
+    // Calculate based on dataSolicitacao + 30 days
+    const deadline = new Date(dataSolicitacao)
+    deadline.setDate(deadline.getDate() + 30)
+    return deadline < new Date()
   }
 
-  const getDaysUntilExpiration = (prazoAtendimento: string) => {
+  const getDaysUntilExpiration = (dataSolicitacao: string) => {
     const today = new Date()
-    const expiration = new Date(prazoAtendimento)
-    const diffTime = expiration.getTime() - today.getTime()
+    const deadline = new Date(dataSolicitacao)
+    deadline.setDate(deadline.getDate() + 30)
+    const diffTime = deadline.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
   }
@@ -199,30 +203,30 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[120px]">
-                  <SortButton field="numeroRegistro">Código</SortButton>
+                  <SortButton field="numeroNicLaudoAuto">NIC/Laudo</SortButton>
                 </TableHead>
                 <TableHead>
-                  <SortButton field="tipo">Tipo</SortButton>
+                  <SortButton field="tipoDesarquivamento">Tipo</SortButton>
                 </TableHead>
                 <TableHead>
-                  <SortButton field="nomeRequerente">Requerente</SortButton>
+                  <SortButton field="nomeCompleto">Nome Completo</SortButton>
                 </TableHead>
                 <TableHead>
                   <SortButton field="status">Status</SortButton>
                 </TableHead>
                 <TableHead>
-                  <SortButton field="createdAt">Data Criação</SortButton>
+                  <SortButton field="dataSolicitacao">Data Solicitação</SortButton>
                 </TableHead>
                 <TableHead>
-                  <SortButton field="prazoAtendimento">Prazo</SortButton>
+                  <SortButton field="setorDemandante">Setor</SortButton>
                 </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.map((item) => {
-                const expired = isExpired(item.prazoAtendimento)
-                const daysUntilExpiration = getDaysUntilExpiration(item.prazoAtendimento)
+                const expired = isExpired(item.dataSolicitacao)
+                const daysUntilExpiration = getDaysUntilExpiration(item.dataSolicitacao)
                 
                 return (
                   <TableRow 
@@ -235,10 +239,15 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-mono">
-                          {item.numeroRegistro}
+                          {item.numeroNicLaudoAuto}
                         </span>
                         {expired && (
                           <AlertTriangle className="h-4 w-4 text-red-500" />
+                        )}
+                        {item.urgente && (
+                          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                            URGENTE
+                          </Badge>
                         )}
                       </div>
                     </TableCell>
@@ -246,16 +255,16 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
                     <TableCell>
                       <Badge 
                         variant="outline" 
-                        className={cn("text-xs", getTipoColor(item.tipo || TipoSolicitacao.DESARQUIVAMENTO))}
+                        className="text-xs bg-purple-100 text-purple-800 border-purple-200"
                       >
-                        {getTipoLabel(item.tipo)}
+                        {item.tipoDesarquivamento}
                       </Badge>
                     </TableCell>
                     
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium">{item.nomeRequerente}</span>
+                        <span className="font-medium">{item.nomeCompleto}</span>
                       </div>
                     </TableCell>
                     
@@ -271,24 +280,18 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
                     <TableCell>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Calendar className="h-4 w-4" />
-                        {formatDate(item.createdAt)}
+                        {formatDate(item.dataSolicitacao)}
                       </div>
                     </TableCell>
                     
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span 
-                          className={cn(
-                            "text-sm",
-                            expired ? "text-red-600 font-medium" : "text-gray-600"
-                          )}
-                        >
-                          {formatDate(item.prazoAtendimento)}
+                        <span className="text-sm text-gray-600">
+                          {item.setorDemandante}
                         </span>
                         {!expired && daysUntilExpiration <= 7 && daysUntilExpiration > 0 && (
                           <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-200">
-                            {daysUntilExpiration}d
+                            {daysUntilExpiration}d restantes
                           </Badge>
                         )}
                       </div>
@@ -332,12 +335,12 @@ const DesarquivamentosTable: React.FC<DesarquivamentosTableProps> = ({
         </CardContent>
       </Card>
 
-      <ConfirmDialog
+      <AdminConfirmDialog
         isOpen={deleteConfirm.isOpen}
         onClose={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
         title="Excluir Solicitação"
-        description={`Tem certeza que deseja excluir a solicitação ${deleteConfirm.item?.numeroRegistro}? Esta ação não pode ser desfeita.`}
+        description={`Tem certeza que deseja excluir a solicitação ${deleteConfirm.item?.numeroNicLaudoAuto}? Esta ação não pode ser desfeita.`}
         confirmText="Excluir"
         cancelText="Cancelar"
         variant="danger"

@@ -17,6 +17,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/Select'
+import { DateRangePicker, DateRange } from '@/components/ui/DateRangePicker'
 
 import {
   Table,
@@ -48,6 +49,7 @@ import { toast } from 'sonner'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableLoading } from '@/components/ui/Loading'
 import { ImportModal } from '@/components/desarquivamentos/ImportModal'
+import { AdminConfirmDialog } from '@/components/ui/AdminConfirmDialog'
 
 const DesarquivamentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -55,9 +57,14 @@ const DesarquivamentosPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [tipoFilter, setTipoFilter] = useState<string>('all')
   const [tipoDesarquivamentoFilter, setTipoDesarquivamentoFilter] = useState<string>('all')
+  const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null })
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: CreateDesarquivamentoDto | null }>({
+    isOpen: false,
+    item: null,
+  })
 
   // Query parameters
   const queryParams = useMemo(() => ({
@@ -66,7 +73,9 @@ const DesarquivamentosPage: React.FC = () => {
     search: searchTerm || undefined,
     status: statusFilter !== 'all' ? statusFilter as StatusDesarquivamento : undefined,
     tipo: tipoFilter !== 'all' ? tipoFilter as TipoSolicitacao : undefined,
-  }), [currentPage, pageSize, searchTerm, statusFilter, tipoFilter])
+    startDate: dateRange.startDate ? dateRange.startDate.toISOString().split('T')[0] : undefined,
+    endDate: dateRange.endDate ? dateRange.endDate.toISOString().split('T')[0] : undefined,
+  }), [currentPage, pageSize, searchTerm, statusFilter, tipoFilter, dateRange])
 
   const { data, isLoading, error, refetch } = useDesarquivamentos(queryParams)
   const deleteDesarquivamento = useDeleteDesarquivamento()
@@ -75,15 +84,24 @@ const DesarquivamentosPage: React.FC = () => {
     setIsImportModalOpen(false)
   })
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir esta solicitação?')) {
+  const handleDeleteClick = (item: CreateDesarquivamentoDto) => {
+    setDeleteConfirm({ isOpen: true, item })
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (deleteConfirm.item) {
       try {
-        await deleteDesarquivamento.mutateAsync(Number(id))
-        toast.success('Solicitação excluída com sucesso!')
+        await deleteDesarquivamento.mutateAsync(Number(deleteConfirm.item.id))
+        setDeleteConfirm({ isOpen: false, item: null })
       } catch (error) {
-        toast.error('Erro ao excluir solicitação')
+        console.error('Delete error:', error)
+        setDeleteConfirm({ isOpen: false, item: null })
       }
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, item: null })
   }
 
   const handleSearch = (value: string) => {
@@ -103,6 +121,11 @@ const DesarquivamentosPage: React.FC = () => {
 
   const handleTipoDesarquivamentoFilter = (value: string) => {
     setTipoDesarquivamentoFilter(value)
+    setCurrentPage(1)
+  }
+
+  const handleDateRangeChange = (newDateRange: DateRange) => {
+    setDateRange(newDateRange)
     setCurrentPage(1)
   }
 
@@ -227,27 +250,13 @@ const DesarquivamentosPage: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <label htmlFor="tipo" className="text-sm font-medium">Tipo</label>
-              <Select value={tipoFilter} onValueChange={handleTipoFilter}>
-                <SelectTrigger id="tipo" name="tipo">
-                  <SelectValue placeholder="Todos os tipos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os tipos</SelectItem>
-                  <SelectItem value={TipoSolicitacao.DESARQUIVAMENTO}>
-                    {getTipoLabel(TipoSolicitacao.DESARQUIVAMENTO)}
-                  </SelectItem>
-                  <SelectItem value={TipoSolicitacao.COPIA}>
-                    {getTipoLabel(TipoSolicitacao.COPIA)}
-                  </SelectItem>
-                  <SelectItem value={TipoSolicitacao.VISTA}>
-                    {getTipoLabel(TipoSolicitacao.VISTA)}
-                  </SelectItem>
-                  <SelectItem value={TipoSolicitacao.CERTIDAO}>
-                    {getTipoLabel(TipoSolicitacao.CERTIDAO)}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <label htmlFor="dateRange" className="text-sm font-medium">Período</label>
+              <DateRangePicker
+                value={dateRange}
+                onChange={handleDateRangeChange}
+                placeholder="Selecionar período de datas"
+                className="w-full"
+              />
             </div>
             <div className="space-y-2">
               <label htmlFor="tipoDesarquivamento" className="text-sm font-medium">Desarquivamento</label>
@@ -290,7 +299,6 @@ const DesarquivamentosPage: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Código</TableHead>
                       <TableHead>Desarquivamento Físico/Digital</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Nome completo</TableHead>
@@ -311,9 +319,6 @@ const DesarquivamentosPage: React.FC = () => {
                     {data?.data && data.data.length > 0 ? (
                       data.data.map((item) => (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium">
-                            {item.codigoBarras}
-                          </TableCell>
                           <TableCell>
                             <Badge variant="outline">
                               {item.tipoDesarquivamento ? getTipoDesarquivamentoLabel(item.tipoDesarquivamento) : '-'}
@@ -376,7 +381,7 @@ const DesarquivamentosPage: React.FC = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDelete(String(item.id))}
+                                  onClick={() => handleDeleteClick(item)}
                                   disabled={deleteDesarquivamento.isPending}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -388,7 +393,7 @@ const DesarquivamentosPage: React.FC = () => {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={15} className="text-center py-8">
+                        <TableCell colSpan={14} className="text-center py-8">
                           <div className="text-gray-500">
                             <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
                             <p>Nenhuma solicitação encontrada</p>
@@ -448,6 +453,18 @@ const DesarquivamentosPage: React.FC = () => {
           refetch()
           setIsImportModalOpen(false)
         }}
+      />
+
+      <AdminConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Excluir Solicitação"
+        description={`Tem certeza que deseja excluir a solicitação ${deleteConfirm.item?.numeroNicLaudoAuto}? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={deleteDesarquivamento.isPending}
       />
     </div>
   )

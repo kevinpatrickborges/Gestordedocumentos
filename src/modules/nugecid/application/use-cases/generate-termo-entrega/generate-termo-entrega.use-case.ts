@@ -32,15 +32,15 @@ export interface GenerateTermoEntregaResponse {
 export interface TermoEntregaData {
   desarquivamento: {
     id: number;
-    codigoBarras: string;
-    numeroRegistro: string;
-    tipoSolicitacao: string;
-    nomeSolicitante: string;
-    nomeVitima?: string;
-    dataFato?: Date;
-    finalidade?: string;
-    observacoes?: string;
-    localizacaoFisica?: string;
+    numeroNicLaudoAuto: string;
+    numeroProcesso: string;
+    tipoDesarquivamento: string;
+    nomeCompleto: string;
+    tipoDocumento: string;
+    dataSolicitacao: Date;
+    finalidadeDesarquivamento: string;
+    setorDemandante: string;
+    servidorResponsavel: string;
     urgente: boolean;
   };
   entrega: {
@@ -153,22 +153,16 @@ export class GenerateTermoEntregaUseCase {
       );
     }
 
-    if (desarquivamento.status.isCancelled()) {
+    // Check if status is appropriate for generating termo
+    if (desarquivamento.status.value === 'NAO_LOCALIZADO') {
       throw new Error(
-        'Não é possível gerar termo para desarquivamento cancelado',
+        'Não é possível gerar termo para desarquivamento não localizado',
       );
     }
 
     if (desarquivamento.isDeleted()) {
       throw new Error(
         'Não é possível gerar termo para desarquivamento excluído',
-      );
-    }
-
-    // Verificar se tem localização física (necessária para entrega)
-    if (!desarquivamento.localizacaoFisica) {
-      throw new Error(
-        'Localização física é obrigatória para gerar termo de entrega',
       );
     }
   }
@@ -197,26 +191,22 @@ export class GenerateTermoEntregaUseCase {
     return {
       desarquivamento: {
         id: plainObject.id,
-        codigoBarras: plainObject.codigoBarras,
-        numeroRegistro: plainObject.numeroRegistro,
-        tipoSolicitacao: plainObject.tipoSolicitacao,
-        nomeSolicitante: plainObject.nomeSolicitante,
-        nomeVitima: plainObject.nomeVitima,
-        dataFato: plainObject.dataFato,
-        finalidade: plainObject.finalidade,
-        observacoes: request.templateOptions?.incluirObservacoes
-          ? plainObject.observacoes
-          : undefined,
-        localizacaoFisica: request.templateOptions?.incluirLocalizacao
-          ? plainObject.localizacaoFisica
-          : undefined,
+        numeroNicLaudoAuto: plainObject.numeroNicLaudoAuto,
+        numeroProcesso: plainObject.numeroProcesso,
+        tipoDesarquivamento: plainObject.tipoDesarquivamento,
+        nomeCompleto: plainObject.nomeCompleto,
+        tipoDocumento: plainObject.tipoDocumento,
+        dataSolicitacao: plainObject.dataSolicitacao,
+        finalidadeDesarquivamento: plainObject.finalidadeDesarquivamento,
+        setorDemandante: plainObject.setorDemandante,
+        servidorResponsavel: plainObject.servidorResponsavel,
         urgente: plainObject.urgente,
       },
       entrega: {
         dataEntrega: request.templateOptions?.assinatura?.data || new Date(),
         responsavel,
         recebedor: {
-          nome: plainObject.nomeSolicitante,
+          nome: plainObject.nomeCompleto,
           documento: '', // Seria preenchido manualmente
           assinatura: '', // Seria preenchido manualmente
         },
@@ -243,10 +233,10 @@ export class GenerateTermoEntregaUseCase {
     const mockPdfContent = `
       TERMO DE ENTREGA DE DOCUMENTO
       
-      Código de Barras: ${termoData.desarquivamento.codigoBarras}
-      Número do Registro: ${termoData.desarquivamento.numeroRegistro}
-      Tipo: ${termoData.desarquivamento.tipoSolicitacao}
-      Solicitante: ${termoData.desarquivamento.nomeSolicitante}
+      Número NIC/Laudo/Auto: ${termoData.desarquivamento.numeroNicLaudoAuto}
+      Número do Processo: ${termoData.desarquivamento.numeroProcesso}
+      Tipo: ${termoData.desarquivamento.tipoDesarquivamento}
+      Nome Completo: ${termoData.desarquivamento.nomeCompleto}
       Data de Entrega: ${termoData.entrega.dataEntrega.toLocaleDateString('pt-BR')}
       
       Responsável: ${termoData.entrega.responsavel.nome}
@@ -292,27 +282,17 @@ export class GenerateTermoEntregaUseCase {
         <div class="title">TERMO DE ENTREGA DE DOCUMENTO</div>
         
         <div class="content">
-          <div class="field"><strong>Código de Barras:</strong> ${termoData.desarquivamento.codigoBarras}</div>
-          <div class="field"><strong>Número do Registro:</strong> ${termoData.desarquivamento.numeroRegistro}</div>
-          <div class="field"><strong>Tipo de Solicitação:</strong> ${termoData.desarquivamento.tipoSolicitacao}</div>
-          <div class="field"><strong>Solicitante:</strong> ${termoData.desarquivamento.nomeSolicitante}</div>
-          ${termoData.desarquivamento.nomeVitima ? `<div class="field"><strong>Vítima:</strong> ${termoData.desarquivamento.nomeVitima}</div>` : ''}
-          ${termoData.desarquivamento.finalidade ? `<div class="field"><strong>Finalidade:</strong> ${termoData.desarquivamento.finalidade}</div>` : ''}
-          ${termoData.desarquivamento.localizacaoFisica ? `<div class="field"><strong>Localização:</strong> ${termoData.desarquivamento.localizacaoFisica}</div>` : ''}
+          <div class="field"><strong>Número NIC/Laudo/Auto:</strong> ${termoData.desarquivamento.numeroNicLaudoAuto}</div>
+          <div class="field"><strong>Número do Processo:</strong> ${termoData.desarquivamento.numeroProcesso}</div>
+          <div class="field"><strong>Tipo de Desarquivamento:</strong> ${termoData.desarquivamento.tipoDesarquivamento}</div>
+          <div class="field"><strong>Nome Completo:</strong> ${termoData.desarquivamento.nomeCompleto}</div>
+          <div class="field"><strong>Tipo de Documento:</strong> ${termoData.desarquivamento.tipoDocumento}</div>
+          <div class="field"><strong>Setor Demandante:</strong> ${termoData.desarquivamento.setorDemandante}</div>
+          <div class="field"><strong>Servidor Responsável:</strong> ${termoData.desarquivamento.servidorResponsavel}</div>
+          ${termoData.desarquivamento.finalidadeDesarquivamento ? `<div class="field"><strong>Finalidade:</strong> ${termoData.desarquivamento.finalidadeDesarquivamento}</div>` : ''}
           <div class="field"><strong>Data de Entrega:</strong> ${termoData.entrega.dataEntrega.toLocaleDateString('pt-BR')}</div>
           ${termoData.desarquivamento.urgente ? '<div class="field"><strong>URGENTE</strong></div>' : ''}
         </div>
-        
-        ${
-          termoData.desarquivamento.observacoes
-            ? `
-          <div class="field">
-            <strong>Observações:</strong><br>
-            ${termoData.desarquivamento.observacoes}
-          </div>
-        `
-            : ''
-        }
         
         <div class="signature-area">
           <div>
@@ -337,6 +317,7 @@ export class GenerateTermoEntregaUseCase {
   private generateFileName(desarquivamento: DesarquivamentoDomain): string {
     const plainObject = desarquivamento.toPlainObject();
     const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return `termo_entrega_${plainObject.codigoBarras}_${timestamp}.pdf`;
+    const sanitizedNumber = plainObject.numeroNicLaudoAuto.replace(/[^a-zA-Z0-9]/g, '_');
+    return `termo_entrega_${sanitizedNumber}_${timestamp}.pdf`;
   }
 }

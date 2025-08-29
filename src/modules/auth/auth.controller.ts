@@ -51,9 +51,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Renderiza página de login' })
   @Render('login')
   loginPage(@Request() req: ExpressRequest) {
-    // Se já estiver logado, redireciona para dashboard
+    // Se já estiver logado, redireciona para página principal
     if (req.user) {
-      return { redirect: '/dashboard' };
+      return { redirect: '/' };
     }
 
     return {
@@ -121,7 +121,7 @@ export class AuthController {
       }
 
       // Se for requisição web, redireciona
-      return res.redirect('/dashboard');
+      return res.redirect('/');
     } catch (error) {
       this.logger.error(`Erro no login: ${error.message}`);
 
@@ -329,6 +329,33 @@ export class AuthController {
       return result;
     } catch (error) {
       this.logger.error(`Erro no login API v2: ${error.message}`);
+      throw error;
+    }
+  }
+
+  @Post('refresh')
+  @IsPublic()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Renovar token JWT usando refresh token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token renovado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        accessToken: { type: 'string' },
+        expiresIn: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado' })
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    try {
+      const result = await this.authService.refreshToken(body.refreshToken);
+      this.logger.log('Token renovado com sucesso');
+      return result;
+    } catch (error) {
+      this.logger.error(`Erro ao renovar token: ${error.message}`);
       throw error;
     }
   }

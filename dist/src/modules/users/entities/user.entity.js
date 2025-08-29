@@ -13,7 +13,6 @@ exports.User = void 0;
 const typeorm_1 = require("typeorm");
 const bcrypt = require("bcryptjs");
 const role_entity_1 = require("./role.entity");
-const desarquivamento_entity_1 = require("../../nugecid/entities/desarquivamento.entity");
 const auditoria_entity_1 = require("../../audit/entities/auditoria.entity");
 let User = class User {
     async hashPassword() {
@@ -113,10 +112,6 @@ __decorate([
     (0, typeorm_1.DeleteDateColumn)({ name: 'deleted_at' }),
     __metadata("design:type", Date)
 ], User.prototype, "deletedAt", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => desarquivamento_entity_1.Desarquivamento, desarquivamento => desarquivamento.criadoPor),
-    __metadata("design:type", Array)
-], User.prototype, "desarquivamentos", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => auditoria_entity_1.Auditoria, auditoria => auditoria.user),
     __metadata("design:type", Array)

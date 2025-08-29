@@ -17,7 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./modules/users/entities/user.entity");
-const desarquivamento_entity_1 = require("./modules/nugecid/entities/desarquivamento.entity");
+const desarquivamento_typeorm_entity_1 = require("./modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity");
 let AppService = class AppService {
     constructor(userRepository, desarquivamentoRepository) {
         this.userRepository = userRepository;
@@ -44,7 +44,7 @@ let AppService = class AppService {
         });
         const emPosse = await this.desarquivamentoRepository.count({
             where: {
-                status: desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO,
+                status: 'DESARQUIVADO',
                 deletedAt: null,
             },
         });
@@ -88,7 +88,7 @@ exports.AppService = AppService;
 exports.AppService = AppService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(1, (0, typeorm_1.InjectRepository)(desarquivamento_entity_1.Desarquivamento)),
+    __param(1, (0, typeorm_1.InjectRepository)(desarquivamento_typeorm_entity_1.DesarquivamentoTypeOrmEntity)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository])
 ], AppService);

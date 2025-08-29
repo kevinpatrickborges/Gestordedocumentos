@@ -17,57 +17,73 @@ exports.NugecidService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const XLSX = require("xlsx");
-const fs = require("fs");
-const desarquivamento_entity_1 = require("./entities/desarquivamento.entity");
-const tipo_desarquivamento_vo_1 = require("./domain/value-objects/tipo-desarquivamento.vo");
-const tipo_solicitacao_vo_1 = require("./domain/value-objects/tipo-solicitacao.vo");
-const PDFDocument = require("pdfkit");
+const desarquivamento_typeorm_entity_1 = require("./infrastructure/entities/desarquivamento.typeorm-entity");
 const user_entity_1 = require("../users/entities/user.entity");
-const auditoria_entity_1 = require("../audit/entities/auditoria.entity");
-const import_result_dto_1 = require("./dto/import-result.dto");
-const import_desarquivamento_dto_1 = require("./dto/import-desarquivamento.dto");
-const import_registro_dto_1 = require("./dto/import-registro.dto");
-const class_validator_1 = require("class-validator");
+const nugecid_audit_service_1 = require("./nugecid-audit.service");
 let NugecidService = NugecidService_1 = class NugecidService {
-    constructor(desarquivamentoRepository, userRepository, auditoriaRepository) {
+    constructor(desarquivamentoRepository, userRepository, nugecidAuditService) {
         this.desarquivamentoRepository = desarquivamentoRepository;
         this.userRepository = userRepository;
-        this.auditoriaRepository = auditoriaRepository;
+        this.nugecidAuditService = nugecidAuditService;
         this.logger = new common_1.Logger(NugecidService_1.name);
     }
     async create(createDesarquivamentoDto, currentUser) {
         const desarquivamento = this.desarquivamentoRepository.create({
             ...createDesarquivamentoDto,
-            criadoPor: currentUser,
-            status: desarquivamento_entity_1.StatusDesarquivamento.PENDENTE,
+            criadoPorId: currentUser.id,
+            status: 'SOLICITADO',
         });
         const saved = await this.desarquivamentoRepository.save(desarquivamento);
         if (Array.isArray(saved)) {
             throw new Error('A operação de salvar retornou um array, mas um único objeto era esperado.');
         }
-        await this.saveDesarquivamentoAudit(currentUser.id, 'CREATE', saved, null);
-        this.logger.log(`Desarquivamento criado: ${saved.codigoBarras} por ${currentUser.usuario}`);
+        await this.nugecidAuditService.saveDesarquivamentoAudit(currentUser.id, 'CREATE', saved, null);
+        this.logger.log(`Desarquivamento criado: ${saved.numeroNicLaudoAuto} por ${currentUser.usuario}`);
         return this.findOne(saved.id);
     }
     async findAll(queryDto) {
-        const { page = 1, limit = 10, search, status, tipo, usuarioId, dataInicio, dataFim, vencidos, sortBy = 'createdAt', sortOrder = 'DESC', } = queryDto;
+        const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'DESC', } = queryDto;
         const queryBuilder = this.desarquivamentoRepository
             .createQueryBuilder('desarquivamento')
             .leftJoinAndSelect('desarquivamento.criadoPor', 'criadoPor')
             .leftJoinAndSelect('desarquivamento.responsavel', 'responsavel');
+        this.applyFilters(queryBuilder, queryDto);
+        const validSortFields = [
+            'dataSolicitacao',
+            'nomeCompleto',
+            'numeroNicLaudoAuto',
+            'numeroProcesso',
+            'status',
+            'tipoDesarquivamento',
+        ];
+        const sortField = validSortFields.includes(sortBy) ? sortBy : 'dataSolicitacao';
+        queryBuilder.orderBy(`desarquivamento.${sortField}`, sortOrder);
+        const offset = (page - 1) * limit;
+        queryBuilder.skip(offset).take(limit);
+        const [desarquivamentos, total] = await queryBuilder.getManyAndCount();
+        const totalPages = Math.ceil(total / limit);
+        return {
+            desarquivamentos,
+            total,
+            page,
+            limit,
+            totalPages,
+        };
+    }
+    applyFilters(queryBuilder, queryDto) {
+        const { search, status, tipoDesarquivamento, usuarioId, dataInicio, dataFim, startDate, endDate, vencidos, } = queryDto;
         if (search) {
-            queryBuilder.andWhere('(desarquivamento.nomeSolicitante ILIKE :search OR ' +
-                'desarquivamento.numeroRegistro ILIKE :search OR ' +
-                'desarquivamento.codigoBarras ILIKE :search)', { search: `%${search}%` });
+            queryBuilder.andWhere('(desarquivamento.nomeCompleto ILIKE :search OR ' +
+                'desarquivamento.numeroNicLaudoAuto ILIKE :search OR ' +
+                'desarquivamento.numeroProcesso ILIKE :search)', { search: `%${search}%` });
         }
         if (status && status.length > 0) {
             queryBuilder.andWhere('desarquivamento.status IN (:...status)', {
                 status,
             });
         }
-        if (tipo && tipo.length > 0) {
-            queryBuilder.andWhere('desarquivamento.tipo IN (:...tipo)', { tipo });
+        if (tipoDesarquivamento && tipoDesarquivamento.length > 0) {
+            queryBuilder.andWhere('desarquivamento.tipoDesarquivamento IN (:...tipoDesarquivamento)', { tipoDesarquivamento });
         }
         if (usuarioId) {
             queryBuilder.andWhere('desarquivamento.criadoPor.id = :usuarioId', {
@@ -84,31 +100,26 @@ let NugecidService = NugecidService_1 = class NugecidService {
                 dataFim: new Date(dataFim),
             });
         }
-        if (vencidos) {
-            queryBuilder.andWhere('desarquivamento.prazo_atendimento < :now', {
-                now: new Date(),
+        if (startDate) {
+            queryBuilder.andWhere('desarquivamento.dataSolicitacao >= :startDate', {
+                startDate: new Date(startDate),
             });
         }
-        const validSortFields = [
-            'createdAt',
-            'nomeSolicitante',
-            'status',
-            'tipo',
-            'prazoAtendimento',
-        ];
-        const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-        queryBuilder.orderBy(`desarquivamento.${sortField}`, sortOrder);
-        const offset = (page - 1) * limit;
-        queryBuilder.skip(offset).take(limit);
-        const [desarquivamentos, total] = await queryBuilder.getManyAndCount();
-        const totalPages = Math.ceil(total / limit);
-        return {
-            desarquivamentos,
-            total,
-            page,
-            limit,
-            totalPages,
-        };
+        if (endDate) {
+            queryBuilder.andWhere('desarquivamento.dataSolicitacao <= :endDate', {
+                endDate: new Date(endDate),
+            });
+        }
+        if (vencidos) {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            queryBuilder.andWhere('desarquivamento.dataSolicitacao < :thirtyDaysAgo', {
+                thirtyDaysAgo,
+            });
+            queryBuilder.andWhere('desarquivamento.status != :finalizado', {
+                finalizado: 'FINALIZADO',
+            });
+        }
     }
     async findOne(id) {
         const desarquivamento = await this.desarquivamentoRepository
@@ -122,77 +133,9 @@ let NugecidService = NugecidService_1 = class NugecidService {
         }
         return desarquivamento;
     }
-    async importFromXLSX(file, currentUser) {
-        if (!file) {
-            throw new common_1.BadRequestException('Arquivo não enviado.');
-        }
-        this.logger.log(`Iniciando importação do arquivo: ${file.originalname}`);
-        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
-        const result = new import_result_dto_1.ImportResultDto();
-        result.totalRows = data.length;
-        result.successCount = 0;
-        result.errorCount = 0;
-        result.errors = [];
-        for (let i = 0; i < data.length; i++) {
-            const row = data[i];
-            const rowNumber = i + 2;
-            const importDto = new import_desarquivamento_dto_1.ImportDesarquivamentoDto();
-            importDto.numero_processo =
-                row['numero_processo'] || row['Numero Processo'] || row['Nº Processo'];
-            importDto.requerente = row['requerente'] || row['Requerente'];
-            importDto.data_requerimento =
-                row['data_requerimento'] || row['Data Requerimento'];
-            importDto.palavras_chave = row['palavras_chave'] || row['Palavras Chave'];
-            importDto.assunto = row['assunto'] || row['Assunto'];
-            importDto.autorId = currentUser.id;
-            const errors = await (0, class_validator_1.validate)(importDto);
-            if (errors.length > 0) {
-                result.errorCount++;
-                result.errors.push({
-                    row: rowNumber,
-                    details: {
-                        message: errors
-                            .map(err => Object.values(err.constraints).join(', '))
-                            .join('; '),
-                        data: row,
-                    },
-                });
-                continue;
-            }
-            try {
-                const createDto = {
-                    numeroRegistro: importDto.numero_processo,
-                    numeroProcesso: importDto.numero_processo || '',
-                    nomeSolicitante: importDto.requerente,
-                    requerente: importDto.requerente,
-                    tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
-                    tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
-                    tipoDocumento: importDto.assunto || 'Não especificado',
-                    setorDemandante: 'A verificar',
-                    servidorResponsavel: 'A verificar',
-                    finalidadeDesarquivamento: importDto.assunto || 'Não especificado',
-                };
-                await this.create(createDto, currentUser);
-                result.successCount++;
-            }
-            catch (error) {
-                this.logger.error(`Erro ao salvar linha ${rowNumber}: ${error.message}`);
-                result.errorCount++;
-                result.errors.push({
-                    row: rowNumber,
-                    details: { message: error.message, data: row },
-                });
-            }
-        }
-        this.logger.log(`Importação concluída para ${file.originalname}: ${result.successCount} sucessos, ${result.errorCount} falhas.`);
-        return result;
-    }
-    async findByBarcode(codigoBarras) {
+    async findByBarcode(numeroNicLaudoAuto) {
         const desarquivamento = await this.desarquivamentoRepository.findOne({
-            where: { codigoBarras },
+            where: { numeroNicLaudoAuto },
             relations: ['usuario', 'responsavel'],
         });
         if (!desarquivamento) {
@@ -202,7 +145,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
     }
     async update(id, updateDesarquivamentoDto, currentUser) {
         const desarquivamento = await this.findOne(id);
-        if (!desarquivamento.canBeEditedBy(currentUser)) {
+        if (!currentUser.isAdmin() && desarquivamento.criadoPorId !== currentUser.id) {
             throw new common_1.ForbiddenException('Você não tem permissão para editar este desarquivamento');
         }
         Object.assign(desarquivamento, updateDesarquivamentoDto);
@@ -213,417 +156,30 @@ let NugecidService = NugecidService_1 = class NugecidService {
             if (!responsavel) {
                 throw new common_1.BadRequestException('Responsável não encontrado');
             }
-            desarquivamento.responsavel = responsavel;
+            desarquivamento.responsavelId = responsavel.id;
         }
         const updated = await this.desarquivamentoRepository.save(desarquivamento);
-        await this.saveDesarquivamentoAudit(currentUser.id, 'UPDATE', updated, updateDesarquivamentoDto);
-        this.logger.log(`Desarquivamento atualizado: ${updated.codigoBarras} por ${currentUser.usuario}`);
+        await this.nugecidAuditService.saveDesarquivamentoAudit(currentUser.id, 'UPDATE', updated, updateDesarquivamentoDto);
+        this.logger.log(`Desarquivamento atualizado: ${updated.numeroNicLaudoAuto} por ${currentUser.usuario}`);
         return this.findOne(updated.id);
-    }
-    async importRegistros(file, currentUser) {
-        if (!file) {
-            throw new common_1.BadRequestException('Arquivo não enviado.');
-        }
-        this.logger.log(`Iniciando importação de registros do arquivo: ${file.originalname}`);
-        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(worksheet);
-        const result = new import_result_dto_1.ImportResultDto();
-        result.totalRows = data.length;
-        result.successCount = 0;
-        result.errorCount = 0;
-        result.errors = [];
-        for (let i = 0; i < data.length; i++) {
-            const row = data[i];
-            const rowNumber = i + 2;
-            const importDto = new import_registro_dto_1.ImportRegistroDto();
-            importDto.desarquivamentoTipo =
-                row['DESARQUIVAMENTO FÍSICO/DIGITAL'] || row['desarquivamento_tipo'];
-            importDto.status = row['Status'] || row['status'];
-            importDto.nomeCompleto = row['Nome Completo'] || row['nome_completo'];
-            importDto.numDocumento =
-                row['Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA'] || row['num_documento'];
-            importDto.numProcesso = row['Nº do Processo'] || row['num_processo'];
-            importDto.tipoDocumento =
-                row['Tipo de Documento'] || row['tipo_documento'];
-            importDto.dataSolicitacao =
-                row['Data de solicitação'] || row['data_solicitacao'];
-            importDto.dataDesarquivamento =
-                row['Data do desarquivamento - SAG'] || row['data_desarquivamento'];
-            importDto.dataDevolucao =
-                row['Data da devolução pelo setor'] || row['data_devolucao'];
-            importDto.setorDemandante =
-                row['Setor Demandante'] || row['setor_demandante'];
-            importDto.servidorResponsavel =
-                row['Servidor Responsável'] || row['servidor_responsavel'];
-            importDto.finalidade = row['Finalidade'] || row['finalidade'];
-            const prorrogacaoValue = row['Prorrogação'] || row['prorrogacao'];
-            if (prorrogacaoValue !== undefined) {
-                importDto.prorrogacao =
-                    prorrogacaoValue === 'Sim' ||
-                        prorrogacaoValue === 'sim' ||
-                        prorrogacaoValue === true ||
-                        prorrogacaoValue === 'true';
-            }
-            const errors = await (0, class_validator_1.validate)(importDto);
-            if (errors.length > 0) {
-                result.errorCount++;
-                result.errors.push({
-                    row: rowNumber,
-                    details: {
-                        message: errors
-                            .map(err => Object.values(err.constraints).join(', '))
-                            .join('; '),
-                        data: row,
-                    },
-                });
-                continue;
-            }
-            try {
-                const createDto = {
-                    tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
-                    nomeSolicitante: importDto.nomeCompleto,
-                    requerente: importDto.nomeCompleto,
-                    numeroRegistro: importDto.numProcesso,
-                    numeroProcesso: importDto.numProcesso || '',
-                    numeroNicLaudoAuto: importDto.numDocumento,
-                    tipoDocumento: importDto.tipoDocumento,
-                    tipoDesarquivamento: this.mapTipoDesarquivamentoFromExcel(importDto.desarquivamentoTipo),
-                    setorDemandante: importDto.setorDemandante,
-                    servidorResponsavel: importDto.servidorResponsavel,
-                    finalidadeDesarquivamento: importDto.finalidade,
-                    solicitacaoProrrogacao: importDto.prorrogacao,
-                };
-                await this.create(createDto, currentUser);
-                result.successCount++;
-            }
-            catch (error) {
-                this.logger.error(`Erro ao salvar linha ${rowNumber} do arquivo ${file.originalname}: ${error.message}`);
-                result.errorCount++;
-                result.errors.push({
-                    row: rowNumber,
-                    details: { message: error.message, data: row },
-                });
-            }
-        }
-        this.logger.log(`Importação de registros concluída para ${file.originalname}: ${result.successCount} sucessos, ${result.errorCount} falhas.`);
-        await this.saveAudit(currentUser.id, 'IMPORT', 'REGISTRO', `Importação de registros: ${result.successCount}/${result.totalRows} sucesso(s).`, { fileName: file.originalname, result });
-        return result;
     }
     async remove(id, currentUser) {
         const desarquivamento = await this.findOne(id);
-        if (!desarquivamento.canBeDeletedBy(currentUser)) {
+        if (!currentUser.isAdmin() && desarquivamento.criadoPorId !== currentUser.id) {
             throw new common_1.ForbiddenException('Você não tem permissão para remover este desarquivamento');
         }
         await this.desarquivamentoRepository.softDelete(id);
-        await this.saveAudit(currentUser.id, 'DELETE', 'DESARQUIVAMENTO', `Desarquivamento removido: ${desarquivamento.codigoBarras}`, { desarquivamentoId: desarquivamento.id });
-        this.logger.log(`Desarquivamento removido: ${desarquivamento.codigoBarras} por ${currentUser.usuario}`);
-    }
-    async importFromExcel(filePath, currentUser) {
-        try {
-            const workbook = XLSX.readFile(filePath);
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const data = XLSX.utils.sheet_to_json(worksheet);
-            const result = new import_result_dto_1.ImportResultDto();
-            result.totalRows = data.length;
-            result.successCount = 0;
-            result.errorCount = 0;
-            result.errors = [];
-            for (let i = 0; i < data.length; i++) {
-                const row = data[i];
-                const rowNumber = i + 2;
-                try {
-                    await this.createFromExcelRow(row, currentUser);
-                    result.successCount++;
-                }
-                catch (error) {
-                    result.errorCount++;
-                    result.errors.push({
-                        row: rowNumber,
-                        details: { message: error.message, data: row },
-                    });
-                }
-            }
-            fs.unlinkSync(filePath);
-            await this.saveAudit(currentUser.id, 'IMPORT', 'DESARQUIVAMENTO', `Importação de planilha: ${result.successCount}/${result.totalRows} registros`, { result });
-            this.logger.log(`Importação concluída: ${result.successCount}/${result.totalRows} registros por ${currentUser.usuario}`);
-            return result;
-        }
-        catch (error) {
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-            throw new common_1.BadRequestException(`Erro na importação: ${error.message}`);
-        }
-    }
-    async getDashboardStats() {
-        const total = await this.desarquivamentoRepository.count();
-        const pendentes = await this.desarquivamentoRepository.count({
-            where: { status: desarquivamento_entity_1.StatusDesarquivamento.PENDENTE },
-        });
-        const emAndamento = await this.desarquivamentoRepository.count({
-            where: { status: desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO },
-        });
-        const concluidos = await this.desarquivamentoRepository.count({
-            where: { status: desarquivamento_entity_1.StatusDesarquivamento.CONCLUIDO },
-        });
-        const vencidos = await this.desarquivamentoRepository
-            .createQueryBuilder('desarquivamento')
-            .where('desarquivamento.prazo_atendimento < :now', { now: new Date() })
-            .andWhere('desarquivamento.status != :concluido', {
-            concluido: desarquivamento_entity_1.StatusDesarquivamento.CONCLUIDO,
-        })
-            .getCount();
-        const porStatus = await this.desarquivamentoRepository
-            .createQueryBuilder('desarquivamento')
-            .select('desarquivamento.status', 'status')
-            .addSelect('COUNT(desarquivamento.id)', 'count')
-            .groupBy('desarquivamento.status')
-            .getRawMany();
-        const porTipo = await this.desarquivamentoRepository
-            .createQueryBuilder('desarquivamento')
-            .select('desarquivamento.tipoSolicitacao', 'tipo')
-            .addSelect('COUNT(desarquivamento.id)', 'count')
-            .groupBy('desarquivamento.tipoSolicitacao')
-            .getRawMany();
-        const recentes = await this.desarquivamentoRepository.find({
-            relations: ['usuario'],
-            order: { createdAt: 'DESC' },
-            take: 10,
-        });
-        return {
-            total,
-            pendentes,
-            emAndamento,
-            concluidos,
-            vencidos,
-            porStatus: porStatus.map(item => ({
-                status: item.status,
-                count: parseInt(item.count),
-                color: this.getStatusColor(item.status),
-            })),
-            porTipo: porTipo.map(item => ({
-                tipo: item.tipo,
-                count: parseInt(item.count),
-            })),
-            recentes,
-        };
-    }
-    async createFromExcelRow(row, currentUser) {
-        const data = {
-            tipoSolicitacao: this.mapTipoFromExcel(row['Tipo'] || row['tipo']),
-            nomeSolicitante: row['Nome Requerente'] || row['nome_requerente'] || '',
-            requerente: row['Requerente'] ||
-                row['requerente'] ||
-                row['Nome Requerente'] ||
-                row['nome_requerente'] ||
-                '',
-            numeroRegistro: row['Número Registro'] || row['numero_registro'] || '',
-            numeroProcesso: row['Número Processo'] ||
-                row['numero_processo'] ||
-                row['numeroRegistro'] ||
-                row['numero_registro'] ||
-                '',
-            tipoDocumento: row['Tipo Documento'] || row['tipo_documento'] || '',
-            finalidadeDesarquivamento: row['Finalidade'] || row['finalidade'] || '',
-            urgente: this.parseBooleanFromExcel(row['Urgente'] || row['urgente']),
-            tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
-            setorDemandante: 'A verificar',
-            servidorResponsavel: 'A verificar',
-        };
-        if (!data.nomeSolicitante) {
-            throw new Error('Nome do requerente é obrigatório');
-        }
-        if (!data.numeroRegistro) {
-            throw new Error('Número do registro é obrigatório');
-        }
-        return this.create(data, currentUser);
-    }
-    mapTipoFromExcel(tipo) {
-        if (!tipo)
-            return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO;
-        const tipoLower = tipo.toLowerCase().trim();
-        if (tipoLower.includes('desarquiv'))
-            return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO;
-        if (tipoLower.includes('cópia') || tipoLower.includes('copia'))
-            return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.COPIA;
-        if (tipoLower.includes('vista'))
-            return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.VISTA;
-        if (tipoLower.includes('certidão') || tipoLower.includes('certidao'))
-            return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.CERTIDAO;
-        return tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO;
-    }
-    mapTipoDesarquivamentoFromExcel(tipo) {
-        if (!tipo)
-            return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO;
-        const tipoLower = tipo.toLowerCase().trim();
-        if (tipoLower.includes('digital'))
-            return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.DIGITAL;
-        return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO;
-    }
-    parseBooleanFromExcel(value) {
-        if (typeof value === 'boolean')
-            return value;
-        if (typeof value === 'string') {
-            const lower = value.toLowerCase().trim();
-            return (lower === 'sim' || lower === 'true' || lower === '1' || lower === 'x');
-        }
-        if (typeof value === 'number')
-            return value === 1;
-        return false;
-    }
-    getStatusColor(status) {
-        const colors = {
-            [desarquivamento_entity_1.StatusDesarquivamento.PENDENTE]: '#fbbf24',
-            [desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO]: '#3b82f6',
-            [desarquivamento_entity_1.StatusDesarquivamento.CONCLUIDO]: '#10b981',
-            [desarquivamento_entity_1.StatusDesarquivamento.CANCELADO]: '#ef4444',
-        };
-        return colors[status] || '#6b7280';
-    }
-    async generatePdf(desarquivamento) {
-        try {
-            this.logger.log(`Iniciando geração de PDF para o desarquivamento ID: ${desarquivamento.id}`);
-            this.logger.debug('Dados do desarquivamento para o PDF:', JSON.stringify(desarquivamento, null, 2));
-            return new Promise((resolve, reject) => {
-                const doc = new PDFDocument({
-                    size: 'A4',
-                    margins: { top: 50, bottom: 50, left: 72, right: 72 },
-                    bufferPages: true,
-                });
-                doc
-                    .font('Helvetica')
-                    .fontSize(12)
-                    .text('GOVERNO DO ESTADO DO RIO GRANDE DO NORTE', {
-                    align: 'center',
-                });
-                doc.text('SECRETARIA DE ESTADO DA SEGURANÇA PÚBLICA E DA DEFESA SOCIAL', { align: 'center' });
-                doc.text('INSTITUTO TÉCNICO-CIENTÍFICO DE PERÍCIA - ITEP/RN', {
-                    align: 'center',
-                });
-                doc.moveDown(2);
-                doc
-                    .font('Helvetica-Bold')
-                    .fontSize(16)
-                    .text('TERMO DE DESARQUIVAMENTO', { align: 'center' });
-                doc.moveDown(2);
-                const dataSolicitacao = new Date(desarquivamento.createdAt).toLocaleDateString('pt-BR');
-                const texto = `Pelo presente termo, certifico que, para fins de ${desarquivamento.finalidade || 'não especificado'}, foi desarquivado o procedimento referente a(o) ${desarquivamento.tipoDocumento || 'documento'} de número ${desarquivamento.numeroRegistro}, que tem como parte(s) ${desarquivamento.nomeSolicitante} e ${desarquivamento.nomeVitima || 'não aplicável'}. A solicitação foi realizada em ${dataSolicitacao}.`;
-                doc.font('Helvetica').fontSize(12).text(texto, { align: 'justify' });
-                doc.moveDown(2);
-                doc.font('Helvetica-Bold').fontSize(12).text('DETALHES DA SOLICITAÇÃO');
-                doc.moveDown();
-                doc.font('Helvetica').fontSize(12);
-                doc.text(`- Código de Barras: ${desarquivamento.codigoBarras}`);
-                doc.text(`- Solicitante: ${desarquivamento.criadoPor.nome}`);
-                doc.text(`- Data da Solicitação: ${new Date(desarquivamento.createdAt).toLocaleString('pt-BR')}`);
-                doc.text(`- Prazo para Atendimento: ${new Date(desarquivamento.prazoAtendimento).toLocaleDateString('pt-BR')}`);
-                doc.moveDown(3);
-                doc
-                    .font('Helvetica')
-                    .fontSize(12)
-                    .text('___________________________________________', {
-                    align: 'center',
-                });
-                doc.text(desarquivamento.responsavel
-                    ? desarquivamento.responsavel.nome
-                    : 'Responsável não atribuído', { align: 'center' });
-                doc.text('Responsável pelo Desarquivamento', { align: 'center' });
-                doc.moveDown(2);
-                const dataGeracao = new Date().toLocaleString('pt-BR');
-                doc
-                    .font('Helvetica')
-                    .fontSize(10)
-                    .text(`Gerado em: ${dataGeracao} - SGC/ITEP`, { align: 'center' });
-                const buffers = [];
-                doc.on('data', buffers.push.bind(buffers));
-                doc.on('end', () => {
-                    const pdfData = Buffer.concat(buffers);
-                    resolve(pdfData);
-                });
-                doc.on('error', err => {
-                    this.logger.error('Erro no stream do PDF:', err);
-                    reject(err);
-                });
-                doc.end();
-            });
-        }
-        catch (error) {
-            this.logger.error(`Erro catastrófico ao gerar PDF para ID ${desarquivamento?.id}:`, error.stack);
-            throw error;
-        }
-    }
-    async saveAudit(userId, action, resource, details, data, resourceId, ipAddress, userAgent) {
-        try {
-            const enrichedData = {
-                details,
-                originalData: data,
-                timestamp: new Date().toISOString(),
-                action,
-                resource,
-                userId,
-                resourceId: resourceId || data?.desarquivamentoId || 0,
-                metadata: {
-                    environment: process.env.NODE_ENV || 'development',
-                    version: process.env.npm_package_version || '1.0.0',
-                    service: 'nugecid-service',
-                },
-            };
-            const auditData = auditoria_entity_1.Auditoria.createResourceAudit(userId, action, resource, resourceId || data?.desarquivamentoId || 0, enrichedData, ipAddress || 'system', userAgent || 'nugecid-service');
-            const audit = this.auditoriaRepository.create(auditData);
-            await this.auditoriaRepository.save(audit);
-            this.logger.debug(`Auditoria salva: ${action} em ${resource} por usuário ${userId}`, { enrichedData });
-        }
-        catch (error) {
-            this.logger.error(`Erro ao salvar auditoria: ${error.message}`, error.stack);
-        }
-    }
-    async saveDesarquivamentoAudit(userId, action, desarquivamento, changes, ipAddress, userAgent) {
-        const details = this.buildAuditDetails(action, desarquivamento, changes);
-        const auditData = {
-            desarquivamentoId: desarquivamento.id,
-            codigoBarras: desarquivamento.codigoBarras,
-            numeroRegistro: desarquivamento.numeroRegistro,
-            nomeSolicitante: desarquivamento.nomeSolicitante,
-            tipoSolicitacao: desarquivamento.tipoSolicitacao,
-            status: desarquivamento.status,
-            changes,
-            previousValues: changes ? this.extractPreviousValues(changes) : null,
-        };
-        await this.saveAudit(userId, action, 'DESARQUIVAMENTO', details, auditData, desarquivamento.id, ipAddress, userAgent);
-    }
-    buildAuditDetails(action, desarquivamento, changes) {
-        const baseInfo = `${desarquivamento.codigoBarras || 'N/A'} - ${desarquivamento.nomeSolicitante || 'N/A'}`;
-        switch (action) {
-            case 'CREATE':
-                return `Novo desarquivamento criado: ${baseInfo} (Tipo: ${desarquivamento.tipoSolicitacao}, Status: ${desarquivamento.status})`;
-            case 'UPDATE':
-                const changedFields = changes ? Object.keys(changes).join(', ') : 'N/A';
-                return `Desarquivamento atualizado: ${baseInfo} (Campos alterados: ${changedFields})`;
-            case 'DELETE':
-                return `Desarquivamento removido: ${baseInfo}`;
-            case 'RESTORE':
-                return `Desarquivamento restaurado: ${baseInfo}`;
-            case 'VIEW':
-                return `Desarquivamento visualizado: ${baseInfo}`;
-            default:
-                return `Ação ${action} executada em desarquivamento: ${baseInfo}`;
-        }
-    }
-    extractPreviousValues(changes) {
-        return null;
+        await this.nugecidAuditService.saveAudit(currentUser.id, 'DELETE', 'DESARQUIVAMENTO', `Desarquivamento removido: ${desarquivamento.numeroNicLaudoAuto}`, { desarquivamentoId: desarquivamento.id });
+        this.logger.log(`Desarquivamento removido: ${desarquivamento.numeroNicLaudoAuto} por ${currentUser.usuario}`);
     }
 };
 exports.NugecidService = NugecidService;
 exports.NugecidService = NugecidService = NugecidService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(desarquivamento_entity_1.Desarquivamento)),
+    __param(0, (0, typeorm_1.InjectRepository)(desarquivamento_typeorm_entity_1.DesarquivamentoTypeOrmEntity)),
     __param(1, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
-    __param(2, (0, typeorm_1.InjectRepository)(auditoria_entity_1.Auditoria)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        nugecid_audit_service_1.NugecidAuditService])
 ], NugecidService);
 //# sourceMappingURL=nugecid.service.js.map

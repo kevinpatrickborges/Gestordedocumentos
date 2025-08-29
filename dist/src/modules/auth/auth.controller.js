@@ -33,7 +33,7 @@ let AuthController = AuthController_1 = class AuthController {
     }
     loginPage(req) {
         if (req.user) {
-            return { redirect: '/dashboard' };
+            return { redirect: '/' };
         }
         return {
             title: 'Login - SGC ITEP',
@@ -57,7 +57,7 @@ let AuthController = AuthController_1 = class AuthController {
                     data: result,
                 });
             }
-            return res.redirect('/dashboard');
+            return res.redirect('/');
         }
         catch (error) {
             this.logger.error(`Erro no login: ${error.message}`);
@@ -150,6 +150,17 @@ let AuthController = AuthController_1 = class AuthController {
         }
         catch (error) {
             this.logger.error(`Erro no login API v2: ${error.message}`);
+            throw error;
+        }
+    }
+    async refreshToken(body) {
+        try {
+            const result = await this.authService.refreshToken(body.refreshToken);
+            this.logger.log('Token renovado com sucesso');
+            return result;
+        }
+        catch (error) {
+            this.logger.error(`Erro ao renovar token: ${error.message}`);
             throw error;
         }
     }
@@ -286,6 +297,28 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto, String, String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginV2", null);
+__decorate([
+    (0, common_1.Post)('refresh'),
+    (0, is_public_decorator_1.IsPublic)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Renovar token JWT usando refresh token' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Token renovado com sucesso',
+        schema: {
+            type: 'object',
+            properties: {
+                accessToken: { type: 'string' },
+                expiresIn: { type: 'string' },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Refresh token inválido ou expirado' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refreshToken", null);
 exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, swagger_1.ApiTags)('Autenticação'),
     (0, common_1.Controller)('auth'),

@@ -1,396 +1,420 @@
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ForbiddenException,
-  Logger,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+  Header,
+  UseGuards,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  Render,
+  Request,
+  Response,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, FindManyOptions } from 'typeorm';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
+import {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from 'express';
 
+// Use Cases
+import {
+  CreateUserUseCase,
+  UpdateUserUseCase,
+  DeleteUserUseCase,
+  GetUserByIdUseCase,
+  GetUsersUseCase,
+  RestoreUserUseCase,
+  GetUserStatisticsUseCase,
+  GetRolesUseCase,
+} from './application/use-cases';
+
+// DTOs
+import { CreateUserDto } from './application/dto/create-user.dto';
+import { UpdateUserDto } from './application/dto/update-user.dto';
+import { QueryUsersDto } from './application/dto/query-users.dto';
+
+// Guards and Decorators
+import { SessionAuthGuard } from '../auth/guards/session-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from './entities/user.entity';
-import { Role } from './entities/role.entity';
-import { Auditoria } from '../audit/entities/auditoria.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { QueryUsersDto } from './dto/query-users.dto';
 
-export interface PaginatedUsers {
-  users: any[]; // Objetos serializados sem métodos
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+// Mappers
+import { UserMapper } from './infrastructure/mappers/user.mapper';
+import { RoleMapper } from './infrastructure/mappers/role.mapper';
 
-@Injectable()
-export class UsersService {
-  private readonly logger = new Logger(UsersService.name);
-
+@ApiTags('Usuários')
+@Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class UsersController {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
-    @InjectRepository(Auditoria)
-    private readonly auditoriaRepository: Repository<Auditoria>,
+    private readonly createUserUseCase: CreateUserUseCase,
+    private readonly updateUserUseCase: UpdateUserUseCase,
+    private readonly deleteUserUseCase: DeleteUserUseCase,
+    private readonly getUserByIdUseCase: GetUserByIdUseCase,
+    private readonly getUsersUseCase: GetUsersUseCase,
+    private readonly restoreUserUseCase: RestoreUserUseCase,
+    private readonly getUserStatisticsUseCase: GetUserStatisticsUseCase,
+    private readonly getRolesUseCase: GetRolesUseCase,
   ) {}
 
-  /**
-   * Cria um novo usuário
-   */
-  async create(createUserDto: CreateUserDto, currentUser: User): Promise<User> {
-    if (!currentUser.isAdmin()) {
-      throw new ForbiddenException(
-        'Apenas administradores podem criar usuários',
-      );
+  @Get()
+  @Roles('admin')
+  // Ensure API responses are not cached by browsers/proxies
+  // This prevents browsers from returning 304 Not Modified for the users list
+  // which was causing the frontend to mis-handle the response.
+  // Using no-store and no-cache guarantees fresh data.
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  @ApiOperation({ summary: 'Lista todos os usuários' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'role', required: false, type: String })
+  @ApiQuery({ name: 'ativo', required: false, type: Boolean })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuários retornada com sucesso.',
+  })
+  async findAll(@Query() query: QueryUsersDto) {
+    const result = await this.getUsersUseCase.execute(query as any);
+
+    // Caso paginado (objeto com users + meta)
+    if (Array.isArray((result as any).users)) {
+      const pag = result as any;
+      const items = pag.users.map((u: any) => UserMapper.toEntity(u));
+      return {
+        success: true,
+        data: items,
+        meta: {
+          total: pag.total || items.length,
+          page: pag.page || query.page || 1,
+          limit: pag.limit || query.limit || items.length,
+          totalPages: pag.totalPages || 1,
+          hasNext: (pag.page || 1) < (pag.totalPages || 1),
+          hasPrev: (pag.page || 1) > 1,
+        },
+      };
     }
 
-    // Verifica se usuario já existe
-    const existingUser = await this.userRepository.findOne({
-      where: { usuario: createUserDto.usuario },
-    });
-
-    if (existingUser) {
-      throw new BadRequestException('Usuário já está em uso');
-    }
-
-    // Verifica se a role existe
-    const role = await this.roleRepository.findOne({
-      where: { id: createUserDto.roleId },
-    });
-
-    if (!role) {
-      throw new BadRequestException('Role inválida');
-    }
-
-    const user = this.userRepository.create({
-      ...createUserDto,
-      role,
-    });
-
-    const savedUser = await this.userRepository.save(user);
-
-    // Salva auditoria
-    await this.saveAudit(
-      currentUser.id,
-      'CREATE',
-      'USER',
-      `Usuário criado: ${savedUser.usuario}`,
-      { userId: savedUser.id },
-    );
-
-    this.logger.log(
-      `Usuário criado: ${savedUser.usuario} por ${currentUser.usuario}`,
-    );
-
-    return this.findOne(savedUser.id);
-  }
-
-  /**
-   * Lista usuários com paginação e filtros
-   */
-  async findAll(queryDto: QueryUsersDto): Promise<PaginatedUsers> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      roleId,
-      ativo,
-      sortBy = 'criadoEm',
-      sortOrder = 'DESC',
-    } = queryDto;
-
-    const queryBuilder = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('user.desarquivamentos', 'desarquivamentos');
-
-    // Filtros
-    if (search) {
-      queryBuilder.andWhere(
-        '(user.nome ILIKE :search OR user.usuario ILIKE :search)',
-        { search: `%${search}%` },
-      );
-    }
-
-    if (roleId) {
-      queryBuilder.andWhere('user.roleId = :roleId', { roleId });
-    }
-
-    if (ativo !== undefined) {
-      queryBuilder.andWhere('user.ativo = :ativo', { ativo });
-    }
-
-    // Ordenação
-    const validSortFields = ['nome', 'usuario', 'criadoEm', 'ultimoLogin'];
-    const sortField = validSortFields.includes(sortBy) ? sortBy : 'criadoEm';
-    queryBuilder.orderBy(`user.${sortField}`, sortOrder as 'ASC' | 'DESC');
-
-    // Paginação
-    const offset = (page - 1) * limit;
-    queryBuilder.skip(offset).take(limit);
-
-    const [users, total] = await queryBuilder.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
-
+    // Caso não paginado (array simples)
+    const users = result as any[];
     return {
-      users: users.map(user => user.serialize()),
-      total,
-      page,
-      limit,
-      totalPages,
+      success: true,
+      data: users.map(user => UserMapper.toEntity(user)),
+      meta: {
+        total: users.length,
+        page: 1,
+        limit: users.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
 
-  /**
-   * Busca usuário por ID
-   */
-  async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['role', 'desarquivamentos'],
-    });
+  @Get('api')
+  @Roles('admin', 'coordenador')
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  @ApiOperation({ summary: 'Lista usuários com paginação e filtros' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'roleId', required: false, type: Number })
+  @ApiQuery({ name: 'ativo', required: false, type: Boolean })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['nome', 'usuario', 'criadoEm', 'ultimoLogin'],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
+  @ApiResponse({ status: 200, description: 'Lista de usuários' })
+  async findAllApi(@Query() query: QueryUsersDto) {
+    const result = await this.getUsersUseCase.execute(query as any);
 
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
+    // Caso paginado (objeto com users + meta)
+    if (Array.isArray((result as any).users)) {
+      const pag = result as any;
+      const items = pag.users.map((u: any) => UserMapper.toEntity(u));
+      return {
+        success: true,
+        data: items,
+        meta: {
+          total: pag.total || items.length,
+          page: pag.page || query.page || 1,
+          limit: pag.limit || query.limit || items.length,
+          totalPages: pag.totalPages || 1,
+          hasNext: (pag.page || 1) < (pag.totalPages || 1),
+          hasPrev: (pag.page || 1) > 1,
+        },
+      };
     }
 
-    return user;
-  }
-
-  /**
-   * Busca usuário por usuario
-   */
-  async findByUsuario(usuario: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { usuario },
-      relations: ['role'],
-    });
-  }
-
-  /**
-   * Atualiza usuário
-   */
-  async update(
-    id: number,
-    updateUserDto: UpdateUserDto,
-    currentUser: User,
-  ): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      relations: ['role'],
-    });
-
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    // Verifica permissões
-    if (!currentUser.isAdmin() && currentUser.id !== id) {
-      throw new ForbiddenException(
-        'Você só pode editar seu próprio perfil ou ser administrador',
-      );
-    }
-
-    // Apenas admins podem alterar role e status ativo
-    if (!currentUser.isAdmin()) {
-      delete updateUserDto.roleId;
-      delete updateUserDto.ativo;
-    }
-
-    // Verifica se usuario já existe (se estiver sendo alterado)
-    if (updateUserDto.usuario && updateUserDto.usuario !== user.usuario) {
-      const existingUser = await this.userRepository.findOne({
-        where: { usuario: updateUserDto.usuario },
-      });
-
-      if (existingUser) {
-        throw new BadRequestException('Usuário já está em uso');
-      }
-    }
-
-    // Verifica se a role existe (se estiver sendo alterada)
-    if (updateUserDto.roleId) {
-      const role = await this.roleRepository.findOne({
-        where: { id: updateUserDto.roleId },
-      });
-
-      if (!role) {
-        throw new BadRequestException('Role inválida');
-      }
-    }
-
-    // Atualiza os campos
-    Object.assign(user, updateUserDto);
-    const updatedUser = await this.userRepository.save(user);
-
-    // Salva auditoria
-    await this.saveAudit(
-      currentUser.id,
-      'UPDATE',
-      'USER',
-      `Usuário atualizado: ${updatedUser.usuario}`,
-      { userId: updatedUser.id, changes: updateUserDto },
-    );
-
-    this.logger.log(
-      `Usuário atualizado: ${updatedUser.usuario} por ${currentUser.usuario}`,
-    );
-
-    return this.findOne(updatedUser.id);
-  }
-
-  /**
-   * Remove usuário (soft delete)
-   */
-  async remove(id: number, currentUser: User): Promise<void> {
-    if (!currentUser.isAdmin()) {
-      throw new ForbiddenException(
-        'Apenas administradores podem remover usuários',
-      );
-    }
-
-    const user = await this.userRepository.findOne({ where: { id } });
-
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    if (user.id === currentUser.id) {
-      throw new BadRequestException('Você não pode remover sua própria conta');
-    }
-
-    // Soft delete - apenas desativa o usuário
-    user.ativo = false;
-    await this.userRepository.save(user);
-
-    // Salva auditoria
-    await this.saveAudit(
-      currentUser.id,
-      'DELETE',
-      'USER',
-      `Usuário removido: ${user.usuario}`,
-      { userId: user.id },
-    );
-
-    this.logger.log(
-      `Usuário removido: ${user.usuario} por ${currentUser.usuario}`,
-    );
-  }
-
-  /**
-   * Reativa usuário
-   */
-  async reactivate(id: number, currentUser: User): Promise<User> {
-    if (!currentUser.isAdmin()) {
-      throw new ForbiddenException(
-        'Apenas administradores podem reativar usuários',
-      );
-    }
-
-    const user = await this.userRepository.findOne({ where: { id } });
-
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
-    user.ativo = true;
-    user.tentativasLogin = 0;
-    user.bloqueadoAte = null;
-
-    const reactivatedUser = await this.userRepository.save(user);
-
-    // Salva auditoria
-    await this.saveAudit(
-      currentUser.id,
-      'UPDATE',
-      'USER',
-      `Usuário reativado: ${reactivatedUser.usuario}`,
-      { userId: reactivatedUser.id },
-    );
-
-    this.logger.log(
-      `Usuário reativado: ${reactivatedUser.usuario} por ${currentUser.usuario}`,
-    );
-
-    return this.findOne(reactivatedUser.id);
-  }
-
-  /**
-   * Lista todas as roles disponíveis
-   */
-  async findAllRoles(): Promise<Role[]> {
-    return this.roleRepository.find({
-      order: { name: 'ASC' },
-    });
-  }
-
-  /**
-   * Obtém estatísticas dos usuários
-   */
-  async getStats(): Promise<{
-    total: number;
-    ativos: number;
-    inativos: number;
-    bloqueados: number;
-    porRole: { role: string; count: number }[];
-  }> {
-    const total = await this.userRepository.count();
-    const ativos = await this.userRepository.count({ where: { ativo: true } });
-    const inativos = await this.userRepository.count({
-      where: { ativo: false },
-    });
-
-    const bloqueados = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.bloqueadoAte > :now', { now: new Date() })
-      .getCount();
-
-    const porRole = await this.userRepository
-      .createQueryBuilder('user')
-      .leftJoin('user.role', 'role')
-      .select('role.name', 'role')
-      .addSelect('COUNT(user.id)', 'count')
-      .groupBy('role.name')
-      .getRawMany();
-
+    // Caso não paginado (array simples)
+    const users = result as any[];
     return {
-      total,
-      ativos,
-      inativos,
-      bloqueados,
-      porRole: porRole.map(item => ({
-        role: item.role || 'Sem role',
-        count: parseInt(item.count),
-      })),
+      success: true,
+      data: users.map(user => UserMapper.toEntity(user)),
+      meta: {
+        total: users.length,
+        page: 1,
+        limit: users.length,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
 
-  /**
-   * Salva auditoria
-   */
-  private async saveAudit(
-    userId: number,
-    action: string,
-    resource: string,
-    details: string,
-    data?: any,
-  ): Promise<void> {
+  @Get('novo')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Render('usuarios/novo')
+  @ApiOperation({ summary: 'Renderiza página de criação de usuário' })
+  async createPage() {
+    const roles = await this.getRolesUseCase.execute();
+    return {
+      title: 'Novo Usuário - SGC ITEP',
+      roles: roles.map(role => RoleMapper.toEntity(role)),
+    };
+  }
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Cria novo usuário' })
+  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  async create(
+    @Body() createUserDto: CreateUserDto,
+    @CurrentUser() currentUser: User,
+    @Request() req: ExpressRequest,
+    @Response() res: ExpressResponse,
+  ) {
     try {
-      const auditData = Auditoria.createResourceAudit(
-        userId,
-        action as any,
-        resource as any,
-        0, // resourceId - usando 0 como padrão
-        { details, data }, // details como objeto
-        'unknown', // ipAddress - usando 'unknown' como padrão
-        'unknown', // userAgent - usando 'unknown' como padrão
-      );
-      const audit = this.auditoriaRepository.create(auditData);
-      await this.auditoriaRepository.save(audit);
+      const user = await this.createUserUseCase.execute(createUserDto);
+      const userEntity = UserMapper.toEntity(user);
+
+      // Se for requisição AJAX/API, retorna JSON
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(201).json(userEntity);
+      }
+
+      // Se for requisição web, redireciona
+      return res.redirect('/users?message=Usuário criado com sucesso');
     } catch (error) {
-      this.logger.error(`Erro ao salvar auditoria: ${error.message}`);
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      return res.redirect(
+        `/users/novo?error=${encodeURIComponent(error.message)}`,
+      );
     }
+  }
+
+  @Get('stats')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Obtém estatísticas dos usuários' })
+  @ApiResponse({ status: 200, description: 'Estatísticas dos usuários' })
+  async getStats() {
+    return this.getUserStatisticsUseCase.execute();
+  }
+
+  @Get('roles')
+  @ApiOperation({ summary: 'Lista todas as roles disponíveis' })
+  @ApiResponse({ status: 200, description: 'Lista de roles' })
+  async findAllRoles() {
+    const roles = await this.getRolesUseCase.execute();
+    return roles.map(role => RoleMapper.toEntity(role));
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Busca usuário por ID' })
+  @ApiResponse({ status: 200, description: 'Dados do usuário' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: ExpressRequest,
+  ) {
+    const user = await this.getUserByIdUseCase.execute(id);
+    const userEntity = UserMapper.toEntity(user);
+
+    // Se for requisição AJAX/API, retorna JSON
+    if (req.headers.accept?.includes('application/json')) {
+      return userEntity;
+    }
+
+    // Se for requisição web, renderiza página de detalhes
+    return {
+      title: `${userEntity.nome} - SGC ITEP`,
+      user: userEntity,
+    };
+  }
+
+  @Get(':id/detalhe')
+  @Render('usuarios/detalhe')
+  @ApiOperation({ summary: 'Renderiza página de detalhes do usuário' })
+  async detailPage(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.getUserByIdUseCase.execute(id);
+    const userEntity = UserMapper.toEntity(user);
+    return {
+      title: `${userEntity.nome} - SGC ITEP`,
+      user: userEntity,
+    };
+  }
+
+  @Get(':id/editar')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @Render('usuarios/editar')
+  @ApiOperation({ summary: 'Renderiza página de edição do usuário' })
+  async editPage(@Param('id', ParseIntPipe) id: number) {
+    const user = await this.getUserByIdUseCase.execute(id);
+    const roles = await this.getRolesUseCase.execute();
+    const userEntity = UserMapper.toEntity(user);
+    return {
+      title: `Editar ${userEntity.nome} - SGC ITEP`,
+      user: userEntity,
+      roles: roles.map(role => RoleMapper.toEntity(role)),
+    };
+  }
+
+  @Patch(':id')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Atualiza usuário' })
+  @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() currentUser: User,
+    @Request() req: ExpressRequest,
+    @Response() res: ExpressResponse,
+  ) {
+    try {
+      const user = await this.updateUserUseCase.execute(id, updateUserDto);
+      const userEntity = UserMapper.toEntity(user);
+
+      // Se for requisição AJAX/API, retorna JSON
+      if (req.headers.accept?.includes('application/json')) {
+        return res.json(userEntity);
+      }
+
+      // Se for requisição web, redireciona
+      return res.redirect(
+        `/users/${id}?message=Usuário atualizado com sucesso`,
+      );
+    } catch (error) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      return res.redirect(
+        `/users/${id}/editar?error=${encodeURIComponent(error.message)}`,
+      );
+    }
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Remove usuário (soft delete)' })
+  @ApiResponse({ status: 204, description: 'Usuário removido com sucesso' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: User,
+    @Request() req: ExpressRequest,
+    @Response() res: ExpressResponse,
+  ) {
+    try {
+      await this.deleteUserUseCase.execute(id);
+
+      // Se for requisição AJAX/API, retorna status 204
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(204).send();
+      }
+
+      // Se for requisição web, redireciona
+      return res.redirect('/users?message=Usuário removido com sucesso');
+    } catch (error) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      return res.redirect(`/users?error=${encodeURIComponent(error.message)}`);
+    }
+  }
+
+  @Patch(':id/reativar')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Reativa usuário' })
+  @ApiResponse({ status: 200, description: 'Usuário reativado com sucesso' })
+  @ApiResponse({ status: 403, description: 'Acesso negado' })
+  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
+  async reactivate(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: User,
+    @Request() req: ExpressRequest,
+    @Response() res: ExpressResponse,
+  ) {
+    try {
+      const user = await this.restoreUserUseCase.execute(id);
+      const userEntity = UserMapper.toEntity(user);
+
+      // Se for requisição AJAX/API, retorna JSON
+      if (req.headers.accept?.includes('application/json')) {
+        return res.json(userEntity);
+      }
+
+      // Se for requisição web, redireciona
+      return res.redirect(`/users/${id}?message=Usuário reativado com sucesso`);
+    } catch (error) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      return res.redirect(`/users?error=${encodeURIComponent(error.message)}`);
+    }
+  }
+
+  @Get('perfil/meu')
+  @Render('usuarios/perfil')
+  @ApiOperation({ summary: 'Renderiza página do perfil do usuário logado' })
+  async profilePage(@CurrentUser() currentUser: User) {
+    const user = await this.getUserByIdUseCase.execute(currentUser.id);
+    const userEntity = UserMapper.toEntity(user);
+    return {
+      title: 'Meu Perfil - SGC ITEP',
+      user: userEntity,
+      isOwnProfile: true,
+    };
   }
 }

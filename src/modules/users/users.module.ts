@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersController } from './users.controller';
 
 // Legacy Service (manter para compatibilidade)
-import { UsersService } from './users.service';
+// import { UsersService } from './users.service'; // Removido - arquivo contém UsersController
 
 // Entities
 import { User } from './entities/user.entity';
@@ -38,7 +38,7 @@ import {
   controllers: [UsersController],
   providers: [
     // Legacy Service (manter para compatibilidade)
-    UsersService,
+    // UsersService, // Removido - não existe essa classe
 
     // Repository Implementations
     {
@@ -61,7 +61,7 @@ import {
     GetRolesUseCase,
   ],
   exports: [
-    UsersService, // Manter para compatibilidade
+    // UsersService, // Removido - não existe essa classe
     TypeOrmModule,
     // Exportar casos de uso para outros módulos se necessário
     CreateUserUseCase,

@@ -3,10 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StatusDesarquivamento = exports.StatusDesarquivamentoEnum = void 0;
 var StatusDesarquivamentoEnum;
 (function (StatusDesarquivamentoEnum) {
-    StatusDesarquivamentoEnum["PENDENTE"] = "PENDENTE";
-    StatusDesarquivamentoEnum["EM_ANDAMENTO"] = "EM_ANDAMENTO";
-    StatusDesarquivamentoEnum["CONCLUIDO"] = "CONCLUIDO";
-    StatusDesarquivamentoEnum["CANCELADO"] = "CANCELADO";
+    StatusDesarquivamentoEnum["FINALIZADO"] = "FINALIZADO";
+    StatusDesarquivamentoEnum["DESARQUIVADO"] = "DESARQUIVADO";
+    StatusDesarquivamentoEnum["NAO_COLETADO"] = "NAO_COLETADO";
+    StatusDesarquivamentoEnum["SOLICITADO"] = "SOLICITADO";
+    StatusDesarquivamentoEnum["REARQUIVAMENTO_SOLICITADO"] = "REARQUIVAMENTO_SOLICITADO";
+    StatusDesarquivamentoEnum["RETIRADO_PELO_SETOR"] = "RETIRADO_PELO_SETOR";
+    StatusDesarquivamentoEnum["NAO_LOCALIZADO"] = "NAO_LOCALIZADO";
 })(StatusDesarquivamentoEnum || (exports.StatusDesarquivamentoEnum = StatusDesarquivamentoEnum = {}));
 class StatusDesarquivamento {
     constructor(value) {
@@ -27,17 +30,26 @@ class StatusDesarquivamento {
     static create(value) {
         return new StatusDesarquivamento(value);
     }
-    static createPendente() {
-        return new StatusDesarquivamento(StatusDesarquivamentoEnum.PENDENTE);
+    static createSolicitado() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.SOLICITADO);
     }
-    static createEmAndamento() {
-        return new StatusDesarquivamento(StatusDesarquivamentoEnum.EM_ANDAMENTO);
+    static createDesarquivado() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.DESARQUIVADO);
     }
-    static createConcluido() {
-        return new StatusDesarquivamento(StatusDesarquivamentoEnum.CONCLUIDO);
+    static createFinalizado() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.FINALIZADO);
     }
-    static createCancelado() {
-        return new StatusDesarquivamento(StatusDesarquivamentoEnum.CANCELADO);
+    static createNaoLocalizado() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.NAO_LOCALIZADO);
+    }
+    static createNaoColetado() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.NAO_COLETADO);
+    }
+    static createRetiradoPeloSetor() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR);
+    }
+    static createRearquivamentoSolicitado() {
+        return new StatusDesarquivamento(StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO);
     }
     canTransitionTo(newStatus) {
         const allowedTransitions = StatusDesarquivamento.VALID_TRANSITIONS.get(this._value) || [];
@@ -47,32 +59,44 @@ class StatusDesarquivamento {
         return StatusDesarquivamento.VALID_TRANSITIONS.get(this._value) || [];
     }
     isFinal() {
-        return this._value === StatusDesarquivamentoEnum.CONCLUIDO;
+        return this._value === StatusDesarquivamentoEnum.FINALIZADO ||
+            this._value === StatusDesarquivamentoEnum.NAO_LOCALIZADO;
     }
-    isCancelled() {
-        return this._value === StatusDesarquivamentoEnum.CANCELADO;
+    isFinalized() {
+        return this._value === StatusDesarquivamentoEnum.FINALIZADO;
     }
-    isInProgress() {
-        return this._value === StatusDesarquivamentoEnum.EM_ANDAMENTO;
+    isDesarquivado() {
+        return this._value === StatusDesarquivamentoEnum.DESARQUIVADO;
     }
     isPending() {
-        return this._value === StatusDesarquivamentoEnum.PENDENTE;
+        return this._value === StatusDesarquivamentoEnum.SOLICITADO;
+    }
+    isInProgress() {
+        return this._value === StatusDesarquivamentoEnum.DESARQUIVADO ||
+            this._value === StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR ||
+            this._value === StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO;
     }
     canBeCancelled() {
-        return this.canTransitionTo(StatusDesarquivamento.createCancelado());
+        return false;
     }
     canBeCompleted() {
-        return this.canTransitionTo(StatusDesarquivamento.createConcluido());
+        return this.canTransitionTo(StatusDesarquivamento.createFinalizado());
     }
     getColor() {
         switch (this._value) {
-            case StatusDesarquivamentoEnum.PENDENTE:
-                return '#fbbf24';
-            case StatusDesarquivamentoEnum.EM_ANDAMENTO:
+            case StatusDesarquivamentoEnum.SOLICITADO:
+                return '#8b5cf6';
+            case StatusDesarquivamentoEnum.DESARQUIVADO:
                 return '#3b82f6';
-            case StatusDesarquivamentoEnum.CONCLUIDO:
+            case StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR:
+                return '#06b6d4';
+            case StatusDesarquivamentoEnum.FINALIZADO:
                 return '#10b981';
-            case StatusDesarquivamentoEnum.CANCELADO:
+            case StatusDesarquivamentoEnum.NAO_COLETADO:
+                return '#f59e0b';
+            case StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO:
+                return '#6b7280';
+            case StatusDesarquivamentoEnum.NAO_LOCALIZADO:
                 return '#ef4444';
             default:
                 return '#6b7280';
@@ -80,14 +104,20 @@ class StatusDesarquivamento {
     }
     getDescription() {
         switch (this._value) {
-            case StatusDesarquivamentoEnum.PENDENTE:
-                return 'Aguardando atendimento';
-            case StatusDesarquivamentoEnum.EM_ANDAMENTO:
-                return 'Em processo de atendimento';
-            case StatusDesarquivamentoEnum.CONCLUIDO:
-                return 'Atendimento concluído';
-            case StatusDesarquivamentoEnum.CANCELADO:
-                return 'Solicitação cancelada';
+            case StatusDesarquivamentoEnum.SOLICITADO:
+                return 'Aguardando desarquivamento';
+            case StatusDesarquivamentoEnum.DESARQUIVADO:
+                return 'Desarquivado e disponível';
+            case StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR:
+                return 'Retirado pelo setor solicitante';
+            case StatusDesarquivamentoEnum.FINALIZADO:
+                return 'Processo finalizado';
+            case StatusDesarquivamentoEnum.NAO_COLETADO:
+                return 'Não coletado pelo setor';
+            case StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO:
+                return 'Rearquivamento solicitado';
+            case StatusDesarquivamentoEnum.NAO_LOCALIZADO:
+                return 'Documento não localizado';
             default:
                 return 'Status desconhecido';
         }
@@ -96,21 +126,33 @@ class StatusDesarquivamento {
 exports.StatusDesarquivamento = StatusDesarquivamento;
 StatusDesarquivamento.VALID_TRANSITIONS = new Map([
     [
-        StatusDesarquivamentoEnum.PENDENTE,
+        StatusDesarquivamentoEnum.SOLICITADO,
         [
-            StatusDesarquivamentoEnum.EM_ANDAMENTO,
-            StatusDesarquivamentoEnum.CANCELADO,
+            StatusDesarquivamentoEnum.DESARQUIVADO,
+            StatusDesarquivamentoEnum.NAO_LOCALIZADO,
         ],
     ],
     [
-        StatusDesarquivamentoEnum.EM_ANDAMENTO,
+        StatusDesarquivamentoEnum.DESARQUIVADO,
         [
-            StatusDesarquivamentoEnum.CONCLUIDO,
-            StatusDesarquivamentoEnum.CANCELADO,
-            StatusDesarquivamentoEnum.PENDENTE,
+            StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR,
+            StatusDesarquivamentoEnum.NAO_COLETADO,
+            StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO,
         ],
     ],
-    [StatusDesarquivamentoEnum.CONCLUIDO, []],
-    [StatusDesarquivamentoEnum.CANCELADO, [StatusDesarquivamentoEnum.PENDENTE]],
+    [
+        StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR,
+        [StatusDesarquivamentoEnum.FINALIZADO],
+    ],
+    [
+        StatusDesarquivamentoEnum.NAO_COLETADO,
+        [StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO],
+    ],
+    [
+        StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO,
+        [StatusDesarquivamentoEnum.FINALIZADO],
+    ],
+    [StatusDesarquivamentoEnum.NAO_LOCALIZADO, []],
+    [StatusDesarquivamentoEnum.FINALIZADO, []],
 ]);
 //# sourceMappingURL=status-desarquivamento.vo.js.map

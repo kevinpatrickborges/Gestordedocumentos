@@ -24,7 +24,7 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         const options = {
             page: request.page || 1,
             limit: Math.min(request.limit || 10, 100),
-            sortBy: request.sortBy || 'createdAt',
+            sortBy: request.sortBy || 'dataSolicitacao',
             sortOrder: request.sortOrder || 'DESC',
             filters: {
                 ...request.filters,
@@ -63,13 +63,14 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         const allowedSortFields = [
             'id',
             'codigoBarras',
-            'tipoSolicitacao',
+            'tipoDesarquivamento',
             'status',
-            'nomeSolicitante',
-            'numeroRegistro',
-            'dataFato',
-            'prazoAtendimento',
-            'dataAtendimento',
+            'nomeCompleto',
+            'numeroNicLaudoAuto',
+            'numeroProcesso',
+            'dataSolicitacao',
+            'dataDesarquivamentoSAG',
+            'dataDevolucaoSetor',
             'urgente',
             'criadoPorId',
             'responsavelId',
@@ -86,19 +87,22 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         }
         if (request.filters?.status) {
             const validStatuses = [
-                'PENDENTE',
-                'EM_ANDAMENTO',
-                'CONCLUIDO',
-                'CANCELADO',
+                'FINALIZADO',
+                'DESARQUIVADO',
+                'NAO_COLETADO',
+                'SOLICITADO',
+                'REARQUIVAMENTO_SOLICITADO',
+                'RETIRADO_PELO_SETOR',
+                'NAO_LOCALIZADO'
             ];
             if (!validStatuses.includes(request.filters.status)) {
                 throw new Error(`Status inválido. Status válidos: ${validStatuses.join(', ')}`);
             }
         }
-        if (request.filters?.tipoSolicitacao) {
-            const validTypes = ['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO'];
-            if (!validTypes.includes(request.filters.tipoSolicitacao)) {
-                throw new Error(`Tipo de solicitação inválido. Tipos válidos: ${validTypes.join(', ')}`);
+        if (request.filters?.tipoDesarquivamento) {
+            const validTypes = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
+            if (!validTypes.includes(request.filters.tipoDesarquivamento)) {
+                throw new Error(`Tipo de desarquivamento inválido. Tipos válidos: ${validTypes.join(', ')}`);
             }
         }
         if (request.filters?.criadoPorId && request.filters.criadoPorId <= 0) {
@@ -122,30 +126,29 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         };
     }
     mapToResponse(desarquivamento) {
-        const plainObject = desarquivamento.toPlainObject();
         return {
-            id: plainObject.id,
-            codigoBarras: plainObject.codigoBarras,
-            tipoSolicitacao: plainObject.tipoSolicitacao,
-            status: plainObject.status,
-            nomeSolicitante: plainObject.nomeSolicitante,
-            nomeVitima: plainObject.nomeVitima,
-            numeroRegistro: plainObject.numeroRegistro,
-            tipoDocumento: plainObject.tipoDocumento,
-            dataFato: plainObject.dataFato,
-            prazoAtendimento: plainObject.prazoAtendimento,
-            dataAtendimento: plainObject.dataAtendimento,
-            resultadoAtendimento: plainObject.resultadoAtendimento,
-            finalidade: plainObject.finalidade,
-            observacoes: plainObject.observacoes,
-            urgente: plainObject.urgente,
-            localizacaoFisica: plainObject.localizacaoFisica,
-            criadoPorId: plainObject.criadoPorId,
-            responsavelId: plainObject.responsavelId,
-            createdAt: plainObject.createdAt,
-            updatedAt: plainObject.updatedAt,
-            isOverdue: desarquivamento.isOverdue(),
-            daysUntilDeadline: desarquivamento.getDaysUntilDeadline(),
+            id: desarquivamento.id?.value || 0,
+            codigoBarras: desarquivamento.numeroNicLaudoAuto,
+            tipoDesarquivamento: desarquivamento.tipoDesarquivamento,
+            status: desarquivamento.status.value,
+            nomeCompleto: desarquivamento.nomeCompleto,
+            numeroNicLaudoAuto: desarquivamento.numeroNicLaudoAuto,
+            numeroProcesso: desarquivamento.numeroProcesso,
+            tipoDocumento: desarquivamento.tipoDocumento,
+            dataSolicitacao: desarquivamento.dataSolicitacao,
+            dataDesarquivamentoSAG: desarquivamento.dataDesarquivamentoSAG,
+            dataDevolucaoSetor: desarquivamento.dataDevolucaoSetor,
+            setorDemandante: desarquivamento.setorDemandante,
+            servidorResponsavel: desarquivamento.servidorResponsavel,
+            finalidadeDesarquivamento: desarquivamento.finalidadeDesarquivamento,
+            solicitacaoProrrogacao: desarquivamento.solicitacaoProrrogacao,
+            urgente: desarquivamento.urgente,
+            criadoPorId: desarquivamento.criadoPorId,
+            responsavelId: desarquivamento.responsavelId,
+            createdAt: desarquivamento.createdAt,
+            updatedAt: desarquivamento.updatedAt,
+            isOverdue: desarquivamento.isOverdue ? desarquivamento.isOverdue() : false,
+            daysUntilDeadline: desarquivamento.getDaysUntilDeadline ? desarquivamento.getDaysUntilDeadline() : undefined,
         };
     }
 };

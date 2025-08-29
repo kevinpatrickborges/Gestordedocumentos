@@ -2,6 +2,7 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import Layout from '@/components/layout/Layout'
 import LoginPage from '@/pages/LoginPage'
@@ -26,8 +27,9 @@ import { UserRole } from '@/types'
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
           <Routes>
             {/* Rota de Login - Não requer autenticação */}
             <Route
@@ -59,11 +61,11 @@ const App: React.FC = () => {
                 {/* Lista de desarquivamentos - Todos os usuários */}
                 <Route index element={<DesarquivamentosPage />} />
                 
-                {/* Nova solicitação - Coordenadores e Admins */}
+                {/* Nova solicitação - Apenas Admins */}
                 <Route
                   path="novo"
                   element={
-                    <ProtectedRoute requiredRole={UserRole.COORDENADOR}>
+                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
                       <NovoDesarquivamentoPage />
                     </ProtectedRoute>
                   }
@@ -72,11 +74,11 @@ const App: React.FC = () => {
                 {/* Detalhes da solicitação - Todos os usuários */}
                 <Route path=":id" element={<DetalhesDesarquivamentoPage />} />
                 
-                {/* Editar solicitação - Coordenadores e Admins */}
+                {/* Editar solicitação - Apenas Admins */}
                 <Route
                   path=":id/editar"
                   element={
-                    <ProtectedRoute requiredRole={UserRole.COORDENADOR}>
+                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
                       <EditarDesarquivamentoPage />
                     </ProtectedRoute>
                   }
@@ -88,21 +90,21 @@ const App: React.FC = () => {
                 {/* Lista de registros NUGECID - Todos os usuários */}
                 <Route index element={<NugecidListPage />} />
                 
-                {/* Registros excluídos - Apenas Admins e Operadores NUGECID */}
+                {/* Registros excluídos - Apenas Admins */}
                 <Route
                   path="excluidos"
                   element={
-                    <ProtectedRoute requiredRole={UserRole.NUGECID_OPERATOR}>
+                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
                       <DesarquivamentosExcluidosPage />
                     </ProtectedRoute>
                   }
                 />
                 
-                {/* Novo registro NUGECID - Coordenadores e Admins */}
+                {/* Novo registro NUGECID - Apenas Admins */}
                 <Route
                   path="novo"
                   element={
-                    <ProtectedRoute requiredRole={UserRole.COORDENADOR}>
+                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
                       <NugecidCreatePage />
                     </ProtectedRoute>
                   }
@@ -111,11 +113,11 @@ const App: React.FC = () => {
                 {/* Detalhes do registro NUGECID - Todos os usuários */}
                 <Route path=":id" element={<NugecidDetailPage />} />
                 
-                {/* Editar registro NUGECID - Coordenadores e Admins */}
+                {/* Editar registro NUGECID - Apenas Admins */}
                 <Route
                   path=":id/editar"
                   element={
-                    <ProtectedRoute requiredRole={UserRole.COORDENADOR}>
+                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
                       <NugecidEditPage />
                     </ProtectedRoute>
                   }
@@ -124,11 +126,11 @@ const App: React.FC = () => {
 
               {/* Rotas de Usuários */}
               <Route path="usuarios">
-                {/* Lista de usuários - Coordenadores e Admins podem visualizar */}
+                {/* Lista de usuários - Apenas Admins */}
                 <Route 
                   index 
                   element={
-                    <ProtectedRoute requiredRole={UserRole.COORDENADOR}>
+                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
                       <UsuariosPage />
                     </ProtectedRoute>
                   } 
@@ -200,7 +202,8 @@ const App: React.FC = () => {
             }}
           />
         </div>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   )
 }
 

@@ -1,40 +1,69 @@
-import { Repository } from 'typeorm';
+import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
+import { CreateUserUseCase, UpdateUserUseCase, DeleteUserUseCase, GetUserByIdUseCase, GetUsersUseCase, RestoreUserUseCase, GetUserStatisticsUseCase, GetRolesUseCase } from './application/use-cases';
+import { CreateUserDto } from './application/dto/create-user.dto';
+import { UpdateUserDto } from './application/dto/update-user.dto';
+import { QueryUsersDto } from './application/dto/query-users.dto';
 import { User } from './entities/user.entity';
-import { Role } from './entities/role.entity';
-import { Auditoria } from '../audit/entities/auditoria.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { QueryUsersDto } from './dto/query-users.dto';
-export interface PaginatedUsers {
-    users: any[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-}
-export declare class UsersService {
-    private readonly userRepository;
-    private readonly roleRepository;
-    private readonly auditoriaRepository;
-    private readonly logger;
-    constructor(userRepository: Repository<User>, roleRepository: Repository<Role>, auditoriaRepository: Repository<Auditoria>);
-    create(createUserDto: CreateUserDto, currentUser: User): Promise<User>;
-    findAll(queryDto: QueryUsersDto): Promise<PaginatedUsers>;
-    findOne(id: number): Promise<User>;
-    findByUsuario(usuario: string): Promise<User | null>;
-    update(id: number, updateUserDto: UpdateUserDto, currentUser: User): Promise<User>;
-    remove(id: number, currentUser: User): Promise<void>;
-    reactivate(id: number, currentUser: User): Promise<User>;
-    findAllRoles(): Promise<Role[]>;
-    getStats(): Promise<{
-        total: number;
-        ativos: number;
-        inativos: number;
-        bloqueados: number;
-        porRole: {
-            role: string;
-            count: number;
-        }[];
+export declare class UsersController {
+    private readonly createUserUseCase;
+    private readonly updateUserUseCase;
+    private readonly deleteUserUseCase;
+    private readonly getUserByIdUseCase;
+    private readonly getUsersUseCase;
+    private readonly restoreUserUseCase;
+    private readonly getUserStatisticsUseCase;
+    private readonly getRolesUseCase;
+    constructor(createUserUseCase: CreateUserUseCase, updateUserUseCase: UpdateUserUseCase, deleteUserUseCase: DeleteUserUseCase, getUserByIdUseCase: GetUserByIdUseCase, getUsersUseCase: GetUsersUseCase, restoreUserUseCase: RestoreUserUseCase, getUserStatisticsUseCase: GetUserStatisticsUseCase, getRolesUseCase: GetRolesUseCase);
+    findAll(query: QueryUsersDto): Promise<{
+        success: boolean;
+        data: any;
+        meta: {
+            total: any;
+            page: any;
+            limit: any;
+            totalPages: any;
+            hasNext: boolean;
+            hasPrev: boolean;
+        };
     }>;
-    private saveAudit;
+    findAllApi(query: QueryUsersDto): Promise<{
+        success: boolean;
+        data: any;
+        meta: {
+            total: any;
+            page: any;
+            limit: any;
+            totalPages: any;
+            hasNext: boolean;
+            hasPrev: boolean;
+        };
+    }>;
+    createPage(): Promise<{
+        title: string;
+        roles: import("./entities/role.entity").Role[];
+    }>;
+    create(createUserDto: CreateUserDto, currentUser: User, req: ExpressRequest, res: ExpressResponse): Promise<void | ExpressResponse<any, Record<string, any>>>;
+    getStats(): Promise<import("./domain/repositories").UserStatistics>;
+    findAllRoles(): Promise<import("./entities/role.entity").Role[]>;
+    findOne(id: number, req: ExpressRequest): Promise<User | {
+        title: string;
+        user: User;
+    }>;
+    detailPage(id: number): Promise<{
+        title: string;
+        user: User;
+    }>;
+    editPage(id: number): Promise<{
+        title: string;
+        user: User;
+        roles: import("./entities/role.entity").Role[];
+    }>;
+    update(id: number, updateUserDto: UpdateUserDto, currentUser: User, req: ExpressRequest, res: ExpressResponse): Promise<void | ExpressResponse<any, Record<string, any>>>;
+    remove(id: number, currentUser: User, req: ExpressRequest, res: ExpressResponse): Promise<void | ExpressResponse<any, Record<string, any>>>;
+    reactivate(id: number, currentUser: User, req: ExpressRequest, res: ExpressResponse): Promise<void | ExpressResponse<any, Record<string, any>>>;
+    profilePage(currentUser: User): Promise<{
+        title: string;
+        user: User;
+        isOwnProfile: boolean;
+    }>;
 }

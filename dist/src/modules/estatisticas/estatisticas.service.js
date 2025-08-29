@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const desarquivamento_typeorm_entity_1 = require("../nugecid/infrastructure/entities/desarquivamento.typeorm-entity");
-const desarquivamento_entity_1 = require("../nugecid/entities/desarquivamento.entity");
 let EstatisticasService = class EstatisticasService {
     constructor(desarquivamentoRepo) {
         this.desarquivamentoRepo = desarquivamentoRepo;
@@ -29,7 +28,7 @@ let EstatisticasService = class EstatisticasService {
         const [total, pendentes, esteMes] = await Promise.all([
             this.desarquivamentoRepo.count(),
             this.desarquivamentoRepo.count({
-                where: { status: desarquivamento_entity_1.StatusDesarquivamento.PENDENTE },
+                where: { status: 'SOLICITADO' },
             }),
             this.desarquivamentoRepo
                 .createQueryBuilder('d')
@@ -78,10 +77,13 @@ let EstatisticasService = class EstatisticasService {
             .groupBy('d.status')
             .getRawMany();
         const mapNome = {
-            [desarquivamento_entity_1.StatusDesarquivamento.PENDENTE]: 'Pendente',
-            [desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO]: 'Em andamento',
-            [desarquivamento_entity_1.StatusDesarquivamento.CONCLUIDO]: 'Concluído',
-            [desarquivamento_entity_1.StatusDesarquivamento.CANCELADO]: 'Cancelado',
+            ['SOLICITADO']: 'Solicitado',
+            ['DESARQUIVADO']: 'Desarquivado',
+            ['FINALIZADO']: 'Finalizado',
+            ['NAO_LOCALIZADO']: 'Não Localizado',
+            ['NAO_COLETADO']: 'Não Coletado',
+            ['RETIRADO_PELO_SETOR']: 'Retirado pelo Setor',
+            ['REARQUIVAMENTO_SOLICITADO']: 'Rearquivamento Solicitado',
         };
         return rows.map(r => ({
             name: mapNome[r.status] || r.status,

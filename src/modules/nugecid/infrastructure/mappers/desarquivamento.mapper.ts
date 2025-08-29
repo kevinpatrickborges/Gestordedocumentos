@@ -3,10 +3,7 @@ import { DesarquivamentoDomain } from '../../domain/entities/desarquivamento.ent
 import { DesarquivamentoTypeOrmEntity } from '../entities/desarquivamento.typeorm-entity';
 import {
   DesarquivamentoId,
-  CodigoBarras,
-  NumeroRegistro,
   StatusDesarquivamento,
-  TipoSolicitacao,
 } from '../../domain/value-objects';
 import { StatusDesarquivamentoEnum } from '../../domain/value-objects/status-desarquivamento.vo';
 
@@ -23,26 +20,21 @@ export class DesarquivamentoMapper {
       entity.id = domain.id.value;
     }
 
-    // Value Objects
-    entity.codigoBarras = domain.codigoBarras.value;
-    entity.tipoSolicitacao = domain.tipoSolicitacao.value;
+    // Propriedades simplificadas
+    entity.tipoDesarquivamento = domain.tipoDesarquivamento;
     entity.status = domain.status.value;
-    entity.numeroRegistro = domain.numeroRegistro.value;
-
-    // Propriedades simples
-    entity.nomeSolicitante = domain.nomeSolicitante;
-    entity.requerente = domain.requerente;
-    entity.nomeVitima = domain.nomeVitima;
+    entity.nomeCompleto = domain.nomeCompleto;
+    entity.numeroNicLaudoAuto = domain.numeroNicLaudoAuto;
     entity.numeroProcesso = domain.numeroProcesso;
     entity.tipoDocumento = domain.tipoDocumento;
-    entity.dataFato = domain.dataFato;
-    entity.prazoAtendimento = domain.prazoAtendimento;
-    entity.dataAtendimento = domain.dataAtendimento;
-    entity.resultadoAtendimento = domain.resultadoAtendimento;
-    entity.finalidade = domain.finalidade;
-    entity.observacoes = domain.observacoes;
+    entity.dataSolicitacao = domain.dataSolicitacao;
+    entity.dataDesarquivamentoSAG = domain.dataDesarquivamentoSAG;
+    entity.dataDevolucaoSetor = domain.dataDevolucaoSetor;
+    entity.setorDemandante = domain.setorDemandante;
+    entity.servidorResponsavel = domain.servidorResponsavel;
+    entity.finalidadeDesarquivamento = domain.finalidadeDesarquivamento;
+    entity.solicitacaoProrrogacao = domain.solicitacaoProrrogacao;
     entity.urgente = domain.urgente;
-    entity.localizacaoFisica = domain.localizacaoFisica;
     entity.criadoPorId = domain.criadoPorId;
     entity.responsavelId = domain.responsavelId;
 
@@ -60,33 +52,25 @@ export class DesarquivamentoMapper {
   toDomain(entity: DesarquivamentoTypeOrmEntity): DesarquivamentoDomain {
     // Criar value objects
     const id = entity.id ? DesarquivamentoId.create(entity.id) : undefined;
-    const codigoBarras = CodigoBarras.create(entity.codigoBarras);
-    const numeroRegistro = NumeroRegistro.create(entity.numeroRegistro);
     const status = StatusDesarquivamento.create(entity.status as any);
-    const tipoSolicitacao = TipoSolicitacao.create(
-      entity.tipoSolicitacao as any,
-    );
 
     // Reconstruir entidade de domínio
     return DesarquivamentoDomain.reconstruct({
       id,
-      codigoBarras,
-      tipoSolicitacao,
+      tipoDesarquivamento: entity.tipoDesarquivamento,
       status,
-      nomeSolicitante: entity.nomeSolicitante,
-      requerente: entity.requerente,
-      nomeVitima: entity.nomeVitima,
-      numeroRegistro,
+      nomeCompleto: entity.nomeCompleto,
+      numeroNicLaudoAuto: entity.numeroNicLaudoAuto,
       numeroProcesso: entity.numeroProcesso,
       tipoDocumento: entity.tipoDocumento,
-      dataFato: entity.dataFato,
-      prazoAtendimento: entity.prazoAtendimento,
-      dataAtendimento: entity.dataAtendimento,
-      resultadoAtendimento: entity.resultadoAtendimento,
-      finalidade: entity.finalidade,
-      observacoes: entity.observacoes,
+      dataSolicitacao: entity.dataSolicitacao,
+      dataDesarquivamentoSAG: entity.dataDesarquivamentoSAG,
+      dataDevolucaoSetor: entity.dataDevolucaoSetor,
+      setorDemandante: entity.setorDemandante,
+      servidorResponsavel: entity.servidorResponsavel,
+      finalidadeDesarquivamento: entity.finalidadeDesarquivamento,
+      solicitacaoProrrogacao: entity.solicitacaoProrrogacao,
       urgente: entity.urgente,
-      localizacaoFisica: entity.localizacaoFisica,
       criadoPorId: entity.criadoPorId,
       responsavelId: entity.responsavelId,
       createdAt: entity.createdAt,
@@ -119,22 +103,20 @@ export class DesarquivamentoMapper {
   toPlainObject(domain: DesarquivamentoDomain): any {
     return {
       id: domain.id?.value,
-      codigoBarras: domain.codigoBarras.value,
-      tipoSolicitacao: domain.tipoSolicitacao.value,
+      tipoDesarquivamento: domain.tipoDesarquivamento,
       status: domain.status.value,
-      nomeSolicitante: domain.nomeSolicitante,
-      requerente: domain.requerente,
-      nomeVitima: domain.nomeVitima,
-      numeroRegistro: domain.numeroRegistro.value,
+      nomeCompleto: domain.nomeCompleto,
+      numeroNicLaudoAuto: domain.numeroNicLaudoAuto,
+      numeroProcesso: domain.numeroProcesso,
       tipoDocumento: domain.tipoDocumento,
-      dataFato: domain.dataFato,
-      prazoAtendimento: domain.prazoAtendimento,
-      dataAtendimento: domain.dataAtendimento,
-      resultadoAtendimento: domain.resultadoAtendimento,
-      finalidade: domain.finalidade,
-      observacoes: domain.observacoes,
+      dataSolicitacao: domain.dataSolicitacao,
+      dataDesarquivamentoSAG: domain.dataDesarquivamentoSAG,
+      dataDevolucaoSetor: domain.dataDevolucaoSetor,
+      setorDemandante: domain.setorDemandante,
+      servidorResponsavel: domain.servidorResponsavel,
+      finalidadeDesarquivamento: domain.finalidadeDesarquivamento,
+      solicitacaoProrrogacao: domain.solicitacaoProrrogacao,
       urgente: domain.urgente,
-      localizacaoFisica: domain.localizacaoFisica,
       criadoPorId: domain.criadoPorId,
       responsavelId: domain.responsavelId,
       createdAt: domain.createdAt,
@@ -157,25 +139,22 @@ export class DesarquivamentoMapper {
    * Converte dados de entrada (DTO) para uma entidade de domínio
    */
   fromCreateDto(dto: any): DesarquivamentoDomain {
-    const codigoBarras = CodigoBarras.generateNew();
-    const numeroRegistro = NumeroRegistro.create(dto.numeroRegistro);
     const status = StatusDesarquivamento.create(
-      StatusDesarquivamentoEnum.PENDENTE,
+      StatusDesarquivamentoEnum.SOLICITADO,
     );
-    const tipoSolicitacao = TipoSolicitacao.create(dto.tipoSolicitacao);
 
     return DesarquivamentoDomain.create({
-      codigoBarras,
-      tipoSolicitacao,
+      tipoDesarquivamento: dto.tipoDesarquivamento,
       status,
-      nomeSolicitante: dto.nomeSolicitante,
-      requerente: dto.requerente,
-      nomeVitima: dto.nomeVitima,
-      numeroRegistro,
+      nomeCompleto: dto.nomeCompleto,
+      numeroNicLaudoAuto: dto.numeroNicLaudoAuto,
+      numeroProcesso: dto.numeroProcesso,
       tipoDocumento: dto.tipoDocumento,
-      dataFato: dto.dataFato ? new Date(dto.dataFato) : undefined,
-      finalidade: dto.finalidade,
-      observacoes: dto.observacoes,
+      dataSolicitacao: dto.dataSolicitacao ? new Date(dto.dataSolicitacao) : new Date(),
+      setorDemandante: dto.setorDemandante,
+      servidorResponsavel: dto.servidorResponsavel,
+      finalidadeDesarquivamento: dto.finalidadeDesarquivamento,
+      solicitacaoProrrogacao: dto.solicitacaoProrrogacao || false,
       urgente: dto.urgente || false,
       criadoPorId: dto.criadoPorId,
     });
@@ -188,59 +167,43 @@ export class DesarquivamentoMapper {
     domain: DesarquivamentoDomain,
     dto: any,
   ): DesarquivamentoDomain {
-    const updates: any = {};
+    // For the simplified structure, updates are handled through domain methods
+    // This method can be used for simple field updates that don't require
+    // complex business logic
+    
+    const currentData = domain.toPlainObject();
+    const updatedData = {
+      ...currentData,
+      ...(dto.tipoDesarquivamento !== undefined && {
+        tipoDesarquivamento: dto.tipoDesarquivamento,
+      }),
+      ...(dto.nomeCompleto !== undefined && {
+        nomeCompleto: dto.nomeCompleto,
+      }),
+      ...(dto.numeroProcesso !== undefined && {
+        numeroProcesso: dto.numeroProcesso,
+      }),
+      ...(dto.tipoDocumento !== undefined && {
+        tipoDocumento: dto.tipoDocumento,
+      }),
+      ...(dto.setorDemandante !== undefined && {
+        setorDemandante: dto.setorDemandante,
+      }),
+      ...(dto.servidorResponsavel !== undefined && {
+        servidorResponsavel: dto.servidorResponsavel,
+      }),
+      ...(dto.finalidadeDesarquivamento !== undefined && {
+        finalidadeDesarquivamento: dto.finalidadeDesarquivamento,
+      }),
+      ...(dto.solicitacaoProrrogacao !== undefined && {
+        solicitacaoProrrogacao: dto.solicitacaoProrrogacao,
+      }),
+      ...(dto.urgente !== undefined && {
+        urgente: dto.urgente,
+      }),
+      updatedAt: new Date(),
+    };
 
-    // Campos que podem ser atualizados
-    if (dto.nomeSolicitante !== undefined) {
-      updates.nomeSolicitante = dto.nomeSolicitante;
-    }
-    if (dto.requerente !== undefined) {
-      updates.requerente = dto.requerente;
-    }
-    if (dto.nomeVitima !== undefined) {
-      updates.nomeVitima = dto.nomeVitima;
-    }
-    if (dto.tipoDocumento !== undefined) {
-      updates.tipoDocumento = dto.tipoDocumento;
-    }
-    if (dto.dataFato !== undefined) {
-      updates.dataFato = dto.dataFato ? new Date(dto.dataFato) : undefined;
-    }
-    if (dto.finalidade !== undefined) {
-      updates.finalidade = dto.finalidade;
-    }
-    if (dto.observacoes !== undefined) {
-      updates.observacoes = dto.observacoes;
-    }
-    if (dto.urgente !== undefined) {
-      updates.urgente = dto.urgente;
-    }
-    if (dto.localizacaoFisica !== undefined) {
-      updates.localizacaoFisica = dto.localizacaoFisica;
-    }
-    if (dto.responsavelId !== undefined) {
-      updates.responsavelId = dto.responsavelId;
-    }
-    if (dto.resultadoAtendimento !== undefined) {
-      updates.resultadoAtendimento = dto.resultadoAtendimento;
-    }
-    if (dto.dataAtendimento !== undefined) {
-      updates.dataAtendimento = dto.dataAtendimento
-        ? new Date(dto.dataAtendimento)
-        : undefined;
-    }
-
-    // Aplicar atualizações
-    Object.keys(updates).forEach(key => {
-      (domain as any)[key] = updates[key];
-    });
-
-    // Atualizar status se fornecido
-    if (dto.status && dto.status !== domain.status.value) {
-      const newStatus = StatusDesarquivamento.create(dto.status);
-      domain.changeStatus(newStatus);
-    }
-
-    return domain;
+    return DesarquivamentoDomain.reconstruct(updatedData);
   }
 }

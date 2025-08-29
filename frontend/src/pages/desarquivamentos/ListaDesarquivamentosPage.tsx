@@ -10,19 +10,20 @@ import DesarquivamentosTable from '@/components/tables/DesarquivamentosTable'
 import ListingStats from '@/components/stats/ListingStats'
 import Pagination from '@/components/ui/Pagination'
 import { useDesarquivamentos, useDeleteDesarquivamento } from '@/hooks/useDesarquivamentos'
-import { ImportModal } from '@/components/modals/ImportModal'
-import { Desarquivamento } from '@/types'
+import { useDesarquivamentosImport } from '@/hooks/useDesarquivamentosImport'
+import { ImportModal } from '@/components/ImportModal'
+import { Desarquivamento, StatusDesarquivamento, TipoSolicitacao } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 // Remove unused import since formatDate is not used in this file
 
 interface FilterState {
   search: string
-  status: string
-  tipo: string
+  status: StatusDesarquivamento | ''
+  tipo: TipoSolicitacao | ''
   dataInicio: string
   dataFim: string
   requerente: string
-  vencidos: boolean
+  vencidas: boolean
 }
 
 interface PaginationState {
@@ -41,12 +42,12 @@ const ListaDesarquivamentosPage: React.FC = () => {
   
   const [filters, setFilters] = useState<FilterState>({
     search: searchParams.get('search') || '',
-    status: searchParams.get('status') || '',
-    tipo: searchParams.get('tipo') || '',
+    status: (searchParams.get('status') as StatusDesarquivamento) || '',
+    tipo: (searchParams.get('tipo') as TipoSolicitacao) || '',
     dataInicio: searchParams.get('dataInicio') || '',
     dataFim: searchParams.get('dataFim') || '',
     requerente: searchParams.get('requerente') || '',
-    vencidos: searchParams.get('vencidos') === 'true'
+    vencidas: searchParams.get('vencidas') === 'true'
   })
 
   const [pagination, setPagination] = useState<PaginationState>({
@@ -71,7 +72,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
     if (filters.dataInicio) params.dataInicio = filters.dataInicio
     if (filters.dataFim) params.dataFim = filters.dataFim
     if (filters.requerente) params.requerente = filters.requerente
-    if (filters.vencidos) params.vencidos = 'true'
+    if (filters.vencidas) params.vencidos = 'true'
 
     return params
   }, [filters, pagination.page, pagination.limit, sortBy, sortOrder])
@@ -84,11 +85,11 @@ const ListaDesarquivamentosPage: React.FC = () => {
 
   // Update pagination when data changes
   useEffect(() => {
-    if (data) {
+    if (data?.meta) {
       setPagination(prev => ({
         ...prev,
-        total: data.total,
-        totalPages: Math.ceil(data.total / pagination.limit)
+        total: data.meta.total,
+        totalPages: data.meta.totalPages
       }))
     }
   }, [data])
@@ -103,7 +104,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
     if (filters.dataInicio) params.set('dataInicio', filters.dataInicio)
     if (filters.dataFim) params.set('dataFim', filters.dataFim)
     if (filters.requerente) params.set('requerente', filters.requerente)
-    if (filters.vencidos) params.set('vencidos', 'true')
+    if (filters.vencidas) params.set('vencidas', 'true')
     if (pagination.page > 1) params.set('page', pagination.page.toString())
     if (pagination.limit !== 25) params.set('limit', pagination.limit.toString())
     if (sortBy !== 'dataCriacao') params.set('sortBy', sortBy)
@@ -127,7 +128,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
       dataInicio: '',
       dataFim: '',
       requerente: '',
-      vencidos: false
+      vencidas: false
     }
     setFilters(resetFilters)
     setPagination(prev => ({ ...prev, page: 1 }))
@@ -161,36 +162,40 @@ const ListaDesarquivamentosPage: React.FC = () => {
 
     try {
       await deleteDesarquivamento.mutateAsync(parseInt(id))
-      toast.success('Solicitação excluída com sucesso!')
-      refetch()
+      // No need to call refetch() here as the mutation handles cache invalidation
     } catch (error) {
-      toast.error('Erro ao excluir solicitação')
+      // Error is already handled by the mutation's onError callback
+      console.error('Delete error:', error)
     }
   }
 
   // Calculate stats from current data
   const stats = useMemo(() => {
-    if (!data?.items) {
+    if (!data?.data) {
       return {
         total: 0,
         pendente: 0,
         emAnalise: 0,
         aprovado: 0,
-        rejeitado: 0,
-        vencidos: 0
+        expirados: 0
       }
     }
 
-    const items = data.items
+    const items = data.data
     const now = new Date()
 
     return {
       total: items.length,
-      pendente: items.filter(item => item.status === 'PENDENTE').length,
-      emAnalise: items.filter(item => item.status === 'EM_ANALISE').length,
-      aprovado: items.filter((item: Desarquivamento) => item.status === StatusDesarquivamento.APROVADO).length,
-      rejeitado: items.filter((item: Desarquivamento) => item.status === 'REJEITADO').length,
-      vencidos: items.filter(item => new Date(item.prazoVencimento) < now).length
+      pendente: items.filter((item: Desarquivamento) => item.status === StatusDesarquivamento.SOLICITADO).length,
+      emAnalise: items.filter((item: Desarquivamento) => item.status === StatusDesarquivamento.EM_ANDAMENTO).length,
+      aprovado: items.filter((item: Desarquivamento) => item.status === StatusDesarquivamento.FINALIZADO).length,
+      expirados: items.filter((item: Desarquivamento) => {
+        // Calculate expiration based on dataSolicitacao + 30 days
+        if (!item.dataSolicitacao) return false
+        const deadline = new Date(item.dataSolicitacao)
+        deadline.setDate(deadline.getDate() + 30)
+        return now > deadline && item.status !== StatusDesarquivamento.FINALIZADO && item.status !== StatusDesarquivamento.CANCELADO
+      }).length
     }
   }, [data?.data])
 
@@ -248,7 +253,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
             Exportar
           </Button>
           
-          {(user?.role === 'admin' || user?.role === 'coordenador') && (
+          {(user?.role?.name === 'admin' || user?.role?.name === 'coordenador') && (
             <Button 
               variant="outline" 
               onClick={() => setIsImportModalOpen(true)}
@@ -285,7 +290,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
 
       {/* Table */}
       <DesarquivamentosTable
-        data={data?.items || []}
+        data={data?.data || []}
         isLoading={isLoading}
         onDelete={(id: number) => handleDelete(id.toString())}
         sortBy={sortBy}
@@ -295,7 +300,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
       />
 
       {/* Pagination */}
-      {data && data.totalPages > 1 && (
+      {data && data.meta.totalPages > 1 && (
         <Pagination
           currentPage={pagination.page}
           totalPages={pagination.totalPages}
@@ -312,12 +317,8 @@ const ListaDesarquivamentosPage: React.FC = () => {
         onClose={() => setIsImportModalOpen(false)}
         onImportSuccess={() => {
           setIsImportModalOpen(false)
-          refetch()
-          toast.success('Planilha importada com sucesso!')
+          // The mutation's cache invalidation will automatically refresh the data
         }}
-        importHook={importDesarquivamentos}
-        title="Importar Desarquivamentos"
-        description="Selecione um arquivo Excel (.xlsx) para importar desarquivamentos em lote."
       />
     </div>
   )

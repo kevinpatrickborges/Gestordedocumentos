@@ -17,32 +17,50 @@ let RolesGuard = class RolesGuard {
     constructor(reflector) {
         this.reflector = reflector;
     }
-    canActivate(context) {
-        const isPublic = this.reflector.getAllAndOverride(is_public_decorator_1.IS_PUBLIC_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+    async canActivate(context) {
+        const request = context.switchToHttp().getRequest();
+        const handler = context.getHandler();
+        const classRef = context.getClass();
+        const isPublic = this.reflector.getAllAndOverride(is_public_decorator_1.IS_PUBLIC_KEY, [handler, classRef]);
         if (isPublic) {
             return true;
         }
-        const requiredRoles = this.reflector.getAllAndOverride('roles', [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+        const requiredRoles = this.reflector.getAllAndOverride('roles', [handler, classRef]);
+        console.log('🔍 [RolesGuard] Required roles:', requiredRoles);
         if (!requiredRoles) {
             return true;
         }
-        const request = context.switchToHttp().getRequest();
         const user = request.user;
+        console.log('👤 [RolesGuard] User object:', {
+            id: user?.id,
+            nome: user?.nome,
+            role: user?.role,
+            roleId: user?.roleId
+        });
         if (!user) {
             throw new common_1.ForbiddenException('Usuário não autenticado');
         }
         if (!user.role) {
+            console.log('❌ [RolesGuard] User role is null/undefined');
             throw new common_1.ForbiddenException('Usuário sem role definida');
         }
-        const hasRole = requiredRoles.some(role => user.role && user.role.name.toLowerCase() === role.toLowerCase());
+        console.log('🎭 [RolesGuard] User role details:', {
+            id: user.role.id,
+            name: user.role.name,
+            nameType: typeof user.role.name,
+            nameLength: user.role.name?.length
+        });
+        const userRoleName = user.role.name?.toLowerCase()?.trim();
+        console.log('🔄 [RolesGuard] Normalized user role:', userRoleName);
+        const hasRole = requiredRoles.some(role => {
+            const normalizedRequiredRole = role?.toLowerCase()?.trim();
+            console.log(`🔍 [RolesGuard] Comparing '${userRoleName}' === '${normalizedRequiredRole}'`);
+            return userRoleName === normalizedRequiredRole;
+        });
+        console.log('✅ [RolesGuard] Has required role:', hasRole);
         if (!hasRole) {
-            throw new common_1.ForbiddenException(`Acesso negado. Roles necessárias: ${requiredRoles.join(', ')}`);
+            console.log('❌ [RolesGuard] Access denied - role mismatch');
+            throw new common_1.ForbiddenException(`Acesso negado. Role atual: '${user.role.name}'. Roles necessárias: ${requiredRoles.join(', ')}`);
         }
         return true;
     }

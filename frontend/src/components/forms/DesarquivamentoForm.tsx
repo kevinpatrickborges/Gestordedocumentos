@@ -9,30 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ButtonLoading } from '@/components/ui/Loading'
 import { AlertCircle, FileText, User, Briefcase, Calendar, Hash } from 'lucide-react'
-import { TipoDesarquivamento, CreateDesarquivamentoDto, TipoSolicitacao } from '@/types'
-import { getTipoDesarquivamentoLabel, getTipoSolicitacaoLabel } from '@/utils/format'
+import { TipoDesarquivamento, CreateDesarquivamentoDto, TipoSolicitacao, StatusDesarquivamento } from '@/types'
+import { getTipoDesarquivamentoLabel, getTipoSolicitacaoLabel, getStatusLabel } from '@/utils/format'
 import { Checkbox } from '../ui/Checkbox'
 
 const desarquivamentoSchema = z.object({
-  tipoSolicitacao: z.nativeEnum(TipoSolicitacao, {
-    errorMap: () => ({ message: 'O tipo de solicitação é obrigatório' }),
-  }),
   tipoDesarquivamento: z.nativeEnum(TipoDesarquivamento, {
     errorMap: () => ({ message: 'O tipo de desarquivamento é obrigatório' }),
   }),
-  nomeSolicitante: z
+  nomeCompleto: z
     .string()
-    .min(3, 'O nome do solicitante deve ter pelo menos 3 caracteres')
-    .max(255, 'O nome do solicitante deve ter no máximo 255 caracteres'),
-  requerente: z
-    .string()
-    .min(3, 'O requerente deve ter pelo menos 3 caracteres')
-    .max(255, 'O requerente deve ter no máximo 255 caracteres'),
+    .min(3, 'O nome completo deve ter pelo menos 3 caracteres')
+    .max(255, 'O nome completo deve ter no máximo 255 caracteres'),
   numeroNicLaudoAuto: z.string().optional(),
-  numeroRegistro: z
-    .string()
-    .min(5, 'O número de registro deve ter pelo menos 5 caracteres')
-    .max(100, 'O número de registro deve ter no máximo 100 caracteres'),
   numeroProcesso: z
     .string()
     .min(5, 'O número do processo deve ter pelo menos 5 caracteres')
@@ -41,6 +30,15 @@ const desarquivamentoSchema = z.object({
     .string()
     .min(3, 'O tipo de documento é obrigatório')
     .max(100, 'O tipo de documento deve ter no máximo 100 caracteres'),
+  dataSolicitacao: z
+    .string()
+    .min(1, 'A data de solicitação é obrigatória')
+    .refine((date) => {
+      const parsedDate = new Date(date);
+      return !isNaN(parsedDate.getTime());
+    }, 'Formato de data inválido'),
+  dataDesarquivamentoSAG: z.string().optional(),
+  dataDevolucaoSetor: z.string().optional(),
   setorDemandante: z
     .string()
     .min(2, 'O setor demandante é obrigatório')
@@ -85,7 +83,15 @@ const DesarquivamentoForm: React.FC<DesarquivamentoFormProps> = ({
   })
 
   const onFormSubmit = async (data: DesarquivamentoFormData) => {
-    await onSubmit(data)
+    // Garantir que as datas estejam no formato correto (YYYY-MM-DD) quando preenchidas
+    const formattedData = {
+      ...data,
+      dataSolicitacao: data.dataSolicitacao,
+      dataDesarquivamentoSAG: data.dataDesarquivamentoSAG || undefined,
+      dataDevolucaoSetor: data.dataDevolucaoSetor || undefined,
+    }
+    
+    await onSubmit(formattedData)
   }
 
   return (
@@ -101,26 +107,6 @@ const DesarquivamentoForm: React.FC<DesarquivamentoFormProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="tipoSolicitacao">Tipo de Solicitação *</Label>
-            <Select
-              value={watch('tipoSolicitacao')}
-              onValueChange={(value) => setValue('tipoSolicitacao', value as TipoSolicitacao)}
-            >
-              <SelectTrigger className={errors.tipoSolicitacao ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Selecione o tipo de solicitação" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.values(TipoSolicitacao).map((tipo) => (
-                  <SelectItem key={tipo} value={tipo}>
-                    {getTipoSolicitacaoLabel(tipo)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.tipoSolicitacao && <p className="text-sm text-red-600">{errors.tipoSolicitacao.message}</p>}
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="tipoDesarquivamento">Desarquivamento Físico/Digital *</Label>
             <Select
@@ -141,26 +127,26 @@ const DesarquivamentoForm: React.FC<DesarquivamentoFormProps> = ({
             {errors.tipoDesarquivamento && <p className="text-sm text-red-600">{errors.tipoDesarquivamento.message}</p>}
           </div>
 
+
+
           <div className="space-y-2">
-            <Label htmlFor="tipoDocumento">Tipo de Documento *</Label>
+            <Label htmlFor="nomeCompleto">Nome Completo *</Label>
             <Input
-              id="tipoDocumento"
-              placeholder="Ex: Laudo Pericial, Inquérito Policial"
-              {...register('tipoDocumento')}
-              className={errors.tipoDocumento ? 'border-red-500' : ''}
+              id="nomeCompleto"
+              placeholder="Nome completo"
+              {...register('nomeCompleto')}
+              className={errors.nomeCompleto ? 'border-red-500' : ''}
             />
-            {errors.tipoDocumento && <p className="text-sm text-red-600">{errors.tipoDocumento.message}</p>}
+            {errors.nomeCompleto && <p className="text-sm text-red-600">{errors.nomeCompleto.message}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="numeroRegistro">Nº de Registro (Processo, NIC, etc.) *</Label>
+            <Label htmlFor="numeroNicLaudoAuto">Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA</Label>
             <Input
-              id="numeroRegistro"
-              placeholder="Ex: 0800123-45.2025.8.20.0001"
-              {...register('numeroRegistro')}
-              className={errors.numeroRegistro ? 'border-red-500' : ''}
+              id="numeroNicLaudoAuto"
+              placeholder="Opcional"
+              {...register('numeroNicLaudoAuto')}
             />
-            {errors.numeroRegistro && <p className="text-sm text-red-600">{errors.numeroRegistro.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -175,11 +161,42 @@ const DesarquivamentoForm: React.FC<DesarquivamentoFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="numeroNicLaudoAuto">Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA</Label>
+            <Label htmlFor="tipoDocumento">Tipo de Documento *</Label>
             <Input
-              id="numeroNicLaudoAuto"
-              placeholder="Opcional"
-              {...register('numeroNicLaudoAuto')}
+              id="tipoDocumento"
+              placeholder="Ex: Laudo Pericial, Inquérito Policial"
+              {...register('tipoDocumento')}
+              className={errors.tipoDocumento ? 'border-red-500' : ''}
+            />
+            {errors.tipoDocumento && <p className="text-sm text-red-600">{errors.tipoDocumento.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dataSolicitacao">Data de Solicitação *</Label>
+            <Input
+              id="dataSolicitacao"
+              type="date"
+              {...register('dataSolicitacao')}
+              className={errors.dataSolicitacao ? 'border-red-500' : ''}
+            />
+            {errors.dataSolicitacao && <p className="text-sm text-red-600">{errors.dataSolicitacao.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dataDesarquivamentoSAG">Data do Desarquivamento - SAG</Label>
+            <Input
+              id="dataDesarquivamentoSAG"
+              type="date"
+              {...register('dataDesarquivamentoSAG')}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dataDevolucaoSetor">Data da Devolução pelo Setor</Label>
+            <Input
+              id="dataDevolucaoSetor"
+              type="date"
+              {...register('dataDevolucaoSetor')}
             />
           </div>
         </CardContent>
@@ -187,54 +204,29 @@ const DesarquivamentoForm: React.FC<DesarquivamentoFormProps> = ({
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Informações do Solicitante
-          </CardTitle>
+          <CardTitle>Informações Adicionais</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="nomeSolicitante">Nome do Solicitante *</Label>
-            <Input
-              id="nomeSolicitante"
-              placeholder="Nome completo do solicitante"
-              {...register('nomeSolicitante')}
-              className={errors.nomeSolicitante ? 'border-red-500' : ''}
-            />
-            {errors.nomeSolicitante && <p className="text-sm text-red-600">{errors.nomeSolicitante.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="requerente">Requerente *</Label>
-            <Input
-              id="requerente"
-              placeholder="Nome do requerente"
-              {...register('requerente')}
-              className={errors.requerente ? 'border-red-500' : ''}
-            />
-            {errors.requerente && <p className="text-sm text-red-600">{errors.requerente.message}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="servidorResponsavel">Servidor Responsável (Matrícula) *</Label>
-            <Input
-              id="servidorResponsavel"
-              placeholder="Ex: João da Silva (123456)"
-              {...register('servidorResponsavel')}
-              className={errors.servidorResponsavel ? 'border-red-500' : ''}
-            />
-            {errors.servidorResponsavel && <p className="text-sm text-red-600">{errors.servidorResponsavel.message}</p>}
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="setorDemandante">Setor Demandante *</Label>
             <Input
               id="setorDemandante"
-              placeholder="Ex: Delegacia de Plantão, NUGECID"
+              placeholder="Nome do setor"
               {...register('setorDemandante')}
               className={errors.setorDemandante ? 'border-red-500' : ''}
             />
             {errors.setorDemandante && <p className="text-sm text-red-600">{errors.setorDemandante.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="servidorResponsavel">Servidor do ITEP Responsável (Matrícula) *</Label>
+            <Input
+              id="servidorResponsavel"
+              placeholder="Matrícula do servidor"
+              {...register('servidorResponsavel')}
+              className={errors.servidorResponsavel ? 'border-red-500' : ''}
+            />
+            {errors.servidorResponsavel && <p className="text-sm text-red-600">{errors.servidorResponsavel.message}</p>}
           </div>
         </CardContent>
       </Card>

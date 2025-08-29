@@ -38,7 +38,7 @@ const NovoDesarquivamentoPage: React.FC = () => {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Nova Solicitação de Desarquivamento
+            Novo Desarquivamento
           </h1>
           <p className="text-gray-600 mt-1">
             Preencha os dados abaixo para criar uma nova solicitação

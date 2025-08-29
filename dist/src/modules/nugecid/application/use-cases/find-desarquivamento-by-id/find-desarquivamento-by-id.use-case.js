@@ -46,39 +46,47 @@ let FindDesarquivamentoByIdUseCase = class FindDesarquivamentoByIdUseCase {
         }
     }
     mapToResponse(desarquivamento, userId, userRoles) {
-        const plainObject = desarquivamento.toPlainObject();
         let canBeEdited = false;
         let canBeCancelled = false;
         let canBeCompleted = false;
         if (userId && userRoles) {
-            canBeEdited = desarquivamento.canBeEditedBy(userId, userRoles);
-            canBeCancelled = desarquivamento.canBeCancelled() && canBeEdited;
-            canBeCompleted = desarquivamento.canBeCompleted() && canBeEdited;
+            canBeEdited = desarquivamento.canBeEditedBy ? desarquivamento.canBeEditedBy(userId, userRoles) : false;
+            canBeCancelled = desarquivamento.canBeCancelled ? desarquivamento.canBeCancelled() && canBeEdited : false;
+            canBeCompleted = desarquivamento.canBeCompleted ? desarquivamento.canBeCompleted() && canBeEdited : false;
         }
         return {
-            id: plainObject.id,
-            codigoBarras: plainObject.codigoBarras,
-            tipoSolicitacao: plainObject.tipoSolicitacao,
-            status: plainObject.status,
-            nomeSolicitante: plainObject.nomeSolicitante,
-            nomeVitima: plainObject.nomeVitima,
-            numeroRegistro: plainObject.numeroRegistro,
-            tipoDocumento: plainObject.tipoDocumento,
-            dataFato: plainObject.dataFato,
-            prazoAtendimento: plainObject.prazoAtendimento,
-            dataAtendimento: plainObject.dataAtendimento,
-            resultadoAtendimento: plainObject.resultadoAtendimento,
-            finalidade: plainObject.finalidade,
-            observacoes: plainObject.observacoes,
-            urgente: plainObject.urgente,
-            localizacaoFisica: plainObject.localizacaoFisica,
-            criadoPorId: plainObject.criadoPorId,
-            responsavelId: plainObject.responsavelId,
-            createdAt: plainObject.createdAt,
-            updatedAt: plainObject.updatedAt,
-            deletedAt: plainObject.deletedAt,
-            isOverdue: desarquivamento.isOverdue(),
-            daysUntilDeadline: desarquivamento.getDaysUntilDeadline(),
+            id: desarquivamento.id?.value || 0,
+            codigoBarras: desarquivamento.numeroNicLaudoAuto,
+            tipoDesarquivamento: desarquivamento.tipoDesarquivamento,
+            tipoSolicitacao: desarquivamento.tipoDesarquivamento,
+            status: desarquivamento.status.value,
+            nomeCompleto: desarquivamento.nomeCompleto,
+            nomeSolicitante: desarquivamento.nomeCompleto,
+            numeroNicLaudoAuto: desarquivamento.numeroNicLaudoAuto,
+            numeroProcesso: desarquivamento.numeroProcesso,
+            numeroRegistro: desarquivamento.numeroProcesso,
+            tipoDocumento: desarquivamento.tipoDocumento,
+            dataSolicitacao: desarquivamento.dataSolicitacao,
+            dataDesarquivamentoSAG: desarquivamento.dataDesarquivamentoSAG,
+            dataDevolucaoSetor: desarquivamento.dataDevolucaoSetor,
+            setorDemandante: desarquivamento.setorDemandante,
+            servidorResponsavel: desarquivamento.servidorResponsavel,
+            finalidadeDesarquivamento: desarquivamento.finalidadeDesarquivamento,
+            solicitacaoProrrogacao: desarquivamento.solicitacaoProrrogacao,
+            prazoAtendimento: undefined,
+            dataAtendimento: desarquivamento.dataDesarquivamentoSAG,
+            resultadoAtendimento: undefined,
+            finalidade: desarquivamento.finalidadeDesarquivamento,
+            observacoes: undefined,
+            urgente: desarquivamento.urgente,
+            localizacaoFisica: undefined,
+            criadoPorId: desarquivamento.criadoPorId,
+            responsavelId: desarquivamento.responsavelId,
+            createdAt: desarquivamento.createdAt,
+            updatedAt: desarquivamento.updatedAt,
+            deletedAt: desarquivamento.deletedAt,
+            isOverdue: desarquivamento.isOverdue ? desarquivamento.isOverdue() : false,
+            daysUntilDeadline: desarquivamento.getDaysUntilDeadline ? desarquivamento.getDaysUntilDeadline() : undefined,
             canBeEdited,
             canBeCancelled,
             canBeCompleted,

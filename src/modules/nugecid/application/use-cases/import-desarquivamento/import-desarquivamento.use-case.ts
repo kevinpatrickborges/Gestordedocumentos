@@ -49,13 +49,16 @@ export class ImportDesarquivamentoUseCase {
         try {
           // Criar request para o use case
           const request: CreateDesarquivamentoRequest = {
-            tipoSolicitacao: dto.tipoSolicitacao,
-            nomeSolicitante: dto.nomeSolicitante,
-            requerente: dto.requerente || dto.nomeSolicitante,
-            numeroRegistro: dto.numeroRegistro,
+            tipoDesarquivamento: dto.tipoDesarquivamento || 'FISICO',
+            nomeCompleto: dto.nomeCompleto,
+            numeroNicLaudoAuto: dto.numeroNicLaudoAuto,
             numeroProcesso: dto.numeroProcesso || '',
             tipoDocumento: dto.tipoDocumento,
-            finalidade: dto.finalidadeDesarquivamento,
+            dataSolicitacao: dto.dataSolicitacao,
+            setorDemandante: dto.setorDemandante,
+            servidorResponsavel: dto.servidorResponsavel,
+            finalidadeDesarquivamento: dto.finalidadeDesarquivamento,
+            solicitacaoProrrogacao: dto.solicitacaoProrrogacao || false,
             urgente: dto.urgente || false,
             criadoPorId,
           };

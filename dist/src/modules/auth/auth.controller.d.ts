@@ -44,4 +44,10 @@ export declare class AuthController {
         };
     }>;
     loginV2(loginDto: LoginDto, ipAddress: string, userAgent: string): Promise<import("./auth.service").LoginV2Response>;
+    refreshToken(body: {
+        refreshToken: string;
+    }): Promise<{
+        accessToken: string;
+        expiresIn: string;
+    }>;
 }

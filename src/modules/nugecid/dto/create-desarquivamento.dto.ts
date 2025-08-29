@@ -2,60 +2,45 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
-  IsEnum,
   IsBoolean,
+  IsDateString,
   MaxLength,
   MinLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  TipoDesarquivamento,
-  TipoDesarquivamentoEnum,
-} from '../domain/value-objects/tipo-desarquivamento.vo';
-import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
 
 export class CreateDesarquivamentoDto {
   @ApiProperty({
-    description: 'Tipo de solicitação',
-    enum: TipoSolicitacaoEnum,
-    example: TipoSolicitacaoEnum.COPIA,
-  })
-  @IsEnum(TipoSolicitacaoEnum)
-  tipoSolicitacao: TipoSolicitacaoEnum;
-
-  @ApiProperty({
-    description: 'Nome do solicitante',
-    example: 'João da Silva',
+    description: 'Tipo de desarquivamento (Físico ou Digital)',
+    example: 'FISICO',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Nome do solicitante é obrigatório' })
+  @IsNotEmpty({ message: 'Tipo de desarquivamento é obrigatório' })
+  @Transform(({ value }) => value?.trim())
+  tipoDesarquivamento: string;
+
+  @ApiProperty({
+    description: 'Nome completo do solicitante',
+    example: 'João da Silva Santos',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'Nome completo é obrigatório' })
   @MinLength(3)
   @MaxLength(255)
   @Transform(({ value }) => value?.trim())
-  nomeSolicitante: string;
+  nomeCompleto: string;
 
   @ApiProperty({
-    description: 'Requerente',
-    example: 'João da Silva',
+    description: 'Número do NIC, Laudo, Auto ou Informação Técnica',
+    example: 'NIC-123456/2025',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Requerente é obrigatório' })
-  @MinLength(3)
-  @MaxLength(255)
-  @Transform(({ value }) => value?.trim())
-  requerente: string;
-
-  @ApiProperty({
-    description: 'Número de registro (Processo, NIC, etc.)',
-    example: '0800123-45.2025.8.20.0001',
-  })
-  @IsString()
-  @IsNotEmpty({ message: 'Número de registro é obrigatório' })
+  @IsNotEmpty({ message: 'Número NIC/Laudo/Auto é obrigatório' })
   @MinLength(3)
   @MaxLength(100)
   @Transform(({ value }) => value?.trim())
-  numeroRegistro: string;
+  numeroNicLaudoAuto: string;
 
   @ApiProperty({
     description: 'Número do processo',
@@ -69,26 +54,6 @@ export class CreateDesarquivamentoDto {
   numeroProcesso: string;
 
   @ApiProperty({
-    description: 'Tipo de desarquivamento (Físico ou Digital)',
-    enum: TipoDesarquivamentoEnum,
-    example: TipoDesarquivamentoEnum.FISICO,
-  })
-  @IsEnum(TipoDesarquivamentoEnum, {
-    message: 'Tipo de desarquivamento deve ser FÍSICO ou DIGITAL',
-  })
-  tipoDesarquivamento: TipoDesarquivamentoEnum;
-
-  @ApiPropertyOptional({
-    description: 'Número do NIC, Laudo, Auto ou Informação Técnica',
-    example: 'NIC 123456',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  @Transform(({ value }) => value?.trim())
-  numeroNicLaudoAuto?: string;
-
-  @ApiProperty({
     description: 'Tipo do documento',
     example: 'Laudo de Perícia Criminal',
   })
@@ -100,19 +65,42 @@ export class CreateDesarquivamentoDto {
   tipoDocumento: string;
 
   @ApiProperty({
+    description: 'Data da solicitação',
+    example: '2025-01-15T10:30:00Z',
+  })
+  @IsDateString({}, { message: 'Data de solicitação deve estar em formato válido' })
+  @IsNotEmpty({ message: 'Data de solicitação é obrigatória' })
+  dataSolicitacao: string;
+
+  @ApiPropertyOptional({
+    description: 'Data do desarquivamento no sistema SAG',
+    example: '2025-01-20T14:30:00Z',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Data de desarquivamento SAG deve estar em formato válido' })
+  dataDesarquivamentoSAG?: string;
+
+  @ApiPropertyOptional({
+    description: 'Data da devolução pelo setor',
+    example: '2025-01-25T16:00:00Z',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Data de devolução deve estar em formato válido' })
+  dataDevolucaoSetor?: string;
+
+  @ApiProperty({
     description: 'Setor que está solicitando o desarquivamento',
     example: 'Delegacia de Plantão da Zona Sul',
   })
   @IsString()
   @IsNotEmpty({ message: 'Setor demandante é obrigatório' })
   @MinLength(2)
-  @MaxLength(100)
+  @MaxLength(255)
   @Transform(({ value }) => value?.trim())
   setorDemandante: string;
 
   @ApiProperty({
-    description:
-      'Servidor do ITEP responsável pela solicitação (Nome e Matrícula)',
+    description: 'Servidor do ITEP responsável pela solicitação (Nome e Matrícula)',
     example: 'Maria Oliveira (mat. 654321)',
   })
   @IsString()
@@ -133,13 +121,13 @@ export class CreateDesarquivamentoDto {
   @Transform(({ value }) => value?.trim())
   finalidadeDesarquivamento: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Indica se há uma solicitação de prorrogação de prazo',
     default: false,
   })
-  @IsOptional()
   @IsBoolean()
-  solicitacaoProrrogacao?: boolean = false;
+  @IsNotEmpty({ message: 'Solicitação de prorrogação é obrigatória' })
+  solicitacaoProrrogacao: boolean;
 
   @ApiPropertyOptional({
     description: 'Indica se a solicitação é urgente',

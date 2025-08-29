@@ -1,10 +1,4 @@
 // Enums
-export enum TipoSolicitacao {
-  DESARQUIVAMENTO = 'DESARQUIVAMENTO',
-  COPIA = 'COPIA',
-  VISTA = 'VISTA',
-  CERTIDAO = 'CERTIDAO',
-}
 
 export enum StatusDesarquivamento {
   FINALIZADO = 'FINALIZADO',
@@ -22,11 +16,16 @@ export enum TipoDesarquivamento {
   NAO_LOCALIZADO = 'NAO_LOCALIZADO',
 }
 
+export enum TipoSolicitacao {
+  DESARQUIVAMENTO = 'DESARQUIVamento',
+  COPIA = 'COPIA',
+  VISTA = 'VISTA',
+  CERTIDAO = 'CERTIDAO',
+}
+
 export enum UserRole {
   ADMIN = 'admin',
-  COORDENADOR = 'coordenador',
-  USUARIO = 'usuario',
-  NUGECID_OPERATOR = 'nugecid_operator'
+  USUARIO = 'usuario'
 }
 
 // Interfaces
@@ -47,33 +46,21 @@ export interface User {
 
 export interface Desarquivamento {
   id: number
-  codigoBarras: string
-  tipoDesarquivamento: TipoDesarquivamento
+  tipoDesarquivamento: string
   status: StatusDesarquivamento
   nomeCompleto: string
-  numeroNicLaudoAuto?: string
+  numeroNicLaudoAuto: string
   numeroProcesso: string
-  tipoDocumento?: string
+  tipoDocumento: string
   dataSolicitacao: string
-  dataDesarquivamentoSag?: string
+  dataDesarquivamentoSAG?: string
   dataDevolucaoSetor?: string
-  setorDemandante?: string
-  servidorResponsavel?: string
-  finalidadeDesarquivamento?: string
-  solicitacaoProrrogacao?: boolean
-  // Campos legados para compatibilidade
-  tipo?: TipoSolicitacao
-  nomeRequerente?: string
-  nomeVitima?: string
-  numeroRegistro?: string
-  dataFato?: string
-  finalidade?: string
-  observacoes?: string
+  setorDemandante: string
+  servidorResponsavel: string
+  finalidadeDesarquivamento: string
+  solicitacaoProrrogacao: boolean
   urgente?: boolean
-  localizacaoFisica?: string
-  prazoAtendimento?: string
-  dataAtendimento?: string
-  usuarioId: number
+  criadoPorId: number
   responsavelId?: number
   createdAt: string
   updatedAt: string
@@ -84,12 +71,15 @@ export interface Desarquivamento {
 
 // DTOs
 export interface CreateDesarquivamentoDto {
-  tipoSolicitacao: TipoSolicitacao
-  tipoDesarquivamento: TipoDesarquivamento
-  nomeSolicitante: string
-  numeroNicLaudoAuto?: string
-  numeroRegistro: string
+  tipoDesarquivamento: string
+  status?: StatusDesarquivamento
+  nomeCompleto: string
+  numeroNicLaudoAuto: string
+  numeroProcesso: string
   tipoDocumento: string
+  dataSolicitacao: string
+  dataDesarquivamentoSAG?: string
+  dataDevolucaoSetor?: string
   setorDemandante: string
   servidorResponsavel: string
   finalidadeDesarquivamento: string
@@ -107,7 +97,7 @@ export interface QueryDesarquivamentoDto {
   limit?: number
   search?: string
   status?: StatusDesarquivamento | StatusDesarquivamento[]
-  tipo?: TipoSolicitacao | TipoSolicitacao[]
+  tipoDesarquivamento?: TipoDesarquivamento | TipoDesarquivamento[]
   usuarioId?: number
   responsavelId?: number
   dataInicio?: string
@@ -152,6 +142,8 @@ export interface LoginResponse {
   data: {
     user: User
     accessToken: string
+    refreshToken: string
+    expiresIn: string
   }
   message: string
 }
@@ -162,10 +154,9 @@ export interface DashboardStats {
   pendentes: number
   emAndamento: number
   concluidos: number
-  cancelados: number
   urgentes: number
   vencidos: number
-  porTipo: Record<TipoSolicitacao, number>
+  porTipoDesarquivamento: Record<TipoDesarquivamento, number>
   porStatus: Record<StatusDesarquivamento, number>
   recentes: Desarquivamento[]
 }

@@ -19,26 +19,39 @@ export interface UpdateDesarquivamentoRequest {
   responsavelId?: number;
   status?: string;
   resultadoAtendimento?: string;
+  dataDesarquivamentoSAG?: Date | string;
+  dataDevolucaoSetor?: Date | string;
   userId: number;
   userRoles: string[];
 }
 
 export interface UpdateDesarquivamentoResponse {
   id: number;
-  codigoBarras: string;
-  tipoSolicitacao: string;
+  codigoBarras?: string;
+  tipoDesarquivamento: string;
+  tipoSolicitacao?: string;
   status: string;
-  nomeSolicitante: string;
+  nomeSolicitante?: string;
+  nomeCompleto: string;
+  numeroNicLaudoAuto: string;
   nomeVitima?: string;
-  numeroRegistro: string;
+  numeroRegistro?: string;
+  numeroProcesso: string;
   tipoDocumento?: string;
   dataFato?: Date;
+  dataSolicitacao: Date;
+  dataDesarquivamentoSAG?: Date;
+  dataDevolucaoSetor?: Date;
+  setorDemandante: string;
+  servidorResponsavel: string;
+  finalidadeDesarquivamento: string;
+  solicitacaoProrrogacao: boolean;
   prazoAtendimento?: Date;
   dataAtendimento?: Date;
   resultadoAtendimento?: string;
   finalidade?: string;
   observacoes?: string;
-  urgente: boolean;
+  urgente?: boolean;
   localizacaoFisica?: string;
   criadoPorId: number;
   responsavelId?: number;
@@ -117,36 +130,20 @@ export class UpdateDesarquivamentoUseCase {
       throw new Error('Tipo do documento deve ter no máximo 100 caracteres');
     }
 
-    if (
-      request.localizacaoFisica !== undefined &&
-      request.localizacaoFisica.length > 255
-    ) {
-      throw new Error('Localização física deve ter no máximo 255 caracteres');
-    }
-
     if (request.responsavelId !== undefined && request.responsavelId <= 0) {
       throw new Error('ID do responsável deve ser positivo');
-    }
-
-    // Validar datas
-    if (request.dataFato !== undefined && request.dataFato > new Date()) {
-      throw new Error('Data do fato não pode ser futura');
-    }
-
-    if (
-      request.prazoAtendimento !== undefined &&
-      request.prazoAtendimento <= new Date()
-    ) {
-      throw new Error('Prazo de atendimento deve ser futuro');
     }
 
     // Validar status
     if (request.status !== undefined) {
       const validStatuses = [
-        'PENDENTE',
-        'EM_ANDAMENTO',
-        'CONCLUIDO',
-        'CANCELADO',
+        'FINALIZADO',
+        'DESARQUIVADO',
+        'NAO_COLETADO',
+        'SOLICITADO',
+        'REARQUIVAMENTO_SOLICITADO',
+        'RETIRADO_PELO_SETOR',
+        'NAO_LOCALIZADO'
       ];
       if (!validStatuses.includes(request.status)) {
         throw new Error(
@@ -154,118 +151,64 @@ export class UpdateDesarquivamentoUseCase {
         );
       }
     }
-
-    // Validar resultado de atendimento se status for CONCLUIDO
-    if (
-      request.status === 'CONCLUIDO' &&
-      (!request.resultadoAtendimento ||
-        request.resultadoAtendimento.trim().length === 0)
-    ) {
-      throw new Error(
-        'Resultado do atendimento é obrigatório quando o status é CONCLUIDO',
-      );
-    }
   }
 
   private async applyUpdates(
     desarquivamento: DesarquivamentoDomain,
     request: UpdateDesarquivamentoRequest,
   ): Promise<DesarquivamentoDomain> {
-    // Verificar se precisa de reconstrução da entidade
-    if (this.requiresReconstruction(request)) {
-      // Obter dados atuais da entidade
-      const currentData = desarquivamento.toPlainObject();
-
-      // Criar novos dados com os valores atualizados
-      const updatedData = {
-        ...currentData,
-        // Atualizar apenas os campos que foram fornecidos na requisição
-        ...(request.nomeVitima !== undefined && {
-          nomeVitima: request.nomeVitima,
-        }),
-        ...(request.tipoDocumento !== undefined && {
-          tipoDocumento: request.tipoDocumento,
-        }),
-        ...(request.dataFato !== undefined && { dataFato: request.dataFato }),
-        ...(request.prazoAtendimento !== undefined && {
-          prazoAtendimento: request.prazoAtendimento,
-        }),
-        ...(request.finalidade !== undefined && {
-          finalidade: request.finalidade,
-        }),
-        ...(request.observacoes !== undefined && {
-          observacoes: request.observacoes,
-        }),
-        ...(request.localizacaoFisica !== undefined && {
-          localizacaoFisica: request.localizacaoFisica,
-        }),
-        ...(request.responsavelId !== undefined && {
-          responsavelId: request.responsavelId,
-        }),
-        updatedAt: new Date(),
-      };
-
-      // Reconstruir a entidade com os novos dados
-      const reconstructedEntity =
-        DesarquivamentoDomain.reconstruct(updatedData);
-
-      // Atualizar status se necessário
-      if (request.status !== undefined) {
-        await this.updateStatus(
-          reconstructedEntity,
-          request.status,
-          request.resultadoAtendimento,
-        );
-      }
-
-      return reconstructedEntity;
-    } else {
-      // Para atualizações simples que não requerem reconstrução
-      // Atualizar localização física
-      if (request.localizacaoFisica !== undefined) {
-        desarquivamento.setPhysicalLocation(request.localizacaoFisica);
-      }
-
-      // Atribuir responsável
-      if (request.responsavelId !== undefined) {
-        desarquivamento.assignResponsible(request.responsavelId);
-      }
-
-      // Atualizar status
-      if (request.status !== undefined) {
-        await this.updateStatus(
-          desarquivamento,
-          request.status,
-          request.resultadoAtendimento,
-        );
-      }
-
-      return desarquivamento;
+    // Para a estrutura simplificada, usar métodos do domínio para atualizações
+    
+    // Atribuir responsável
+    if (request.responsavelId !== undefined) {
+      desarquivamento.assignResponsible(request.responsavelId);
     }
+
+    // Definir datas
+    if (request.dataDesarquivamentoSAG !== undefined) {
+      desarquivamento.setDataDesarquivamentoSAG(new Date(request.dataDesarquivamentoSAG));
+    }
+
+    if (request.dataDevolucaoSetor !== undefined) {
+      desarquivamento.setDataDevolucaoSetor(new Date(request.dataDevolucaoSetor));
+    }
+
+    // Atualizar status
+    if (request.status !== undefined) {
+      await this.updateStatus(
+        desarquivamento,
+        request.status,
+      );
+    }
+
+    return desarquivamento;
   }
 
   private async updateStatus(
     desarquivamento: DesarquivamentoDomain,
     newStatus: string,
-    resultadoAtendimento?: string,
   ): Promise<void> {
     switch (newStatus) {
-      case 'PENDENTE':
-        desarquivamento.changeStatus(StatusDesarquivamento.createPendente());
+      case 'SOLICITADO':
+        desarquivamento.changeStatus(StatusDesarquivamento.createSolicitado());
         break;
-      case 'EM_ANDAMENTO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createEmAndamento());
+      case 'DESARQUIVADO':
+        desarquivamento.changeStatus(StatusDesarquivamento.createDesarquivado());
         break;
-      case 'CONCLUIDO':
-        if (!resultadoAtendimento) {
-          throw new Error(
-            'Resultado do atendimento é obrigatório para conclusão',
-          );
-        }
-        desarquivamento.complete(resultadoAtendimento);
+      case 'FINALIZADO':
+        desarquivamento.changeStatus(StatusDesarquivamento.createFinalizado());
         break;
-      case 'CANCELADO':
-        desarquivamento.cancel(resultadoAtendimento);
+      case 'NAO_LOCALIZADO':
+        desarquivamento.changeStatus(StatusDesarquivamento.createNaoLocalizado());
+        break;
+      case 'NAO_COLETADO':
+        desarquivamento.changeStatus(StatusDesarquivamento.createNaoColetado());
+        break;
+      case 'RETIRADO_PELO_SETOR':
+        desarquivamento.changeStatus(StatusDesarquivamento.createRetiradoPeloSetor());
+        break;
+      case 'REARQUIVAMENTO_SOLICITADO':
+        desarquivamento.changeStatus(StatusDesarquivamento.createRearquivamentoSolicitado());
         break;
       default:
         throw new Error(`Status inválido: ${newStatus}`);
@@ -275,42 +218,46 @@ export class UpdateDesarquivamentoUseCase {
   private requiresReconstruction(
     request: UpdateDesarquivamentoRequest,
   ): boolean {
-    return (
-      request.nomeVitima !== undefined ||
-      request.tipoDocumento !== undefined ||
-      request.dataFato !== undefined ||
-      request.prazoAtendimento !== undefined ||
-      request.finalidade !== undefined ||
-      request.observacoes !== undefined
-    );
+    // For simplified structure, we don't need reconstruction
+    // All updates can be done through domain methods
+    return false;
   }
 
   private mapToResponse(
     desarquivamento: DesarquivamentoDomain,
   ): UpdateDesarquivamentoResponse {
-    const plainObject = desarquivamento.toPlainObject();
-
     return {
-      id: plainObject.id,
-      codigoBarras: plainObject.codigoBarras,
-      tipoSolicitacao: plainObject.tipoSolicitacao,
-      status: plainObject.status,
-      nomeSolicitante: plainObject.nomeSolicitante,
-      nomeVitima: plainObject.nomeVitima,
-      numeroRegistro: plainObject.numeroRegistro,
-      tipoDocumento: plainObject.tipoDocumento,
-      dataFato: plainObject.dataFato,
-      prazoAtendimento: plainObject.prazoAtendimento,
-      dataAtendimento: plainObject.dataAtendimento,
-      resultadoAtendimento: plainObject.resultadoAtendimento,
-      finalidade: plainObject.finalidade,
-      observacoes: plainObject.observacoes,
-      urgente: plainObject.urgente,
-      localizacaoFisica: plainObject.localizacaoFisica,
-      criadoPorId: plainObject.criadoPorId,
-      responsavelId: plainObject.responsavelId,
-      createdAt: plainObject.createdAt,
-      updatedAt: plainObject.updatedAt,
+      id: desarquivamento.id?.value || 0,
+      codigoBarras: desarquivamento.numeroNicLaudoAuto, // Using numeroNicLaudoAuto as unique identifier
+      tipoDesarquivamento: desarquivamento.tipoDesarquivamento,
+      tipoSolicitacao: desarquivamento.tipoDesarquivamento, // Mapping for compatibility
+      status: desarquivamento.status.value,
+      nomeSolicitante: desarquivamento.nomeCompleto, // Mapping for compatibility
+      nomeCompleto: desarquivamento.nomeCompleto,
+      numeroNicLaudoAuto: desarquivamento.numeroNicLaudoAuto,
+      nomeVitima: undefined, // Not applicable in new structure
+      numeroRegistro: desarquivamento.numeroProcesso, // Mapping for compatibility
+      numeroProcesso: desarquivamento.numeroProcesso,
+      tipoDocumento: desarquivamento.tipoDocumento,
+      dataFato: undefined, // Not applicable in new structure
+      dataSolicitacao: desarquivamento.dataSolicitacao,
+      dataDesarquivamentoSAG: desarquivamento.dataDesarquivamentoSAG,
+      dataDevolucaoSetor: desarquivamento.dataDevolucaoSetor,
+      setorDemandante: desarquivamento.setorDemandante,
+      servidorResponsavel: desarquivamento.servidorResponsavel,
+      finalidadeDesarquivamento: desarquivamento.finalidadeDesarquivamento,
+      solicitacaoProrrogacao: desarquivamento.solicitacaoProrrogacao,
+      prazoAtendimento: undefined, // Not applicable in new structure
+      dataAtendimento: desarquivamento.dataDesarquivamentoSAG, // Mapping for compatibility
+      resultadoAtendimento: undefined, // Not applicable in new structure
+      finalidade: desarquivamento.finalidadeDesarquivamento, // Mapping for compatibility
+      observacoes: undefined, // Not applicable in new structure
+      urgente: desarquivamento.urgente,
+      localizacaoFisica: undefined, // Not applicable in new structure
+      criadoPorId: desarquivamento.criadoPorId,
+      responsavelId: desarquivamento.responsavelId,
+      createdAt: desarquivamento.createdAt,
+      updatedAt: desarquivamento.updatedAt,
     };
   }
 }

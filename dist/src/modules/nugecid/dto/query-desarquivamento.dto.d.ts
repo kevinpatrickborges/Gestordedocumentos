@@ -1,15 +1,15 @@
-import { StatusDesarquivamento } from '../entities/desarquivamento.entity';
-import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
 export declare class QueryDesarquivamentoDto {
     page?: number;
     limit?: number;
     search?: string;
-    status?: StatusDesarquivamento[];
-    tipo?: TipoSolicitacaoEnum[];
+    status?: string[];
+    tipoDesarquivamento?: string[];
     usuarioId?: number;
     responsavelId?: number;
     dataInicio?: string;
     dataFim?: string;
+    startDate?: string;
+    endDate?: string;
     urgente?: boolean;
     vencidos?: boolean;
     sortBy?: string;

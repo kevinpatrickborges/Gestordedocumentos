@@ -15,7 +15,8 @@ export interface JwtPayload {
 export interface LoginResponse {
     user: Omit<User, 'senha'>;
     accessToken: string;
-    refreshToken?: string;
+    refreshToken: string;
+    expiresIn: string;
 }
 export interface LoginV2Response {
     user: {
@@ -36,6 +37,10 @@ export declare class AuthService {
     validateUser(usuario: string, password: string): Promise<User | null>;
     login(loginDto: LoginDto, ipAddress: string, userAgent: string): Promise<LoginResponse>;
     loginV2(loginDto: LoginDto, ipAddress: string, userAgent: string): Promise<LoginV2Response>;
+    refreshToken(refreshToken: string): Promise<{
+        accessToken: string;
+        expiresIn: string;
+    }>;
     validateJwtPayload(payload: JwtPayload): Promise<User | null>;
     register(registerDto: RegisterDto, currentUser: User): Promise<User>;
     logout(userId: number, ipAddress: string, userAgent: string): Promise<void>;

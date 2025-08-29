@@ -32,10 +32,17 @@ import { IDesarquivamentoRepository } from './domain/interfaces/desarquivamento.
 // Token para injeção de dependência
 import { DESARQUIVAMENTO_REPOSITORY_TOKEN } from './domain/nugecid.constants';
 
-// Legacy entities (for compatibility)
-import { Desarquivamento } from './entities/desarquivamento.entity';
+// Legacy entities (for compatibility) - using proper infrastructure entities
+// import { Desarquivamento } from './entities/desarquivamento.entity'; // REMOVED - legacy entity
 import { User } from '../users/entities/user.entity';
 import { Auditoria } from '../audit/entities/auditoria.entity';
+
+// New Services
+import { NugecidImportService } from './nugecid-import.service';
+import { NugecidStatsService } from './nugecid-stats.service';
+import { NugecidPdfService } from './nugecid-pdf.service';
+import { NugecidExportService } from './nugecid-export.service';
+import { NugecidAuditService } from './nugecid-audit.service';
 
 // Legacy service (for gradual migration)
 import { NugecidService } from './nugecid.service';
@@ -43,10 +50,8 @@ import { NugecidService } from './nugecid.service';
 @Module({
   imports: [
     DesarquivamentoRepositoryModule,
-    // TypeORM entities - incluindo as novas entidades da arquitetura hexagonal
     TypeOrmModule.forFeature([
-      // Entidades legadas (para compatibilidade)
-      Desarquivamento,
+      DesarquivamentoTypeOrmEntity,
       User,
       Auditoria,
     ]),
@@ -72,9 +77,9 @@ import { NugecidService } from './nugecid.service';
         }),
         fileFilter: (req, file, cb) => {
           const allowedMimes = [
-            'application/vnd.ms-excel', // .xls
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-            'text/csv', // .csv
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/csv',
           ];
 
           if (allowedMimes.includes(file.mimetype)) {
@@ -107,11 +112,18 @@ import { NugecidService } from './nugecid.service';
     ImportDesarquivamentoUseCase,
     ImportRegistrosUseCase,
 
-    // Legacy service (para compatibilidade durante a migração)
+    // New Services
+    NugecidImportService,
+    NugecidStatsService,
+    NugecidPdfService,
+    NugecidExportService,
+    NugecidAuditService,
+
+    // Legacy service
     NugecidService,
   ],
   exports: [
-    // Use Cases (para outros módulos que possam precisar)
+    // Use Cases
     CreateDesarquivamentoUseCase,
     FindAllDesarquivamentosUseCase,
     FindDesarquivamentoByIdUseCase,
@@ -123,13 +135,20 @@ import { NugecidService } from './nugecid.service';
     ImportDesarquivamentoUseCase,
     ImportRegistrosUseCase,
 
+    // New Services
+    NugecidImportService,
+    NugecidStatsService,
+    NugecidPdfService,
+    NugecidAuditService,
+    NugecidExportService,
+
     // Repository module
     DesarquivamentoRepositoryModule,
 
     // TypeORM module
     TypeOrmModule,
 
-    // Legacy service (para compatibilidade)
+    // Legacy service
     NugecidService,
   ],
 })

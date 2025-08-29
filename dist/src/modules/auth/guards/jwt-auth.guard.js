@@ -31,9 +31,21 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
     }
     handleRequest(err, user, info, context) {
         if (err || !user) {
-            const message = (err && err.message) ||
-                (info && (info.message || info)) ||
-                'Token JWT inválido ou expirado';
+            let message = 'Token JWT inválido ou expirado';
+            if (info) {
+                if (info.name === 'TokenExpiredError') {
+                    message = 'jwt expired';
+                }
+                else if (info.name === 'JsonWebTokenError') {
+                    message = 'jwt malformed';
+                }
+                else if (info.message) {
+                    message = info.message;
+                }
+            }
+            else if (err && err.message) {
+                message = err.message;
+            }
             throw new common_1.UnauthorizedException(message);
         }
         return user;

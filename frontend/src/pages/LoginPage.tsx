@@ -30,7 +30,7 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const from = location.state?.from?.pathname || '/dashboard'
+  const from = location.state?.from?.pathname || '/'
 
   const {
     register,
@@ -144,7 +144,7 @@ const LoginPage: React.FC = () => {
 
         <div className="text-center text-sm text-gray-600">
           <p>Problemas para acessar?</p>
-          <p>Entre em contato com NUGECID</p>
+          <p>Entre em contato com alguém ai</p>
         </div>
       </div>
     </div>

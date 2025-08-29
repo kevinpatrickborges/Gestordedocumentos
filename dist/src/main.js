@@ -16,6 +16,7 @@ const app_module_1 = require("./app.module");
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const logging_interceptor_1 = require("./common/interceptors/logging.interceptor");
 const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
+const database_error_interceptor_1 = require("./common/interceptors/database-error.interceptor");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule, {
@@ -98,7 +99,7 @@ async function bootstrap() {
     }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
     app.setGlobalPrefix('api');
-    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor(), new transform_interceptor_1.TransformInterceptor());
+    app.useGlobalInterceptors(new logging_interceptor_1.LoggingInterceptor(), new transform_interceptor_1.TransformInterceptor(), new database_error_interceptor_1.DatabaseErrorInterceptor());
     if (environment !== 'production') {
         const config = new swagger_1.DocumentBuilder()
             .setTitle(appName)
@@ -169,9 +170,66 @@ async function bootstrap() {
     const dbName = process.env.DATABASE_NAME ||
         configService.get('DATABASE_NAME') ||
         configService.get('database.name');
+    logger.log(`🔗 Verificando conexão com banco de dados...`);
+    logger.log(`📍 Host: ${dbHost}`);
+    logger.log(`🗄️  Database: ${dbName}`);
     try {
         const dataSource = app.get(typeorm_1.DataSource);
-        if (dataSource && dataSource.isInitialized) {
+        if (!dataSource) {
+            logger.error('❌ DataSource não encontrado no contexto da aplicação');
+            logger.error('🚨 PROBLEMA CRÍTICO: TypeORM não foi inicializado corretamente');
+            throw new Error('DataSource não disponível');
+        }
+        if (!dataSource.isInitialized) {
+            logger.warn('⚠️ DataSource não está inicializado, tentando inicializar...');
+            try {
+                await dataSource.initialize();
+                logger.log('✅ DataSource inicializado com sucesso');
+            }
+            catch (initError) {
+                logger.error(`❌ Falha ao inicializar DataSource: ${initError.message}`);
+                throw initError;
+            }
+        }
+        else {
+            logger.log('✅ DataSource já está inicializado');
+        }
+        logger.log('🧪 Executando teste de conectividade...');
+        const connectionTest = await dataSource.query('SELECT 1 as status, NOW() as current_time, version() as pg_version');
+        if (connectionTest && connectionTest[0]) {
+            const result = connectionTest[0];
+            logger.log(`✅ Conexão com banco ATIVA`);
+            logger.log(`🕐 Horário do servidor: ${result.current_time}`);
+            logger.log(`🐘 PostgreSQL: ${result.pg_version.split(' ')[0]} ${result.pg_version.split(' ')[1]}`);
+        }
+        logger.log('📋 Verificando estrutura das tabelas...');
+        const tablesQuery = `
+      SELECT table_name, table_type
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `;
+        const tables = await dataSource.query(tablesQuery);
+        logger.log(`📊 Tabelas encontradas: ${tables.length}`);
+        const expectedTables = ['usuarios', 'roles', 'desarquivamentos', 'auditorias'];
+        const foundTables = tables.map((t) => t.table_name);
+        for (const expectedTable of expectedTables) {
+            if (foundTables.includes(expectedTable)) {
+                try {
+                    const countResult = await dataSource.query(`SELECT COUNT(*) as count FROM ${expectedTable}`);
+                    const count = countResult[0]?.count || 0;
+                    logger.log(`✅ Tabela '${expectedTable}': ${count} registros`);
+                }
+                catch (countError) {
+                    logger.warn(`⚠️ Erro ao contar registros da tabela '${expectedTable}': ${countError.message}`);
+                }
+            }
+            else {
+                logger.warn(`⚠️ Tabela esperada '${expectedTable}' não encontrada`);
+            }
+        }
+        try {
             const sql = `SELECT table_name, last_update FROM (
         SELECT 'auditorias' as table_name, MAX(timestamp) as last_update FROM auditorias
         UNION ALL
@@ -180,18 +238,26 @@ async function bootstrap() {
             const res = await dataSource.query(sql);
             if (res && res.length > 0) {
                 const row = res[0];
-                logger.log(`🔁 Conectado ao DB: ${dbHost}/${dbName} — Última alteração em ${row.table_name}: ${row.last_update}`);
+                logger.log(`🔄 Última alteração em ${row.table_name}: ${row.last_update}`);
             }
             else {
-                logger.log(`🔁 Conectado ao DB: ${dbHost}/${dbName} — Nenhuma alteração encontrada nas tabelas auditadas.`);
+                logger.log(`🔄 Nenhuma alteração encontrada nas tabelas auditadas`);
             }
         }
-        else {
-            logger.warn('DataSource do TypeORM não está inicializado; não foi possível verificar última alteração no banco.');
+        catch (auditError) {
+            logger.warn(`⚠️ Erro ao verificar auditoria: ${auditError.message}`);
         }
     }
     catch (err) {
-        logger.warn(`Não foi possível determinar última alteração do DB: ${err?.message || err}`);
+        logger.error(`❌ ERRO CRÍTICO na conexão com banco de dados:`);
+        logger.error(`📝 Mensagem: ${err?.message || err}`);
+        logger.error(`🔍 Stack trace: ${err?.stack || 'N/A'}`);
+        logger.error(`🔧 DIAGNÓSTICO:`);
+        logger.error(`   - Host configurado: ${dbHost}`);
+        logger.error(`   - Database configurado: ${dbName}`);
+        logger.error(`   - NODE_ENV: ${process.env.NODE_ENV}`);
+        logger.error(`   - DATABASE_TYPE: ${process.env.DATABASE_TYPE}`);
+        logger.error(`🚨 A aplicação continuará, mas funcionalidades do banco podem estar indisponíveis`);
     }
 }
 bootstrap();

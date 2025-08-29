@@ -16,6 +16,7 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { DatabaseErrorInterceptor } from './common/interceptors/database-error.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -140,6 +141,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(
     new LoggingInterceptor(),
     new TransformInterceptor(),
+    new DatabaseErrorInterceptor(),
   );
 
   // Configuração do Swagger
@@ -231,7 +233,7 @@ async function bootstrap() {
     logger.log(`📚 Documentação da API: http://localhost:${port}/api/docs`);
   }
 
-  // Verificação do banco e última alteração (tabelas auditadas)
+  // Verificação detalhada da conexão com banco de dados
   const dbHost =
     process.env.DATABASE_HOST ||
     configService.get('DATABASE_HOST') ||
@@ -240,34 +242,115 @@ async function bootstrap() {
     process.env.DATABASE_NAME ||
     configService.get('DATABASE_NAME') ||
     configService.get('database.name');
+    
+  logger.log(`🔗 Verificando conexão com banco de dados...`);
+  logger.log(`📍 Host: ${dbHost}`);
+  logger.log(`🗄️  Database: ${dbName}`);
+  
   try {
     const dataSource = app.get(DataSource);
-    if (dataSource && dataSource.isInitialized) {
+    
+    if (!dataSource) {
+      logger.error('❌ DataSource não encontrado no contexto da aplicação');
+      logger.error('🚨 PROBLEMA CRÍTICO: TypeORM não foi inicializado corretamente');
+      throw new Error('DataSource não disponível');
+    }
+    
+    if (!dataSource.isInitialized) {
+      logger.warn('⚠️ DataSource não está inicializado, tentando inicializar...');
+      
+      try {
+        await dataSource.initialize();
+        logger.log('✅ DataSource inicializado com sucesso');
+      } catch (initError: any) {
+        logger.error(`❌ Falha ao inicializar DataSource: ${initError.message}`);
+        throw initError;
+      }
+    } else {
+      logger.log('✅ DataSource já está inicializado');
+    }
+    
+    // Teste de conectividade básico
+    logger.log('🧪 Executando teste de conectividade...');
+    const connectionTest = await dataSource.query('SELECT 1 as status, NOW() as current_time, version() as pg_version');
+    
+    if (connectionTest && connectionTest[0]) {
+      const result = connectionTest[0];
+      logger.log(`✅ Conexão com banco ATIVA`);
+      logger.log(`🕐 Horário do servidor: ${result.current_time}`);
+      logger.log(`🐘 PostgreSQL: ${result.pg_version.split(' ')[0]} ${result.pg_version.split(' ')[1]}`);
+    }
+    
+    // Verificar tabelas principais
+    logger.log('📋 Verificando estrutura das tabelas...');
+    
+    const tablesQuery = `
+      SELECT table_name, table_type
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_type = 'BASE TABLE'
+      ORDER BY table_name
+    `;
+    
+    const tables = await dataSource.query(tablesQuery);
+    logger.log(`📊 Tabelas encontradas: ${tables.length}`);
+    
+    const expectedTables = ['usuarios', 'roles', 'desarquivamentos', 'auditorias'];
+    const foundTables = tables.map((t: any) => t.table_name);
+    
+    for (const expectedTable of expectedTables) {
+      if (foundTables.includes(expectedTable)) {
+        // Contar registros
+        try {
+          const countResult = await dataSource.query(`SELECT COUNT(*) as count FROM ${expectedTable}`);
+          const count = countResult[0]?.count || 0;
+          logger.log(`✅ Tabela '${expectedTable}': ${count} registros`);
+        } catch (countError: any) {
+          logger.warn(`⚠️ Erro ao contar registros da tabela '${expectedTable}': ${countError.message}`);
+        }
+      } else {
+        logger.warn(`⚠️ Tabela esperada '${expectedTable}' não encontrada`);
+      }
+    }
+    
+    // Verificar última alteração em tabelas auditadas
+    try {
       const sql = `SELECT table_name, last_update FROM (
         SELECT 'auditorias' as table_name, MAX(timestamp) as last_update FROM auditorias
         UNION ALL
         SELECT 'desarquivamentos' as table_name, MAX(updated_at) as last_update FROM desarquivamentos
       ) t WHERE last_update IS NOT NULL ORDER BY last_update DESC LIMIT 1`;
+      
       const res: Array<any> = await dataSource.query(sql);
+      
       if (res && res.length > 0) {
         const row = res[0];
         logger.log(
-          `🔁 Conectado ao DB: ${dbHost}/${dbName} — Última alteração em ${row.table_name}: ${row.last_update}`,
+          `🔄 Última alteração em ${row.table_name}: ${row.last_update}`,
         );
       } else {
         logger.log(
-          `🔁 Conectado ao DB: ${dbHost}/${dbName} — Nenhuma alteração encontrada nas tabelas auditadas.`,
+          `🔄 Nenhuma alteração encontrada nas tabelas auditadas`,
         );
       }
-    } else {
-      logger.warn(
-        'DataSource do TypeORM não está inicializado; não foi possível verificar última alteração no banco.',
-      );
+    } catch (auditError: any) {
+      logger.warn(`⚠️ Erro ao verificar auditoria: ${auditError.message}`);
     }
+    
   } catch (err: any) {
-    logger.warn(
-      `Não foi possível determinar última alteração do DB: ${err?.message || err}`,
-    );
+    logger.error(`❌ ERRO CRÍTICO na conexão com banco de dados:`);
+    logger.error(`📝 Mensagem: ${err?.message || err}`);
+    logger.error(`🔍 Stack trace: ${err?.stack || 'N/A'}`);
+    
+    // Verificações adicionais de diagnóstico
+    logger.error(`🔧 DIAGNÓSTICO:`);
+    logger.error(`   - Host configurado: ${dbHost}`);
+    logger.error(`   - Database configurado: ${dbName}`);
+    logger.error(`   - NODE_ENV: ${process.env.NODE_ENV}`);
+    logger.error(`   - DATABASE_TYPE: ${process.env.DATABASE_TYPE}`);
+    
+    // Não parar a aplicação, mas registrar o problema
+    logger.error(`🚨 A aplicação continuará, mas funcionalidades do banco podem estar indisponíveis`);
   }
 }
 

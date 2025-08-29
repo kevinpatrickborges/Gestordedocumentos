@@ -12,6 +12,7 @@ export interface DeleteDesarquivamentoResponse {
 }
 export declare class DeleteDesarquivamentoUseCase {
     private readonly desarquivamentoRepository;
+    private readonly logger;
     constructor(desarquivamentoRepository: IDesarquivamentoRepository);
     execute(request: DeleteDesarquivamentoRequest): Promise<DeleteDesarquivamentoResponse>;
     private validateRequest;

@@ -1,5 +1,4 @@
 import { Role } from './role.entity';
-import { Desarquivamento } from '../../nugecid/entities/desarquivamento.entity';
 import { Auditoria } from '../../audit/entities/auditoria.entity';
 export declare class User {
     id: number;
@@ -17,7 +16,6 @@ export declare class User {
     createdAt: Date;
     updatedAt: Date;
     deletedAt: Date;
-    desarquivamentos: Desarquivamento[];
     auditorias: Auditoria[];
     hashPassword(): Promise<void>;
     validatePassword(password: string): Promise<boolean>;

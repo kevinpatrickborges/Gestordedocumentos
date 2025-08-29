@@ -28,6 +28,7 @@ const auditoria_module_1 = require("./modules/audit/auditoria.module");
 const seeding_module_1 = require("./modules/seeding/seeding.module");
 const registros_module_1 = require("./modules/registros/registros.module");
 const estatisticas_module_1 = require("./modules/estatisticas/estatisticas.module");
+const health_module_1 = require("./modules/health/health.module");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 let AppModule = class AppModule {
@@ -120,6 +121,7 @@ exports.AppModule = AppModule = __decorate([
             seeding_module_1.SeedingModule,
             registros_module_1.RegistrosModule,
             estatisticas_module_1.EstatisticasModule,
+            health_module_1.HealthModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

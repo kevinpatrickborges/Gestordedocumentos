@@ -1,30 +1,27 @@
 import { User } from '../../users/entities/user.entity';
-import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
-export declare enum StatusDesarquivamento {
-    PENDENTE = "PENDENTE",
-    EM_ANDAMENTO = "EM_ANDAMENTO",
-    CONCLUIDO = "CONCLUIDO",
-    CANCELADO = "CANCELADO"
-}
+export { StatusDesarquivamento, StatusDesarquivamentoEnum } from '../domain/value-objects/status-desarquivamento.vo';
+export { TipoSolicitacao, TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
+export { TipoDesarquivamento, TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
 export declare class Desarquivamento {
     id: number;
-    codigoBarras: string;
-    tipoSolicitacao: TipoSolicitacaoEnum;
-    status: StatusDesarquivamento;
-    nomeSolicitante: string;
-    nomeVitima?: string;
-    numeroRegistro: string;
-    tipoDocumento?: string;
-    dataFato?: Date;
-    prazoAtendimento?: Date;
-    dataAtendimento?: Date;
-    resultadoAtendimento?: string;
-    finalidade?: string;
-    observacoes?: string;
-    urgente: boolean;
-    localizacaoFisica?: string;
+    tipoDesarquivamento: string;
+    status: string;
+    nomeCompleto: string;
+    numeroNicLaudoAuto: string;
+    numeroProcesso: string;
+    tipoDocumento: string;
+    dataSolicitacao: Date;
+    dataDesarquivamentoSAG?: Date;
+    dataDevolucaoSetor?: Date;
+    setorDemandante: string;
+    servidorResponsavel: string;
+    finalidadeDesarquivamento: string;
+    solicitacaoProrrogacao: boolean;
+    urgente?: boolean;
     responsavelId?: number;
     createdBy: number;
+    get criadoPorId(): number;
+    set criadoPorId(value: number);
     createdAt: Date;
     updatedAt: Date;
     deletedAt?: Date;
@@ -32,15 +29,13 @@ export declare class Desarquivamento {
     responsavel?: User;
     setDefaultValues(): void;
     updateTimestamp(): void;
-    generateBarcode(): string;
-    isOverdue(): boolean;
+    isFinalized(): boolean;
     canBeAccessedBy(user: User): boolean;
     canBeEditedBy(user: User): boolean;
     canBeDeletedBy(user: User): boolean;
     getStatusDisplay(): string;
     getStatusColor(): string;
     getStatusLabel(): string;
-    canTransitionTo(newStatus: StatusDesarquivamento): boolean;
-    getDaysUntilDeadline(): number | null;
+    canTransitionTo(newStatus: string): boolean;
     getPriority(): 'ALTA' | 'MEDIA' | 'BAIXA';
 }

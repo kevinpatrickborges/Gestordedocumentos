@@ -4,10 +4,8 @@ const testing_1 = require("@nestjs/testing");
 const common_1 = require("@nestjs/common");
 const nugecid_controller_1 = require("./nugecid.controller");
 const use_cases_1 = require("./application/use-cases");
-const desarquivamento_entity_1 = require("./entities/desarquivamento.entity");
-const role_type_enum_1 = require("../users/enums/role-type.enum");
 const tipo_desarquivamento_vo_1 = require("./domain/value-objects/tipo-desarquivamento.vo");
-const tipo_solicitacao_vo_1 = require("./domain/value-objects/tipo-solicitacao.vo");
+const role_type_enum_1 = require("../users/enums/role-type.enum");
 describe('NugecidController', () => {
     let controller;
     let createDesarquivamentoUseCase;
@@ -31,8 +29,8 @@ describe('NugecidController', () => {
     };
     const mockEditorRole = {
         id: 2,
-        name: role_type_enum_1.RoleType.COORDENADOR,
-        description: 'Coordinator',
+        name: role_type_enum_1.RoleType.USUARIO,
+        description: 'User',
         permissions: [],
         ativo: true,
         createdAt: new Date(),
@@ -58,7 +56,6 @@ describe('NugecidController', () => {
         bloqueadoAte: null,
         tokenReset: null,
         tokenResetExpira: null,
-        desarquivamentos: [],
         auditorias: [],
         validatePassword: jest.fn().mockResolvedValue(true),
         isAdmin: jest.fn().mockReturnValue(true),
@@ -86,7 +83,6 @@ describe('NugecidController', () => {
         bloqueadoAte: null,
         tokenReset: null,
         tokenResetExpira: null,
-        desarquivamentos: [],
         auditorias: [],
         validatePassword: jest.fn().mockResolvedValue(true),
         isAdmin: jest.fn().mockReturnValue(false),
@@ -100,15 +96,21 @@ describe('NugecidController', () => {
     };
     const mockDesarquivamento = {
         id: 1,
-        tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
-        status: desarquivamento_entity_1.StatusDesarquivamento.PENDENTE,
-        codigoBarras: 'DES202400001',
+        tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+        status: 'SOLICITADO',
+        numeroNicLaudoAuto: 'DES202400001',
         urgente: false,
         createdBy: mockEditorUser.id,
         createdAt: new Date(),
         updatedAt: new Date(),
-        nomeSolicitante: 'João Silva',
-        numeroRegistro: '12345',
+        nomeCompleto: 'João Silva',
+        numeroProcesso: '12345',
+        tipoDocumento: 'Laudo Pericial',
+        dataSolicitacao: new Date(),
+        setorDemandante: 'Setor Teste',
+        servidorResponsavel: 'Servidor Teste',
+        finalidadeDesarquivamento: 'Teste',
+        solicitacaoProrrogacao: false,
     };
     const mockPaginatedResult = {
         data: [mockDesarquivamento],
@@ -179,16 +181,16 @@ describe('NugecidController', () => {
     });
     describe('create', () => {
         const createDto = {
-            tipoSolicitacao: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
-            nomeSolicitante: 'João Silva',
-            requerente: 'João Silva',
-            numeroRegistro: '12345',
-            numeroProcesso: '12345-PROC',
             tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+            nomeCompleto: 'João Silva',
+            numeroNicLaudoAuto: 'NIC-12345',
+            numeroProcesso: '12345-PROC',
             tipoDocumento: 'Laudo',
+            dataSolicitacao: new Date().toISOString(),
             setorDemandante: 'Delegacia',
             servidorResponsavel: 'Servidor Teste',
             finalidadeDesarquivamento: 'Para processo',
+            solicitacaoProrrogacao: false,
         };
         it('should create a new desarquivamento successfully', async () => {
             mockCreateDesarquivamentoUseCase.execute.mockResolvedValue(mockDesarquivamento);
@@ -225,7 +227,7 @@ describe('NugecidController', () => {
                 json: jest.fn(),
                 render: jest.fn(),
             };
-            await controller.findAll(queryDto, mockAdminUser, mockReq, mockRes);
+            await controller.findAll(queryDto, mockAdminUser);
             expect(findAllDesarquivamentosUseCase.execute).toHaveBeenCalledWith({
                 ...queryDto,
                 userId: mockAdminUser.id,
@@ -253,7 +255,7 @@ describe('NugecidController', () => {
                 json: jest.fn(),
                 render: jest.fn(),
             };
-            await controller.findOne(1, mockEditorUser, mockReq, mockRes);
+            await controller.findOne(1, mockEditorUser);
             expect(findDesarquivamentoByIdUseCase.execute).toHaveBeenCalledWith({
                 id: 1,
                 userId: mockEditorUser.id,
@@ -267,7 +269,7 @@ describe('NugecidController', () => {
     });
     describe('update', () => {
         const updateDto = {
-            status: desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO,
+            status: 'DESARQUIVADO',
         };
         it('should update a desarquivamento successfully', async () => {
             const updatedDesarquivamento = { ...mockDesarquivamento, ...updateDto };
@@ -279,7 +281,7 @@ describe('NugecidController', () => {
                 json: jest.fn(),
                 redirect: jest.fn(),
             };
-            await controller.update(1, updateDto, mockEditorUser, mockReq, mockRes);
+            await controller.update(1, updateDto, mockEditorUser);
             expect(updateDesarquivamentoUseCase.execute).toHaveBeenCalledWith({
                 id: 1,
                 ...updateDto,
@@ -303,7 +305,7 @@ describe('NugecidController', () => {
                 json: jest.fn(),
                 redirect: jest.fn(),
             };
-            await controller.remove(1, mockAdminUser, mockReq, mockRes);
+            await controller.remove(1, mockAdminUser);
             expect(deleteDesarquivamentoUseCase.execute).toHaveBeenCalledWith({
                 id: 1,
                 userId: mockAdminUser.id,

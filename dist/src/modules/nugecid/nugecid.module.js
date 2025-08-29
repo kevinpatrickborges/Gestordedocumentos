@@ -16,9 +16,14 @@ const path_1 = require("path");
 const nugecid_controller_1 = require("./nugecid.controller");
 const use_cases_1 = require("./application/use-cases");
 const desarquivamento_repository_module_1 = require("./infrastructure/desarquivamento-repository.module");
-const desarquivamento_entity_1 = require("./entities/desarquivamento.entity");
+const desarquivamento_typeorm_entity_1 = require("./infrastructure/entities/desarquivamento.typeorm-entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const auditoria_entity_1 = require("../audit/entities/auditoria.entity");
+const nugecid_import_service_1 = require("./nugecid-import.service");
+const nugecid_stats_service_1 = require("./nugecid-stats.service");
+const nugecid_pdf_service_1 = require("./nugecid-pdf.service");
+const nugecid_export_service_1 = require("./nugecid-export.service");
+const nugecid_audit_service_1 = require("./nugecid-audit.service");
 const nugecid_service_1 = require("./nugecid.service");
 let NugecidModule = class NugecidModule {
 };
@@ -28,7 +33,7 @@ exports.NugecidModule = NugecidModule = __decorate([
         imports: [
             desarquivamento_repository_module_1.DesarquivamentoRepositoryModule,
             typeorm_1.TypeOrmModule.forFeature([
-                desarquivamento_entity_1.Desarquivamento,
+                desarquivamento_typeorm_entity_1.DesarquivamentoTypeOrmEntity,
                 user_entity_1.User,
                 auditoria_entity_1.Auditoria,
             ]),
@@ -77,6 +82,11 @@ exports.NugecidModule = NugecidModule = __decorate([
             use_cases_1.GetDashboardStatsUseCase,
             use_cases_1.ImportDesarquivamentoUseCase,
             use_cases_1.ImportRegistrosUseCase,
+            nugecid_import_service_1.NugecidImportService,
+            nugecid_stats_service_1.NugecidStatsService,
+            nugecid_pdf_service_1.NugecidPdfService,
+            nugecid_export_service_1.NugecidExportService,
+            nugecid_audit_service_1.NugecidAuditService,
             nugecid_service_1.NugecidService,
         ],
         exports: [
@@ -90,6 +100,11 @@ exports.NugecidModule = NugecidModule = __decorate([
             use_cases_1.GetDashboardStatsUseCase,
             use_cases_1.ImportDesarquivamentoUseCase,
             use_cases_1.ImportRegistrosUseCase,
+            nugecid_import_service_1.NugecidImportService,
+            nugecid_stats_service_1.NugecidStatsService,
+            nugecid_pdf_service_1.NugecidPdfService,
+            nugecid_audit_service_1.NugecidAuditService,
+            nugecid_export_service_1.NugecidExportService,
             desarquivamento_repository_module_1.DesarquivamentoRepositoryModule,
             typeorm_1.TypeOrmModule,
             nugecid_service_1.NugecidService,

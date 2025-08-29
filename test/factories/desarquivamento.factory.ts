@@ -1,27 +1,27 @@
-import {
-  Desarquivamento,
-  StatusDesarquivamento,
-} from '../../src/modules/nugecid/entities/desarquivamento.entity';
-import { TipoSolicitacaoEnum } from '../../src/modules/nugecid/domain/value-objects/tipo-solicitacao.vo';
+import { DesarquivamentoTypeOrmEntity } from '../../src/modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
+import { TipoDesarquivamentoEnum } from '../../src/modules/nugecid/domain/value-objects/tipo-desarquivamento.vo';
 
 export class DesarquivamentoFactory {
-  static build(data: Partial<Desarquivamento> = {}): Partial<Desarquivamento> {
+  static build(data: Partial<DesarquivamentoTypeOrmEntity> = {}): Partial<DesarquivamentoTypeOrmEntity> {
     const now = new Date();
-    const prazo = new Date();
-    prazo.setDate(now.getDate() + 5);
 
     return {
-      codigoBarras: data.codigoBarras || `CB-${Date.now()}`,
-      tipoSolicitacao:
-        data.tipoSolicitacao || TipoSolicitacaoEnum.DESARQUIVAMENTO,
-      nomeSolicitante: data.nomeSolicitante || 'Solicitante Teste',
-      numeroRegistro: data.numeroRegistro || '123456',
-      dataFato: data.dataFato || now,
-      finalidade: data.finalidade || 'Teste de Factory',
-      prazoAtendimento: data.prazoAtendimento || prazo,
-      status: data.status || StatusDesarquivamento.PENDENTE,
+      tipoDesarquivamento: data.tipoDesarquivamento || TipoDesarquivamentoEnum.FISICO,
+      status: data.status || 'SOLICITADO',
+      nomeCompleto: data.nomeCompleto || 'Solicitante Teste',
+      numeroNicLaudoAuto: data.numeroNicLaudoAuto || `NIC-${Date.now()}`,
+      numeroProcesso: data.numeroProcesso || '123456',
+      tipoDocumento: data.tipoDocumento || 'Laudo Pericial',
+      dataSolicitacao: data.dataSolicitacao || now,
+      setorDemandante: data.setorDemandante || 'Setor Teste',
+      servidorResponsavel: data.servidorResponsavel || 'Servidor Teste',
+      finalidadeDesarquivamento: data.finalidadeDesarquivamento || 'Teste de Factory',
+      solicitacaoProrrogacao: data.solicitacaoProrrogacao || false,
       urgente: data.urgente !== undefined ? data.urgente : false,
-      localizacaoFisica: data.localizacaoFisica || 'Arquivo Central',
+      criadoPorId: data.criadoPorId || 1,
+      responsavelId: data.responsavelId,
+      createdAt: data.createdAt || now,
+      updatedAt: data.updatedAt || now,
       ...data,
     };
   }

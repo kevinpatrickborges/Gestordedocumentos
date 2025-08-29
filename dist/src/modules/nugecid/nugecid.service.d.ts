@@ -1,13 +1,11 @@
 import { Repository } from 'typeorm';
-import { Desarquivamento } from './entities/desarquivamento.entity';
+import { DesarquivamentoTypeOrmEntity } from './infrastructure/entities/desarquivamento.typeorm-entity';
 import { User } from '../users/entities/user.entity';
-import { Auditoria } from '../audit/entities/auditoria.entity';
 import { CreateDesarquivamentoDto } from './dto/create-desarquivamento.dto';
 import { UpdateDesarquivamentoDto } from './dto/update-desarquivamento.dto';
 import { QueryDesarquivamentoDto } from './dto/query-desarquivamento.dto';
-import { ImportResultDto } from './dto/import-result.dto';
 export interface PaginatedDesarquivamentos {
-    desarquivamentos: Desarquivamento[];
+    desarquivamentos: DesarquivamentoTypeOrmEntity[];
     total: number;
     page: number;
     limit: number;
@@ -28,32 +26,20 @@ export interface DashboardStats {
         tipo: string;
         count: number;
     }[];
-    recentes: Desarquivamento[];
+    recentes: DesarquivamentoTypeOrmEntity[];
 }
+import { NugecidAuditService } from './nugecid-audit.service';
 export declare class NugecidService {
     private readonly desarquivamentoRepository;
     private readonly userRepository;
-    private readonly auditoriaRepository;
+    private readonly nugecidAuditService;
     private readonly logger;
-    constructor(desarquivamentoRepository: Repository<Desarquivamento>, userRepository: Repository<User>, auditoriaRepository: Repository<Auditoria>);
-    create(createDesarquivamentoDto: CreateDesarquivamentoDto, currentUser: User): Promise<Desarquivamento>;
+    constructor(desarquivamentoRepository: Repository<DesarquivamentoTypeOrmEntity>, userRepository: Repository<User>, nugecidAuditService: NugecidAuditService);
+    create(createDesarquivamentoDto: CreateDesarquivamentoDto, currentUser: User): Promise<DesarquivamentoTypeOrmEntity>;
     findAll(queryDto: QueryDesarquivamentoDto): Promise<PaginatedDesarquivamentos>;
-    findOne(id: number): Promise<Desarquivamento>;
-    importFromXLSX(file: Express.Multer.File, currentUser: User): Promise<ImportResultDto>;
-    findByBarcode(codigoBarras: string): Promise<Desarquivamento>;
-    update(id: number, updateDesarquivamentoDto: UpdateDesarquivamentoDto, currentUser: User): Promise<Desarquivamento>;
-    importRegistros(file: Express.Multer.File, currentUser: User): Promise<ImportResultDto>;
+    private applyFilters;
+    findOne(id: number): Promise<DesarquivamentoTypeOrmEntity>;
+    findByBarcode(numeroNicLaudoAuto: string): Promise<DesarquivamentoTypeOrmEntity>;
+    update(id: number, updateDesarquivamentoDto: UpdateDesarquivamentoDto, currentUser: User): Promise<DesarquivamentoTypeOrmEntity>;
     remove(id: number, currentUser: User): Promise<void>;
-    importFromExcel(filePath: string, currentUser: User): Promise<ImportResultDto>;
-    getDashboardStats(): Promise<DashboardStats>;
-    private createFromExcelRow;
-    private mapTipoFromExcel;
-    private mapTipoDesarquivamentoFromExcel;
-    private parseBooleanFromExcel;
-    private getStatusColor;
-    generatePdf(desarquivamento: Desarquivamento): Promise<Buffer>;
-    private saveAudit;
-    private saveDesarquivamentoAudit;
-    private buildAuditDetails;
-    private extractPreviousValues;
 }

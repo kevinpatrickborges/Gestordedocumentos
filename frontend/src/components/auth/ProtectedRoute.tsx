@@ -70,18 +70,14 @@ function normalizeUserRole(role: unknown): UserRole | undefined {
   if (typeof role === 'string') {
     const value = role.toLowerCase()
     if (value === UserRole.ADMIN) return UserRole.ADMIN
-    if (value === UserRole.COORDENADOR) return UserRole.COORDENADOR
-    if (value === UserRole.NUGECID_OPERATOR) return UserRole.NUGECID_OPERATOR
     if (value === UserRole.USUARIO) return UserRole.USUARIO
     return undefined
   }
 
-  // Caso seja objeto { name: 'admin' | 'coordenador' | ... }
+  // Caso seja objeto { name: 'admin' | 'usuario' }
   if (typeof role === 'object' && role !== null && 'name' in (role as any)) {
     const name = String((role as any).name || '').toLowerCase()
     if (name === UserRole.ADMIN) return UserRole.ADMIN
-    if (name === UserRole.COORDENADOR) return UserRole.COORDENADOR
-    if (name === UserRole.NUGECID_OPERATOR) return UserRole.NUGECID_OPERATOR
     if (name === UserRole.USUARIO) return UserRole.USUARIO
     return undefined
   }
@@ -91,11 +87,9 @@ function normalizeUserRole(role: unknown): UserRole | undefined {
 
 // Função para verificar permissões de role
 function checkRolePermission(userRole: UserRole, requiredRole: UserRole): boolean {
-  // Hierarquia de permissões: ADMIN > COORDENADOR > NUGECID_OPERATOR > USUARIO
+  // Hierarquia de permissões: ADMIN > USUARIO
   const roleHierarchy = {
-    [UserRole.ADMIN]: 4,
-    [UserRole.COORDENADOR]: 3,
-    [UserRole.NUGECID_OPERATOR]: 2,
+    [UserRole.ADMIN]: 2,
     [UserRole.USUARIO]: 1,
   }
 

@@ -3,17 +3,32 @@ import {
   IsString,
   IsNumber,
   IsBoolean,
-  IsEnum,
+  IsIn,
   IsDateString,
   IsArray,
   Min,
   Max,
-  IsIn,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { StatusDesarquivamento } from '../entities/desarquivamento.entity';
-import { TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
+
+// Status values from reference document
+const VALID_STATUS = [
+  'FINALIZADO',
+  'DESARQUIVADO', 
+  'NAO_COLETADO',
+  'SOLICITADO',
+  'REARQUIVAMENTO_SOLICITADO',
+  'RETIRADO_PELO_SETOR',
+  'NAO_LOCALIZADO'
+] as const;
+
+// Tipo desarquivamento values from reference document  
+const VALID_TIPO_DESARQUIVAMENTO = [
+  'FISICO',
+  'DIGITAL',
+  'NAO_LOCALIZADO'
+] as const;
 
 export class QueryDesarquivamentoDto {
   @ApiPropertyOptional({
@@ -44,7 +59,7 @@ export class QueryDesarquivamentoDto {
 
   @ApiPropertyOptional({
     description:
-      'Termo de busca (nome requerente, vítima, número registro, código barras)',
+      'Termo de busca (nome completo, número NIC/Laudo/Auto, número processo)',
     example: 'João Silva',
   })
   @IsOptional()
@@ -54,19 +69,16 @@ export class QueryDesarquivamentoDto {
 
   @ApiPropertyOptional({
     description: 'Filtro por status (múltiplos valores permitidos)',
-    enum: StatusDesarquivamento,
+    enum: VALID_STATUS,
     isArray: true,
-    example: [
-      StatusDesarquivamento.PENDENTE,
-      StatusDesarquivamento.EM_ANDAMENTO,
-    ],
+    example: ['SOLICITADO', 'DESARQUIVADO'],
   })
   @IsOptional()
   @IsArray({ message: 'Status deve ser um array' })
-  @IsEnum(StatusDesarquivamento, {
+  @IsIn(VALID_STATUS, {
     each: true,
     message:
-      'Cada status deve ser um valor válido: PENDENTE, EM_ANDAMENTO, CONCLUIDO, CANCELADO',
+      'Cada status deve ser um valor válido: FINALIZADO, DESARQUIVADO, NAO_COLETADO, SOLICITADO, REARQUIVAMENTO_SOLICITADO, RETIRADO_PELO_SETOR, NAO_LOCALIZADO',
   })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
@@ -74,21 +86,21 @@ export class QueryDesarquivamentoDto {
     }
     return Array.isArray(value) ? value : [];
   })
-  status?: StatusDesarquivamento[];
+  status?: string[];
 
   @ApiPropertyOptional({
     description:
-      'Filtro por tipo de solicitação (múltiplos valores permitidos)',
-    enum: TipoSolicitacaoEnum,
+      'Filtro por tipo de desarquivamento (múltiplos valores permitidos)',
+    enum: VALID_TIPO_DESARQUIVAMENTO,
     isArray: true,
-    example: [TipoSolicitacaoEnum.DESARQUIVAMENTO, TipoSolicitacaoEnum.COPIA],
+    example: ['FISICO', 'DIGITAL'],
   })
   @IsOptional()
   @IsArray({ message: 'Tipo deve ser um array' })
-  @IsEnum(TipoSolicitacaoEnum, {
+  @IsIn(VALID_TIPO_DESARQUIVAMENTO, {
     each: true,
     message:
-      'Cada tipo deve ser um valor válido: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
+      'Cada tipo deve ser um valor válido: FISICO, DIGITAL, NAO_LOCALIZADO',
   })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
@@ -96,7 +108,7 @@ export class QueryDesarquivamentoDto {
     }
     return Array.isArray(value) ? value : [];
   })
-  tipo?: TipoSolicitacaoEnum[];
+  tipoDesarquivamento?: string[];
 
   @ApiPropertyOptional({
     description: 'Filtro por usuário solicitante',
@@ -147,6 +159,32 @@ export class QueryDesarquivamentoDto {
   dataFim?: string;
 
   @ApiPropertyOptional({
+    description: 'Data inicial para filtro de intervalo (formato: YYYY-MM-DD)',
+    example: '2024-01-01',
+    type: 'string',
+    format: 'date',
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'Data inicial deve estar no formato válido (YYYY-MM-DD)' },
+  )
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Data final para filtro de intervalo (formato: YYYY-MM-DD)',
+    example: '2024-12-31',
+    type: 'string',
+    format: 'date',
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'Data final deve estar no formato válido (YYYY-MM-DD)' },
+  )
+  endDate?: string;
+
+  @ApiPropertyOptional({
     description: 'Filtrar apenas solicitações urgentes',
     example: true,
     type: 'boolean',
@@ -178,37 +216,37 @@ export class QueryDesarquivamentoDto {
 
   @ApiPropertyOptional({
     description: 'Campo para ordenação',
-    example: 'createdAt',
+    example: 'dataSolicitacao',
     enum: [
-      'createdAt',
-      'nomeRequerente',
-      'nomeVitima',
-      'numeroRegistro',
+      'dataSolicitacao',
+      'nomeCompleto',
+      'numeroNicLaudoAuto',
+      'numeroProcesso',
       'status',
-      'tipo',
-      'prazoAtendimento',
-      'dataAtendimento',
+      'tipoDesarquivamento',
+      'dataDesarquivamentoSAG',
+      'dataDevolucaoSetor',
     ],
-    default: 'createdAt',
+    default: 'dataSolicitacao',
   })
   @IsOptional()
   @IsString({ message: 'Campo de ordenação deve ser uma string' })
   @IsIn(
     [
-      'createdAt',
-      'nomeRequerente',
-      'nomeVitima',
-      'numeroRegistro',
+      'dataSolicitacao',
+      'nomeCompleto',
+      'numeroNicLaudoAuto',
+      'numeroProcesso',
       'status',
-      'tipo',
-      'prazoAtendimento',
-      'dataAtendimento',
+      'tipoDesarquivamento',
+      'dataDesarquivamentoSAG',
+      'dataDevolucaoSetor',
     ],
     {
       message: 'Campo de ordenação deve ser um dos valores válidos',
     },
   )
-  sortBy?: string = 'createdAt';
+  sortBy?: string = 'dataSolicitacao';
 
   @ApiPropertyOptional({
     description: 'Direção da ordenação',

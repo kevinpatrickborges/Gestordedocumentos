@@ -1,12 +1,12 @@
-# SGC-ITEP v2.0 - Documentação Técnica Completa
+# SGC-ITEP - Documentação Técnica Completa
 
 **Autor:** Kevin Patrick Borges\
-**Versão:** 2.0.0\
+**Versão:** 1.0.0\
 **Data:** Janeiro 2025
 
 ## 1. Visão Geral do Sistema
 
-O SGC-ITEP v2.0 (Sistema de Gestão de Conteúdo - ITEP) é um sistema moderno de gestão documental desenvolvido para o Instituto Técnico-Científico de Perícia do Rio Grande do Norte (ITEP/RN). O sistema foi projetado com arquitetura moderna, implementando princípios de Clean Architecture e Domain-Driven Design (DDD).
+O SGC-ITEP v1.0 (Sistema de Gestão de Conteúdo - ITEP) é um sistema moderno de gestão documental desenvolvido para o Instituto Técnico-Científico de Perícia do Rio Grande do Norte (ITEP/RN). O sistema foi projetado com arquitetura moderna, implementando princípios de Clean Architecture e Domain-Driven Design (DDD).
 
 ### 1.1 Propósito
 
@@ -32,11 +32,9 @@ O SGC-ITEP v2.0 (Sistema de Gestão de Conteúdo - ITEP) é um sistema moderno d
 
 * Upload e processamento de arquivos Excel
 
-* Geração de PDFs e códigos de barras
+* Geração de PDFs
 
 * Interface responsiva com Tailwind CSS
-
-* Testes automatizados (unitários e E2E)
 
 ## 2. Arquitetura Geral
 
@@ -55,8 +53,6 @@ O SGC-ITEP v2.0 (Sistema de Gestão de Conteúdo - ITEP) é um sistema moderno d
 * **Autenticação**: JWT + Passport
 
 * **Documentação**: Swagger/OpenAPI
-
-* **Testes**: Jest + Playwright
 
 #### Frontend
 

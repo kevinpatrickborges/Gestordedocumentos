@@ -1,10 +1,10 @@
 import { Repository } from 'typeorm';
 import { User } from './modules/users/entities/user.entity';
-import { Desarquivamento } from './modules/nugecid/entities/desarquivamento.entity';
+import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
 export declare class AppService {
     private readonly userRepository;
     private readonly desarquivamentoRepository;
-    constructor(userRepository: Repository<User>, desarquivamentoRepository: Repository<Desarquivamento>);
+    constructor(userRepository: Repository<User>, desarquivamentoRepository: Repository<DesarquivamentoTypeOrmEntity>);
     getDashboardData(user: any): Promise<{
         stats: {
             total: number;
@@ -13,7 +13,7 @@ export declare class AppService {
             emPosse: number;
             urgentes: number;
         };
-        ultimosDesarquivamentos: Desarquivamento[];
+        ultimosDesarquivamentos: DesarquivamentoTypeOrmEntity[];
     }>;
     getHealth(): {
         status: string;

@@ -77,11 +77,19 @@ let AuthService = AuthService_1 = class AuthService {
             role: user.role?.name || 'user',
         };
         const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
+        const refreshPayload = {
+            sub: user.id,
+            usuario: user.usuario,
+            type: 'refresh'
+        };
+        const refreshToken = this.jwtService.sign(refreshPayload, { expiresIn: '7d' });
         await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
         this.logger.log(`Login bem-sucedido para usuário: ${user.usuario}`);
         return {
             user: this.sanitizeUser(user),
             accessToken,
+            refreshToken,
+            expiresIn: '50m',
         };
     }
     async loginV2(loginDto, ipAddress, userAgent) {
@@ -107,6 +115,36 @@ let AuthService = AuthService_1 = class AuthService {
             accessToken,
             expiresIn: '50m',
         };
+    }
+    async refreshToken(refreshToken) {
+        try {
+            const decoded = this.jwtService.verify(refreshToken);
+            if (decoded.type !== 'refresh') {
+                throw new common_1.UnauthorizedException('Invalid refresh token type');
+            }
+            const user = await this.userRepository.findOne({
+                where: { id: decoded.sub },
+                relations: ['role'],
+            });
+            if (!user || !user.ativo) {
+                throw new common_1.UnauthorizedException('Usuário não encontrado ou inativo');
+            }
+            const payload = {
+                sub: user.id,
+                usuario: user.usuario,
+                role: user.role?.name || 'user',
+            };
+            const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
+            this.logger.log(`Token renovado para usuário: ${user.usuario}`);
+            return {
+                accessToken,
+                expiresIn: '50m',
+            };
+        }
+        catch (error) {
+            this.logger.warn(`Falha ao renovar token: ${error.message}`);
+            throw new common_1.UnauthorizedException('Token de refresh inválido ou expirado');
+        }
     }
     async validateJwtPayload(payload) {
         const user = await this.userRepository.findOne({

@@ -1,138 +1,88 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import {
+  useQuery,
+  useMutation,
+  keepPreviousData,
+  useQueryClient,
+  UseQueryResult,
+} from '@tanstack/react-query'
 import { apiService } from '@/services/api'
-import { 
-  Desarquivamento, 
-  CreateDesarquivamentoDto, 
-  UpdateDesarquivamentoDto, 
-  QueryDesarquivamentoDto,
-  PaginatedResponse
+import {
+  CreateDesarquivamentoDto,
+  Desarquivamento,
+  PaginatedResponse,
 } from '@/types'
 
-// Query keys
-export const QUERY_KEYS = {
-  desarquivamentos: 'desarquivamentos',
-  desarquivamento: 'desarquivamento',
-  dashboard: 'dashboard',
-  users: 'users',
-} as const
+const DESARQUIVAMENTOS_QUERY_KEY = 'desarquivamentos'
 
-// Hook para listar desarquivamentos
-export const useDesarquivamentos = (params?: QueryDesarquivamentoDto) => {
-  return useQuery<PaginatedResponse<Desarquivamento>>({
-    queryKey: [QUERY_KEYS.desarquivamentos, params],
-    queryFn: () => apiService.getDesarquivamentos(params),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+/**
+ * Hook para buscar uma lista paginada de desarquivamentos.
+ */
+export const useDesarquivamentos = (
+  page = 1,
+  limit = 10,
+  filters: Record<string, any> = {},
+): UseQueryResult<PaginatedResponse<Desarquivamento>> => {
+  return useQuery({
+    queryKey: [DESARQUIVAMENTOS_QUERY_KEY, page, limit, filters],
+    queryFn: () => apiService.getDesarquivamentos(page, limit, filters),
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5, // 5 minutos
   })
 }
 
-// Hook para obter um desarquivamento específico
-export const useDesarquivamento = (id: number) => {
+/**
+ * Hook para buscar um único desarquivamento pelo ID.
+ */
+export const useDesarquivamento = (id: string) => {
   return useQuery({
-    queryKey: [QUERY_KEYS.desarquivamento, id],
-    queryFn: () => apiService.getDesarquivamento(id),
+    queryKey: [DESARQUIVAMENTOS_QUERY_KEY, id],
+    queryFn: () => apiService.getDesarquivamentoById(id),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
   })
 }
 
-// Hook para obter desarquivamento por código de barras
-export const useDesarquivamentoByBarcode = (barcode: string) => {
-  return useQuery({
-    queryKey: [QUERY_KEYS.desarquivamento, 'barcode', barcode],
-    queryFn: () => apiService.getDesarquivamentoByBarcode(barcode),
-    enabled: !!barcode,
-    staleTime: 5 * 60 * 1000,
-  })
-}
-
-// Hook para criar desarquivamento
+/**
+ * Hook para criar um novo desarquivamento.
+ */
 export const useCreateDesarquivamento = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: (data: CreateDesarquivamentoDto) => apiService.createDesarquivamento(data),
-    onSuccess: (response) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.desarquivamentos] })
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.dashboard] })
-        toast.success('Solicitação criada com sucesso!')
-      } else {
-        toast.error(response.message || 'Erro ao criar solicitação')
-      }
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao criar solicitação'
-      toast.error(message)
+    mutationFn: (data: CreateDesarquivamentoDto) =>
+      apiService.createDesarquivamento(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [DESARQUIVAMENTOS_QUERY_KEY] })
     },
   })
 }
 
-// Hook para atualizar desarquivamento
+/**
+ * Hook para atualizar um desarquivamento existente.
+ */
 export const useUpdateDesarquivamento = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateDesarquivamentoDto }) => 
+    mutationFn: ({ id, data }: { id: string; data: CreateDesarquivamentoDto }) =>
       apiService.updateDesarquivamento(id, data),
-    onSuccess: (response, { id }) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.desarquivamentos] })
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.desarquivamento, id] })
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.dashboard] })
-        toast.success('Solicitação atualizada com sucesso!')
-      } else {
-        toast.error(response.message || 'Erro ao atualizar solicitação')
-      }
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao atualizar solicitação'
-      toast.error(message)
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [DESARQUIVAMENTOS_QUERY_KEY, variables.id] })
+      queryClient.invalidateQueries({ queryKey: [DESARQUIVAMENTOS_QUERY_KEY] })
     },
   })
 }
 
-// Hook para excluir desarquivamento
+/**
+ * Hook para excluir um desarquivamento.
+ */
 export const useDeleteDesarquivamento = () => {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: (id: number) => apiService.deleteDesarquivamento(id),
-    onSuccess: (response) => {
-      if (response.success) {
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.desarquivamentos] })
-        queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.dashboard] })
-        toast.success('Solicitação excluída com sucesso!')
-      } else {
-        toast.error(response.message || 'Erro ao excluir solicitação')
-      }
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao excluir solicitação'
-      toast.error(message)
+    mutationFn: (id: string) => apiService.deleteDesarquivamento(id),
+    onSuccess: () => {
+      // AQUI ESTÁ A CORREÇÃO:
+      // Invalida todas as queries que começam com 'desarquivamentos'.
+      // Isso força o React Query a buscar a lista novamente,
+      // agora sem o item que foi excluído.
+      queryClient.invalidateQueries({ queryKey: [DESARQUIVAMENTOS_QUERY_KEY] })
     },
   })
 }
-
-// Hook para dados do dashboard
-export const useDashboard = () => {
-  return useQuery({
-    queryKey: [QUERY_KEYS.dashboard],
-    queryFn: () => apiService.getDashboardStats(),
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    refetchInterval: 5 * 60 * 1000, // Refetch a cada 5 minutos
-  })
-}
-
-// Hook para listar usuários
-export const useUsers = () => {
-  return useQuery({
-    queryKey: [QUERY_KEYS.users],
-    queryFn: () => apiService.getUsers(),
-    staleTime: 10 * 60 * 1000, // 10 minutos
-  })
-}
-
-// Alias para compatibilidade
-export const useDashboardStats = useDashboard

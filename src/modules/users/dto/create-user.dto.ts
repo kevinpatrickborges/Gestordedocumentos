@@ -34,12 +34,13 @@ export class CreateUserDto {
   senha: string;
 
   @ApiProperty({
-    description: 'ID da role do usuário',
-    example: 2,
+    description: 'Role do usuário',
+    example: 'admin',
+    enum: ['admin', 'coordenador', 'usuario'],
   })
-  @IsNumber({}, { message: 'Role ID deve ser um número' })
-  @IsNotEmpty({ message: 'Role ID é obrigatório' })
-  roleId: number;
+  @IsString({ message: 'Role deve ser uma string' })
+  @IsNotEmpty({ message: 'Role é obrigatória' })
+  role: string;
 
   @ApiProperty({
     description: 'Se o usuário está ativo',

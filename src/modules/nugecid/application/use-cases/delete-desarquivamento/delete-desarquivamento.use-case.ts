@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import {
   DesarquivamentoDomain,
   DesarquivamentoId,
@@ -21,6 +21,8 @@ export interface DeleteDesarquivamentoResponse {
 
 @Injectable()
 export class DeleteDesarquivamentoUseCase {
+  private readonly logger = new Logger(DeleteDesarquivamentoUseCase.name);
+
   constructor(
     @Inject(DESARQUIVAMENTO_REPOSITORY_TOKEN)
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
@@ -29,20 +31,29 @@ export class DeleteDesarquivamentoUseCase {
   async execute(
     request: DeleteDesarquivamentoRequest,
   ): Promise<DeleteDesarquivamentoResponse> {
+    this.logger.log(`[DELETE_USE_CASE] Iniciando exclusão do desarquivamento ID: ${request.id}`);
+    
     // Validar entrada
     this.validateRequest(request);
+    this.logger.log(`[DELETE_USE_CASE] Validação de entrada OK para ID: ${request.id}`);
 
-    // Buscar desarquivamento existente
+    // Buscar desarquivamento existente (incluindo soft-deleted para verificação de permissões)
     const desarquivamentoId = DesarquivamentoId.create(request.id);
+    this.logger.log(`[DELETE_USE_CASE] Buscando desarquivamento ID: ${request.id}`);
+    
     const desarquivamento =
-      await this.desarquivamentoRepository.findById(desarquivamentoId);
+      await this.desarquivamentoRepository.findByIdWithDeleted(desarquivamentoId);
 
     if (!desarquivamento) {
+      this.logger.error(`[DELETE_USE_CASE] Desarquivamento com ID ${request.id} não encontrado`);
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
     }
+    
+    this.logger.log(`[DELETE_USE_CASE] Desarquivamento encontrado: ${desarquivamento.numeroNicLaudoAuto || 'N/A'}`);
 
     // Verificar se já foi excluído (para soft delete)
     if (desarquivamento.isDeleted() && !request.permanent) {
+      this.logger.log(`[DELETE_USE_CASE] Desarquivamento ${request.id} já estava excluído`);
       return {
         success: true,
         message: 'Desarquivamento já estava excluído',
@@ -51,17 +62,21 @@ export class DeleteDesarquivamentoUseCase {
     }
 
     // Verificar permissões
+    this.logger.log(`[DELETE_USE_CASE] Verificando permissões para usuário ${request.userId}`);
     this.checkPermissions(
       desarquivamento,
       request.userId,
       request.userRoles,
       request.permanent,
     );
+    this.logger.log(`[DELETE_USE_CASE] Permissões verificadas com sucesso`);
 
     // Executar exclusão
     if (request.permanent) {
+      this.logger.log(`[DELETE_USE_CASE] Executando exclusão permanente para ID: ${request.id}`);
       return await this.performHardDelete(desarquivamento);
     } else {
+      this.logger.log(`[DELETE_USE_CASE] Executando soft delete para ID: ${request.id}`);
       return await this.performSoftDelete(desarquivamento);
     }
   }
@@ -88,6 +103,7 @@ export class DeleteDesarquivamentoUseCase {
     userRoles: string[],
     permanent?: boolean,
   ): void {
+    const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
     // Verificar se pode ser editado (necessário para exclusão)
     if (!desarquivamento.canBeEditedBy(userId, userRoles)) {
       throw new Error(
@@ -96,7 +112,7 @@ export class DeleteDesarquivamentoUseCase {
     }
 
     // Hard delete só para administradores
-    if (permanent && !userRoles.includes('ADMIN')) {
+    if (permanent && !upperCaseUserRoles.includes('ADMIN')) {
       throw new Error(
         'Acesso negado: apenas administradores podem realizar exclusão permanente',
       );
@@ -108,9 +124,9 @@ export class DeleteDesarquivamentoUseCase {
     }
 
     // Verificar regras de negócio específicas
-    if (desarquivamento.status.value === 'CONCLUIDO') {
+    if (desarquivamento.status.value === 'FINALIZADO') {
       // Apenas admins podem excluir registros concluídos
-      if (!userRoles.includes('ADMIN')) {
+      if (!upperCaseUserRoles.includes('ADMIN')) {
         throw new Error(
           'Apenas administradores podem excluir desarquivamentos concluídos',
         );
@@ -122,15 +138,23 @@ export class DeleteDesarquivamentoUseCase {
     desarquivamento: DesarquivamentoDomain,
   ): Promise<DeleteDesarquivamentoResponse> {
     try {
-      // Usar o método softDelete do repositório que é específico para soft delete
+      this.logger.log(`[DELETE_USE_CASE] Iniciando soft delete para desarquivamento ID: ${desarquivamento.id?.value}`);
+      
+      // Usar o método softDelete nativo do TypeORM via repositório
+      this.logger.log(`[DELETE_USE_CASE] Executando softDelete via repositório...`);
+      
       await this.desarquivamentoRepository.softDelete(desarquivamento.id);
+      
+      this.logger.log(`[DELETE_USE_CASE] ✅ Soft delete executado com SUCESSO para ID: ${desarquivamento.id?.value}`);
+      this.logger.log(`[DELETE_USE_CASE] ✅ Registro agora deve possuir deletedAt definido e não aparecerá mais nas listagens`);
 
       return {
         success: true,
         message: 'Desarquivamento excluído com sucesso',
-        deletedAt: new Date(),
+        deletedAt: new Date(), // TypeORM define automaticamente o deletedAt
       };
     } catch (error) {
+      this.logger.error(`[DELETE_USE_CASE] ❌ ERRO ao executar soft delete: ${error.message}`, error.stack);
       throw new Error(`Erro ao excluir desarquivamento: ${error.message}`);
     }
   }
@@ -179,10 +203,10 @@ export class RestoreDesarquivamentoUseCase {
       throw new Error('Roles do usuário são obrigatórias');
     }
 
-    // Buscar desarquivamento
+    // Buscar desarquivamento (incluindo soft-deleted)
     const desarquivamentoId = DesarquivamentoId.create(request.id);
     const desarquivamento =
-      await this.desarquivamentoRepository.findById(desarquivamentoId);
+      await this.desarquivamentoRepository.findByIdWithDeleted(desarquivamentoId);
 
     if (!desarquivamento) {
       throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
@@ -193,10 +217,11 @@ export class RestoreDesarquivamentoUseCase {
       throw new Error('Desarquivamento não está excluído');
     }
 
+    const upperCaseUserRoles = request.userRoles.map(role => role.toUpperCase());
     // Verificar permissões (apenas admins e operadores podem restaurar)
     if (
-      !request.userRoles.includes('ADMIN') &&
-      !request.userRoles.includes('NUGECID_OPERATOR')
+      !upperCaseUserRoles.includes('ADMIN') &&
+      !upperCaseUserRoles.includes('NUGECID_OPERATOR')
     ) {
       throw new Error(
         'Acesso negado: você não tem permissão para restaurar desarquivamentos',

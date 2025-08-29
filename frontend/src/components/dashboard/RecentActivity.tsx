@@ -38,6 +38,9 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isLoading =
   }
 
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') {
+      return 'NN'
+    }
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -139,7 +142,7 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ activities, isLoading =
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {activity.nomeRequerente}
+                    {activity.nomeRequerente || 'Nome não informado'}
                   </p>
                   <Badge 
                     variant="outline" 

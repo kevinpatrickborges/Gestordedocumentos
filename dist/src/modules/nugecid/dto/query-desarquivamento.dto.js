@@ -13,13 +13,25 @@ exports.QueryDesarquivamentoDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
-const desarquivamento_entity_1 = require("../entities/desarquivamento.entity");
-const tipo_solicitacao_vo_1 = require("../domain/value-objects/tipo-solicitacao.vo");
+const VALID_STATUS = [
+    'FINALIZADO',
+    'DESARQUIVADO',
+    'NAO_COLETADO',
+    'SOLICITADO',
+    'REARQUIVAMENTO_SOLICITADO',
+    'RETIRADO_PELO_SETOR',
+    'NAO_LOCALIZADO'
+];
+const VALID_TIPO_DESARQUIVAMENTO = [
+    'FISICO',
+    'DIGITAL',
+    'NAO_LOCALIZADO'
+];
 class QueryDesarquivamentoDto {
     constructor() {
         this.page = 1;
         this.limit = 10;
-        this.sortBy = 'createdAt';
+        this.sortBy = 'dataSolicitacao';
         this.sortOrder = 'DESC';
         this.incluirExcluidos = false;
         this.formato = 'json';
@@ -56,7 +68,7 @@ __decorate([
 ], QueryDesarquivamentoDto.prototype, "limit", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Termo de busca (nome requerente, vítima, número registro, código barras)',
+        description: 'Termo de busca (nome completo, número NIC/Laudo/Auto, número processo)',
         example: 'João Silva',
     }),
     (0, class_validator_1.IsOptional)(),
@@ -67,18 +79,15 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Filtro por status (múltiplos valores permitidos)',
-        enum: desarquivamento_entity_1.StatusDesarquivamento,
+        enum: VALID_STATUS,
         isArray: true,
-        example: [
-            desarquivamento_entity_1.StatusDesarquivamento.PENDENTE,
-            desarquivamento_entity_1.StatusDesarquivamento.EM_ANDAMENTO,
-        ],
+        example: ['SOLICITADO', 'DESARQUIVADO'],
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)({ message: 'Status deve ser um array' }),
-    (0, class_validator_1.IsEnum)(desarquivamento_entity_1.StatusDesarquivamento, {
+    (0, class_validator_1.IsIn)(VALID_STATUS, {
         each: true,
-        message: 'Cada status deve ser um valor válido: PENDENTE, EM_ANDAMENTO, CONCLUIDO, CANCELADO',
+        message: 'Cada status deve ser um valor válido: FINALIZADO, DESARQUIVADO, NAO_COLETADO, SOLICITADO, REARQUIVAMENTO_SOLICITADO, RETIRADO_PELO_SETOR, NAO_LOCALIZADO',
     }),
     (0, class_transformer_1.Transform)(({ value }) => {
         if (typeof value === 'string') {
@@ -90,16 +99,16 @@ __decorate([
 ], QueryDesarquivamentoDto.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Filtro por tipo de solicitação (múltiplos valores permitidos)',
-        enum: tipo_solicitacao_vo_1.TipoSolicitacaoEnum,
+        description: 'Filtro por tipo de desarquivamento (múltiplos valores permitidos)',
+        enum: VALID_TIPO_DESARQUIVAMENTO,
         isArray: true,
-        example: [tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO, tipo_solicitacao_vo_1.TipoSolicitacaoEnum.COPIA],
+        example: ['FISICO', 'DIGITAL'],
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsArray)({ message: 'Tipo deve ser um array' }),
-    (0, class_validator_1.IsEnum)(tipo_solicitacao_vo_1.TipoSolicitacaoEnum, {
+    (0, class_validator_1.IsIn)(VALID_TIPO_DESARQUIVAMENTO, {
         each: true,
-        message: 'Cada tipo deve ser um valor válido: DESARQUIVAMENTO, COPIA, VISTA, CERTIDAO',
+        message: 'Cada tipo deve ser um valor válido: FISICO, DIGITAL, NAO_LOCALIZADO',
     }),
     (0, class_transformer_1.Transform)(({ value }) => {
         if (typeof value === 'string') {
@@ -108,7 +117,7 @@ __decorate([
         return Array.isArray(value) ? value : [];
     }),
     __metadata("design:type", Array)
-], QueryDesarquivamentoDto.prototype, "tipo", void 0);
+], QueryDesarquivamentoDto.prototype, "tipoDesarquivamento", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Filtro por usuário solicitante',
@@ -157,6 +166,28 @@ __decorate([
 ], QueryDesarquivamentoDto.prototype, "dataFim", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
+        description: 'Data inicial para filtro de intervalo (formato: YYYY-MM-DD)',
+        example: '2024-01-01',
+        type: 'string',
+        format: 'date',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Data inicial deve estar no formato válido (YYYY-MM-DD)' }),
+    __metadata("design:type", String)
+], QueryDesarquivamentoDto.prototype, "startDate", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Data final para filtro de intervalo (formato: YYYY-MM-DD)',
+        example: '2024-12-31',
+        type: 'string',
+        format: 'date',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)({}, { message: 'Data final deve estar no formato válido (YYYY-MM-DD)' }),
+    __metadata("design:type", String)
+], QueryDesarquivamentoDto.prototype, "endDate", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
         description: 'Filtrar apenas solicitações urgentes',
         example: true,
         type: 'boolean',
@@ -190,30 +221,30 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Campo para ordenação',
-        example: 'createdAt',
+        example: 'dataSolicitacao',
         enum: [
-            'createdAt',
-            'nomeRequerente',
-            'nomeVitima',
-            'numeroRegistro',
+            'dataSolicitacao',
+            'nomeCompleto',
+            'numeroNicLaudoAuto',
+            'numeroProcesso',
             'status',
-            'tipo',
-            'prazoAtendimento',
-            'dataAtendimento',
+            'tipoDesarquivamento',
+            'dataDesarquivamentoSAG',
+            'dataDevolucaoSetor',
         ],
-        default: 'createdAt',
+        default: 'dataSolicitacao',
     }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)({ message: 'Campo de ordenação deve ser uma string' }),
     (0, class_validator_1.IsIn)([
-        'createdAt',
-        'nomeRequerente',
-        'nomeVitima',
-        'numeroRegistro',
+        'dataSolicitacao',
+        'nomeCompleto',
+        'numeroNicLaudoAuto',
+        'numeroProcesso',
         'status',
-        'tipo',
-        'prazoAtendimento',
-        'dataAtendimento',
+        'tipoDesarquivamento',
+        'dataDesarquivamentoSAG',
+        'dataDevolucaoSetor',
     ], {
         message: 'Campo de ordenação deve ser um dos valores válidos',
     }),

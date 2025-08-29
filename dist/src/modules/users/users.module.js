@@ -10,7 +10,6 @@ exports.UsersModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const users_controller_1 = require("./users.controller");
-const users_service_1 = require("./users.service");
 const user_entity_1 = require("./entities/user.entity");
 const role_entity_1 = require("./entities/role.entity");
 const auditoria_entity_1 = require("../audit/entities/auditoria.entity");
@@ -24,7 +23,6 @@ exports.UsersModule = UsersModule = __decorate([
         imports: [typeorm_1.TypeOrmModule.forFeature([user_entity_1.User, role_entity_1.Role, auditoria_entity_1.Auditoria])],
         controllers: [users_controller_1.UsersController],
         providers: [
-            users_service_1.UsersService,
             {
                 provide: 'IUserRepository',
                 useClass: repositories_1.TypeOrmUserRepository,
@@ -43,7 +41,6 @@ exports.UsersModule = UsersModule = __decorate([
             use_cases_1.GetRolesUseCase,
         ],
         exports: [
-            users_service_1.UsersService,
             typeorm_1.TypeOrmModule,
             use_cases_1.CreateUserUseCase,
             use_cases_1.UpdateUserUseCase,

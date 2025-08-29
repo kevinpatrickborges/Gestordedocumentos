@@ -8,52 +8,71 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var DatabaseConfig_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.databaseConfigFactory = exports.AppDataSource = exports.DatabaseConfig = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const typeorm_1 = require("typeorm");
-const path_1 = require("path");
-let DatabaseConfig = class DatabaseConfig {
+let DatabaseConfig = DatabaseConfig_1 = class DatabaseConfig {
     constructor(configService) {
         this.configService = configService;
+        this.logger = new common_1.Logger(DatabaseConfig_1.name);
     }
     createTypeOrmOptions() {
-        const databaseType = this.configService.get('DATABASE_TYPE', 'postgres');
+        const databaseType = process.env.DATABASE_TYPE || 'postgres';
+        const environment = process.env.NODE_ENV || 'development';
+        const dbHost = process.env.DATABASE_HOST || 'localhost';
+        const dbPort = parseInt(process.env.DATABASE_PORT || '5432', 10);
+        const dbName = process.env.DATABASE_NAME || 'sgc_itep';
+        const dbUser = process.env.DATABASE_USERNAME || 'postgres';
+        this.logger.log(`🔧 Configurando banco de dados...`);
+        this.logger.log(`📍 Host: ${dbHost}:${dbPort}`);
+        this.logger.log(`🗄️  Database: ${dbName}`);
+        this.logger.log(`👤 Username: ${dbUser}`);
+        this.logger.log(`🌐 Environment: ${environment}`);
         const baseConfig = {
             synchronize: false,
-            logging: this.configService.get('NODE_ENV') === 'development',
-            entities: [(0, path_1.join)(__dirname, '..', '**', '*.entity{.ts,.js}')],
-            migrations: [
-                (0, path_1.join)(__dirname, '..', 'database', 'migrations', '*{.ts,.js}'),
-            ],
-            subscribers: [
-                (0, path_1.join)(__dirname, '..', 'database', 'subscribers', '*{.ts,.js}'),
-            ],
+            logging: environment === 'development' ? ['query', 'error', 'warn', 'info', 'log'] : ['error', 'warn'],
+            entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+            migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+            subscribers: [__dirname + '/../database/subscribers/*{.ts,.js}'],
             migrationsRun: false,
             autoLoadEntities: true,
+            maxQueryExecutionTime: 5000,
+            logger: environment === 'development' ? 'advanced-console' : 'simple-console',
         };
-        return {
+        const config = {
             ...baseConfig,
             type: 'postgres',
-            host: this.configService.get('DATABASE_HOST'),
-            port: this.configService.get('DATABASE_PORT'),
-            username: this.configService.get('DATABASE_USERNAME'),
-            password: this.configService.get('DATABASE_PASSWORD'),
-            database: this.configService.get('DATABASE_NAME'),
-            ssl: this.configService.get('DATABASE_SSL') === 'true'
+            host: dbHost,
+            port: dbPort,
+            username: dbUser,
+            password: process.env.DATABASE_PASSWORD || '@Sanfona1',
+            database: dbName,
+            ssl: process.env.DATABASE_SSL === 'true'
                 ? { rejectUnauthorized: false }
                 : false,
             extra: {
                 connectionLimit: 10,
                 acquireTimeout: 60000,
                 timeout: 60000,
+                idleTimeoutMillis: 30000,
+                connectionTimeoutMillis: 10000,
+                max: 10,
+                min: 2,
             },
+            subscribers: [
+                ...baseConfig.subscribers,
+            ],
         };
+        this.logger.log(`✅ Configuração do banco criada`);
+        this.logger.log(`🔗 Tentando conectar em: postgres://${dbUser}@${dbHost}:${dbPort}/${dbName}`);
+        return config;
     }
 };
 exports.DatabaseConfig = DatabaseConfig;
-exports.DatabaseConfig = DatabaseConfig = __decorate([
+exports.DatabaseConfig = DatabaseConfig = DatabaseConfig_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [config_1.ConfigService])
 ], DatabaseConfig);

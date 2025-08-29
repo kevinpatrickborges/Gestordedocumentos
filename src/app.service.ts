@@ -3,18 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { User } from './modules/users/entities/user.entity';
-import {
-  Desarquivamento,
-  StatusDesarquivamento,
-} from './modules/nugecid/entities/desarquivamento.entity';
+import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
 
 @Injectable()
 export class AppService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Desarquivamento)
-    private readonly desarquivamentoRepository: Repository<Desarquivamento>,
+    @InjectRepository(DesarquivamentoTypeOrmEntity)
+    private readonly desarquivamentoRepository: Repository<DesarquivamentoTypeOrmEntity>,
   ) {}
 
   /**
@@ -49,7 +46,7 @@ export class AppService {
     // Desarquivamentos em posse (status específicos)
     const emPosse = await this.desarquivamentoRepository.count({
       where: {
-        status: StatusDesarquivamento.EM_ANDAMENTO,
+        status: 'DESARQUIVADO',
         deletedAt: null,
       },
     });

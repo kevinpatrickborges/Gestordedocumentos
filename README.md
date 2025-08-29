@@ -75,7 +75,7 @@ DATABASE_TYPE=postgres
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
 DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=@Sanfona1
+DATABASE_PASSWORD=sua_senha_aqui
 DATABASE_NAME=sgc_itep
 DATABASE_SSL=false
 
@@ -191,8 +191,7 @@ src/
 ### Funções de Usuário
 
 - **ADMIN** - Acesso total ao sistema
-- **COORDENADOR** - Gestão de desarquivamentos e usuários
-- **USUARIO** - Acesso básico para consultas
+- **USUARIO** - Acesso limitado às próprias solicitações
 
 ## 📊 Monitoramento e Logs
 

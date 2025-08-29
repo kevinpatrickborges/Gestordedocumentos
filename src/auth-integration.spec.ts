@@ -13,7 +13,6 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 import { User } from './modules/users/entities/user.entity';
 import { Role } from './modules/users/entities/role.entity';
-import { Desarquivamento } from './modules/nugecid/entities/desarquivamento.entity';
 import {
   Auditoria,
   AuditAction,

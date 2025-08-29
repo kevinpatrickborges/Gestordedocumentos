@@ -13,17 +13,16 @@ export interface GetDashboardStatsRequest {
 
 export interface GetDashboardStatsResponse {
   totalRegistros: number;
-  pendentes: number;
-  emAndamento: number;
-  concluidos: number;
-  cancelados: number;
+  pendentes: number; // SOLICITADO
+  emAndamento: number; // DESARQUIVADO
+  concluidos: number; // FINALIZADO
+  naoLocalizados: number; // NAO_LOCALIZADO
   vencidos: number;
   urgentes: number;
   porTipo: {
-    desarquivamento: number;
-    copia: number;
-    vista: number;
-    certidao: number;
+    fisico: number;
+    digital: number;
+    naoLocalizado: number;
   };
   porMes: Record<string, number>;
   taxaConclusao: number;
@@ -97,17 +96,16 @@ export class GetDashboardStatsUseCase {
   private formatResponse(stats: DashboardStats): GetDashboardStatsResponse {
     return {
       totalRegistros: stats.totalRegistros,
-      pendentes: stats.pendentes,
-      emAndamento: stats.emAndamento,
-      concluidos: stats.concluidos,
-      cancelados: stats.cancelados,
+      pendentes: stats.pendentes, // SOLICITADO
+      emAndamento: stats.emAndamento, // DESARQUIVADO
+      concluidos: stats.concluidos, // FINALIZADO
+      naoLocalizados: stats.naoLocalizados || 0, // NAO_LOCALIZADO
       vencidos: stats.vencidos,
       urgentes: stats.urgentes,
       porTipo: {
-        desarquivamento: stats.porTipo['DESARQUIVAMENTO'] || 0,
-        copia: stats.porTipo['COPIA'] || 0,
-        vista: stats.porTipo['VISTA'] || 0,
-        certidao: stats.porTipo['CERTIDAO'] || 0,
+        fisico: stats.porTipo['FISICO'] || 0,
+        digital: stats.porTipo['DIGITAL'] || 0,
+        naoLocalizado: stats.porTipo['NAO_LOCALIZADO'] || 0,
       },
       porMes: stats.porMes,
       taxaConclusao: stats.taxaConclusao,

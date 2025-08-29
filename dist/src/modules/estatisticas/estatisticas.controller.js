@@ -15,6 +15,7 @@ const swagger_1 = require("@nestjs/swagger");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const role_type_enum_1 = require("../users/enums/role-type.enum");
 const estatisticas_service_1 = require("./estatisticas.service");
 let EstatisticasController = class EstatisticasController {
     constructor(estatisticasService) {
@@ -73,7 +74,7 @@ exports.EstatisticasController = EstatisticasController = __decorate([
     (0, swagger_1.ApiTags)('Estatísticas'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('admin'),
+    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN, role_type_enum_1.RoleType.USUARIO),
     (0, common_1.Controller)('estatisticas'),
     __metadata("design:paramtypes", [estatisticas_service_1.EstatisticasService])
 ], EstatisticasController);

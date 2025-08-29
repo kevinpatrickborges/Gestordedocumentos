@@ -13,21 +13,32 @@ import {
 import { DESARQUIVAMENTO_REPOSITORY_TOKEN } from '../../../domain/nugecid.constants';
 
 export interface CreateDesarquivamentoRequest {
-  tipoSolicitacao: string;
-  nomeSolicitante: string;
-  requerente: string;
-  nomeVitima?: string;
-  numeroRegistro: string;
+  tipoDesarquivamento: string;
+  nomeCompleto: string;
+  numeroNicLaudoAuto: string;
   numeroProcesso: string;
-  tipoDocumento?: string;
+  tipoDocumento: string;
+  dataSolicitacao: string;
+  dataDesarquivamentoSAG?: string;
+  dataDevolucaoSetor?: string;
+  setorDemandante: string;
+  servidorResponsavel: string;
+  finalidadeDesarquivamento: string;
+  solicitacaoProrrogacao: boolean;
+  urgente?: boolean;
+  criadoPorId: number;
+  responsavelId?: number;
+  // Legacy properties for validation compatibility
+  nomeSolicitante?: string;
+  numeroRegistro?: string;
+  tipoSolicitacao?: string;
+  nomeVitima?: string;
   dataFato?: Date;
   prazoAtendimento?: Date;
   finalidade?: string;
   observacoes?: string;
-  urgente: boolean;
   localizacaoFisica?: string;
-  criadoPorId: number;
-  responsavelId?: number;
+  requerente?: string;
 }
 
 export interface CreateDesarquivamentoResponse {
@@ -67,34 +78,25 @@ export class CreateDesarquivamentoUseCase {
     // Validações de entrada
     await this.validateRequest(request);
 
-    // Gerar código de barras único
-    const codigoBarras = await this.generateUniqueCodigoBarras();
-
-    // Criar value objects
-    const codigoBarrasVO = CodigoBarras.create(codigoBarras);
-    const numeroRegistroVO = NumeroRegistro.create(request.numeroRegistro);
-    const tipoSolicitacaoVO = TipoSolicitacao.create(
-      request.tipoSolicitacao as TipoSolicitacaoEnum,
-    );
-    const statusVO = StatusDesarquivamento.createPendente();
+    // Criar entidade de domínio usando as propriedades corretas
+    const statusVO = StatusDesarquivamento.createSolicitado();
 
     // Criar entidade de domínio
     const desarquivamento = DesarquivamentoDomain.create({
-      codigoBarras: codigoBarrasVO,
-      tipoSolicitacao: tipoSolicitacaoVO,
+      tipoDesarquivamento: request.tipoDesarquivamento,
       status: statusVO,
-      nomeSolicitante: request.nomeSolicitante,
-      requerente: request.requerente,
-      nomeVitima: request.nomeVitima,
-      numeroRegistro: numeroRegistroVO,
+      nomeCompleto: request.nomeCompleto,
+      numeroNicLaudoAuto: request.numeroNicLaudoAuto,
       numeroProcesso: request.numeroProcesso,
       tipoDocumento: request.tipoDocumento,
-      dataFato: request.dataFato,
-      prazoAtendimento: request.prazoAtendimento,
-      finalidade: request.finalidade,
-      observacoes: request.observacoes,
+      dataSolicitacao: new Date(request.dataSolicitacao),
+      dataDesarquivamentoSAG: request.dataDesarquivamentoSAG ? new Date(request.dataDesarquivamentoSAG) : undefined,
+      dataDevolucaoSetor: request.dataDevolucaoSetor ? new Date(request.dataDevolucaoSetor) : undefined,
+      setorDemandante: request.setorDemandante,
+      servidorResponsavel: request.servidorResponsavel,
+      finalidadeDesarquivamento: request.finalidadeDesarquivamento,
+      solicitacaoProrrogacao: request.solicitacaoProrrogacao,
       urgente: request.urgente,
-      localizacaoFisica: request.localizacaoFisica,
       criadoPorId: request.criadoPorId,
       responsavelId: request.responsavelId,
     });
@@ -112,14 +114,14 @@ export class CreateDesarquivamentoUseCase {
   ): Promise<void> {
     // Validar campos obrigatórios
     if (
-      !request.nomeSolicitante ||
-      request.nomeSolicitante.trim().length === 0
+      !request.nomeCompleto ||
+      request.nomeCompleto.trim().length === 0
     ) {
-      throw new Error('Nome do solicitante é obrigatório');
+      throw new Error('Nome completo é obrigatório');
     }
 
-    if (!request.numeroRegistro || request.numeroRegistro.trim().length === 0) {
-      throw new Error('Número do registro é obrigatório');
+    if (!request.numeroNicLaudoAuto || request.numeroNicLaudoAuto.trim().length === 0) {
+      throw new Error('Número NIC/Laudo/Auto é obrigatório');
     }
 
     if (!request.numeroProcesso || request.numeroProcesso.trim().length === 0) {
@@ -130,22 +132,22 @@ export class CreateDesarquivamentoUseCase {
       throw new Error('ID do usuário criador é obrigatório e deve ser válido');
     }
 
-    // Validar se o número de registro já existe
+    // Validar se o número de processo já existe
     const existingByNumero =
       await this.desarquivamentoRepository.findByNumeroRegistro(
-        request.numeroRegistro,
+        request.numeroProcesso,
       );
     if (existingByNumero.length > 0) {
       throw new Error(
-        `Já existe um desarquivamento com o número de registro: ${request.numeroRegistro}`,
+        `Já existe um desarquivamento com o número de processo: ${request.numeroProcesso}`,
       );
     }
 
-    // Validar tipo de solicitação
-    const tiposValidos = ['DESARQUIVAMENTO', 'COPIA', 'VISTA', 'CERTIDAO'];
-    if (!tiposValidos.includes(request.tipoSolicitacao)) {
+    // Validar tipo de desarquivamento
+    const tiposValidos = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
+    if (!tiposValidos.includes(request.tipoDesarquivamento)) {
       throw new Error(
-        `Tipo de solicitação inválido. Valores aceitos: ${tiposValidos.join(', ')}`,
+        `Tipo de desarquivamento inválido. Valores aceitos: ${tiposValidos.join(', ')}`,
       );
     }
 
@@ -155,49 +157,35 @@ export class CreateDesarquivamentoUseCase {
     }
 
     // Validar tamanhos máximos
-    if (request.nomeSolicitante.length > 255) {
-      throw new Error('Nome do solicitante deve ter no máximo 255 caracteres');
+    if (request.nomeCompleto.length > 255) {
+      throw new Error('Nome completo deve ter no máximo 255 caracteres');
     }
 
     if (request.numeroProcesso.length > 50) {
       throw new Error('Número do processo deve ter no máximo 50 caracteres');
     }
 
-    if (request.nomeVitima && request.nomeVitima.length > 255) {
-      throw new Error('Nome da vítima deve ter no máximo 255 caracteres');
+    if (request.setorDemandante && request.setorDemandante.length > 255) {
+      throw new Error('Setor demandante deve ter no máximo 255 caracteres');
     }
 
     if (request.tipoDocumento && request.tipoDocumento.length > 100) {
       throw new Error('Tipo do documento deve ter no máximo 100 caracteres');
     }
 
-    if (request.localizacaoFisica && request.localizacaoFisica.length > 255) {
-      throw new Error('Localização física deve ter no máximo 255 caracteres');
+    if (request.servidorResponsavel && request.servidorResponsavel.length > 255) {
+      throw new Error('Servidor responsável deve ter no máximo 255 caracteres');
     }
 
-    if (request.finalidade && request.finalidade.length > 500) {
+    if (request.finalidadeDesarquivamento && request.finalidadeDesarquivamento.length > 500) {
       throw new Error('Finalidade deve ter no máximo 500 caracteres');
     }
 
-    if (request.observacoes && request.observacoes.length > 1000) {
-      throw new Error('Observações deve ter no máximo 1000 caracteres');
-    }
-
     // Validar datas
-    if (request.dataFato && request.dataFato > new Date()) {
-      throw new Error('Data do fato não pode ser futura');
-    }
-
-    if (request.prazoAtendimento && request.prazoAtendimento <= new Date()) {
-      throw new Error('Prazo de atendimento deve ser futuro');
-    }
-
-    // Validar consistência de dados
-    if (request.dataFato && request.prazoAtendimento) {
-      if (request.dataFato >= request.prazoAtendimento) {
-        throw new Error(
-          'Prazo de atendimento deve ser posterior à data do fato',
-        );
+    if (request.dataSolicitacao) {
+      const dataSolicitacao = new Date(request.dataSolicitacao);
+      if (dataSolicitacao > new Date()) {
+        throw new Error('Data de solicitação não pode ser futura');
       }
     }
   }
@@ -227,30 +215,28 @@ export class CreateDesarquivamentoUseCase {
   private mapToResponse(
     desarquivamento: DesarquivamentoDomain,
   ): CreateDesarquivamentoResponse {
-    const plainObject = desarquivamento.toPlainObject();
-
     return {
-      id: plainObject.id,
-      codigoBarras: plainObject.codigoBarras,
-      tipoSolicitacao: plainObject.tipoSolicitacao,
-      status: plainObject.status,
-      nomeSolicitante: plainObject.nomeSolicitante,
-      nomeVitima: plainObject.nomeVitima,
-      numeroRegistro: plainObject.numeroRegistro,
-      numeroProcesso: plainObject.numeroProcesso,
-      tipoDocumento: plainObject.tipoDocumento,
-      dataFato: plainObject.dataFato,
-      prazoAtendimento: plainObject.prazoAtendimento,
-      dataAtendimento: plainObject.dataAtendimento,
-      resultadoAtendimento: plainObject.resultadoAtendimento,
-      finalidade: plainObject.finalidade,
-      observacoes: plainObject.observacoes,
-      urgente: plainObject.urgente,
-      localizacaoFisica: plainObject.localizacaoFisica,
-      criadoPorId: plainObject.criadoPorId,
-      responsavelId: plainObject.responsavelId,
-      createdAt: plainObject.createdAt,
-      updatedAt: plainObject.updatedAt,
+      id: desarquivamento.id?.value || 0,
+      codigoBarras: desarquivamento.numeroNicLaudoAuto, // Using numeroNicLaudoAuto as unique identifier
+      tipoSolicitacao: desarquivamento.tipoDesarquivamento,
+      status: desarquivamento.status.value,
+      nomeSolicitante: desarquivamento.nomeCompleto,
+      nomeVitima: undefined, // Not applicable in new structure
+      numeroRegistro: desarquivamento.numeroProcesso,
+      numeroProcesso: desarquivamento.numeroProcesso,
+      tipoDocumento: desarquivamento.tipoDocumento,
+      dataFato: undefined, // Not applicable in new structure
+      prazoAtendimento: undefined, // Not applicable in new structure
+      dataAtendimento: desarquivamento.dataDesarquivamentoSAG,
+      resultadoAtendimento: undefined, // Not applicable in new structure
+      finalidade: desarquivamento.finalidadeDesarquivamento,
+      observacoes: undefined, // Not applicable in new structure
+      urgente: desarquivamento.urgente || false,
+      localizacaoFisica: undefined, // Not applicable in new structure
+      criadoPorId: desarquivamento.criadoPorId,
+      responsavelId: desarquivamento.responsavelId,
+      createdAt: desarquivamento.createdAt,
+      updatedAt: desarquivamento.updatedAt,
     };
   }
 }

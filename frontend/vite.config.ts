@@ -6,6 +6,7 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   server: {
+    host: true,
     port: 3001,
     headers: {
       // Esta política é para desenvolvimento. Em produção, deve ser mais restritiva.

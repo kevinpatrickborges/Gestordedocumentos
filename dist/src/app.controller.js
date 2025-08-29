@@ -107,7 +107,7 @@ let AppController = class AppController {
             <div class="endpoints">
                 <div class="endpoint">
                     <span>📊 Dashboard</span>
-                    <a href="/dashboard">Acessar Dashboard</a>
+                    <a href="/">Acessar Dashboard</a>
                 </div>
                 <div class="endpoint">
                     <span>📚 Documentação da API</span>

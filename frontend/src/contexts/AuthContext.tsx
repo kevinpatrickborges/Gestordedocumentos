@@ -20,20 +20,81 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshTimer, setRefreshTimer] = useState<NodeJS.Timeout | null>(null)
 
   const isAuthenticated = !!user
 
   useEffect(() => {
     checkAuthStatus()
+    
+    // Cleanup timer on unmount
+    return () => {
+      if (refreshTimer) {
+        clearTimeout(refreshTimer)
+      }
+    }
   }, [])
+
+  const scheduleTokenRefresh = () => {
+    // Clear existing timer
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+    }
+
+    // Schedule refresh 5 minutes before token expires (45 minutes)
+    const timer = setTimeout(() => {
+      refreshTokens()
+    }, 45 * 60 * 1000) // 45 minutes
+
+    setRefreshTimer(timer)
+  }
+
+  const refreshTokens = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (!refreshToken) {
+        throw new Error('No refresh token available')
+      }
+
+      const response = await apiService.refreshToken(refreshToken)
+      if (response.success && response.data) {
+        const { accessToken } = response.data
+        localStorage.setItem('accessToken', accessToken)
+        
+        // Schedule next refresh
+        scheduleTokenRefresh()
+        
+        console.log('Token refreshed successfully')
+      } else {
+        throw new Error('Failed to refresh token')
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error)
+      // Token refresh failed, logout user
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      setUser(null)
+      
+      // Clear refresh timer
+      if (refreshTimer) {
+        clearTimeout(refreshTimer)
+        setRefreshTimer(null)
+      }
+    }
+  }
 
   const checkAuthStatus = async () => {
     try {
       const accessToken = localStorage.getItem('accessToken')
+      const refreshToken = localStorage.getItem('refreshToken')
       const savedUser = localStorage.getItem('user')
       
-      if (accessToken && savedUser) {
+      if (accessToken && refreshToken && savedUser) {
         setUser(JSON.parse(savedUser))
+        
+        // Schedule token refresh
+        scheduleTokenRefresh()
         
         // Verificar se o token ainda é válido
         try {
@@ -42,12 +103,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUser(response.data)
             localStorage.setItem('user', JSON.stringify(response.data))
           }
-        } catch (error) {
-          // Token inválido, limpar dados
-          localStorage.removeItem('accessToken')
-          localStorage.removeItem('user')
-          setUser(null)
+        } catch (error: any) {
+          // Se o token expirou, tentar renovar
+          if (error.response?.status === 401) {
+            await refreshTokens()
+          } else {
+            // Outro erro, limpar dados
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
+            localStorage.removeItem('user')
+            setUser(null)
+          }
         }
+      } else if (refreshToken && !accessToken) {
+        // Tenta renovar o token se apenas o refresh token estiver presente
+        await refreshTokens()
       }
     } catch (error) {
       console.error('Erro ao verificar autenticação:', error)
@@ -61,11 +131,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.login(credentials)
       
       if (response.success && response.data) {
-        const { user: userData, accessToken } = response.data
+        const { user: userData, accessToken, refreshToken } = response.data
         
         localStorage.setItem('accessToken', accessToken)
+        if (refreshToken) {
+          localStorage.setItem('refreshToken', refreshToken)
+        }
         localStorage.setItem('user', JSON.stringify(userData))
         setUser(userData)
+        
+        // Schedule token refresh
+        scheduleTokenRefresh()
       } else {
         throw new Error(response.message || 'Erro ao fazer login')
       }
@@ -82,8 +158,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Erro ao fazer logout:', error)
     } finally {
       localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
       setUser(null)
+      
+      // Clear refresh timer
+      if (refreshTimer) {
+        clearTimeout(refreshTimer)
+        setRefreshTimer(null)
+      }
     }
   }
 

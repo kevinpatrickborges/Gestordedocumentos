@@ -17,7 +17,6 @@ const common_1 = require("@nestjs/common");
 const user_1 = require("../../domain/entities/user");
 const usuario_1 = require("../../domain/value-objects/usuario");
 const password_1 = require("../../domain/value-objects/password");
-const role_id_1 = require("../../domain/value-objects/role-id");
 let CreateUserUseCase = class CreateUserUseCase {
     constructor(userRepository, roleRepository) {
         this.userRepository = userRepository;
@@ -29,11 +28,11 @@ let CreateUserUseCase = class CreateUserUseCase {
         if (usuarioExists) {
             throw new Error('Usuário já está em uso');
         }
-        const roleId = new role_id_1.RoleId(dto.roleId);
-        const role = await this.roleRepository.findById(roleId);
+        const role = await this.roleRepository.findByName(dto.role);
         if (!role) {
             throw new Error('Role não encontrada');
         }
+        const roleId = role.id;
         const password = await password_1.Password.create(dto.senha);
         const user = new user_1.User({
             nome: dto.nome,

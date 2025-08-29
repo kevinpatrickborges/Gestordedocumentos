@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DesarquivamentoTypeOrmEntity } from '../nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
-import { StatusDesarquivamento } from '../nugecid/entities/desarquivamento.entity';
 
 export interface CardData {
   totalAtendimentos: number;
@@ -40,7 +39,7 @@ export class EstatisticasService {
     const [total, pendentes, esteMes] = await Promise.all([
       this.desarquivamentoRepo.count(),
       this.desarquivamentoRepo.count({
-        where: { status: StatusDesarquivamento.PENDENTE },
+        where: { status: 'SOLICITADO' },
       }),
       this.desarquivamentoRepo
         .createQueryBuilder('d')
@@ -91,7 +90,7 @@ export class EstatisticasService {
   }
 
   async getStatusDistribuicao(): Promise<ChartData[]> {
-    const rows: Array<{ status: StatusDesarquivamento; total: number }> =
+    const rows: Array<{ status: string; total: number }> =
       await this.desarquivamentoRepo
         .createQueryBuilder('d')
         .select('d.status', 'status')
@@ -99,11 +98,14 @@ export class EstatisticasService {
         .groupBy('d.status')
         .getRawMany();
 
-    const mapNome: Record<StatusDesarquivamento, string> = {
-      [StatusDesarquivamento.PENDENTE]: 'Pendente',
-      [StatusDesarquivamento.EM_ANDAMENTO]: 'Em andamento',
-      [StatusDesarquivamento.CONCLUIDO]: 'Concluído',
-      [StatusDesarquivamento.CANCELADO]: 'Cancelado',
+    const mapNome: Record<string, string> = {
+      ['SOLICITADO']: 'Solicitado',
+      ['DESARQUIVADO']: 'Desarquivado',
+      ['FINALIZADO']: 'Finalizado',
+      ['NAO_LOCALIZADO']: 'Não Localizado',
+      ['NAO_COLETADO']: 'Não Coletado',
+      ['RETIRADO_PELO_SETOR']: 'Retirado pelo Setor',
+      ['REARQUIVAMENTO_SOLICITADO']: 'Rearquivamento Solicitado',
     };
 
     return rows.map(r => ({

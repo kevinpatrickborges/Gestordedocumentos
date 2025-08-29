@@ -27,6 +27,7 @@ import { AuditoriaModule } from './modules/audit/auditoria.module';
 import { SeedingModule } from './modules/seeding/seeding.module';
 import { RegistrosModule } from './modules/registros/registros.module';
 import { EstatisticasModule } from './modules/estatisticas/estatisticas.module';
+import { HealthModule } from './modules/health/health.module';
 
 // Guards
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
@@ -38,7 +39,6 @@ import { AppService } from './app.service';
 // Entities
 import { User } from './modules/users/entities/user.entity';
 import { Role } from './modules/users/entities/role.entity';
-import { Desarquivamento } from './modules/nugecid/entities/desarquivamento.entity';
 import { Auditoria } from './modules/audit/entities/auditoria.entity';
 import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
 
@@ -149,6 +149,7 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
     SeedingModule,
     RegistrosModule,
     EstatisticasModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [

@@ -12,14 +12,13 @@ export interface GetDashboardStatsResponse {
     pendentes: number;
     emAndamento: number;
     concluidos: number;
-    cancelados: number;
+    naoLocalizados: number;
     vencidos: number;
     urgentes: number;
     porTipo: {
-        desarquivamento: number;
-        copia: number;
-        vista: number;
-        certidao: number;
+        fisico: number;
+        digital: number;
+        naoLocalizado: number;
     };
     porMes: Record<string, number>;
     taxaConclusao: number;

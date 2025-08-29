@@ -65,7 +65,7 @@ const ListingStats: React.FC<ListingStatsProps> = ({
     },
     {
       label: 'Expirados',
-      value: stats.vencidos,
+      value: stats.expirados,
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-50',

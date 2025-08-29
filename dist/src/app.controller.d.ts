@@ -12,7 +12,7 @@ export declare class AppController {
             emPosse: number;
             urgentes: number;
         };
-        ultimosDesarquivamentos: import("./modules/nugecid/entities/desarquivamento.entity").Desarquivamento[];
+        ultimosDesarquivamentos: import("./modules/nugecid/infrastructure").DesarquivamentoTypeOrmEntity[];
         title: string;
         user: Express.User;
     }>;

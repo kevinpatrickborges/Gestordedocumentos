@@ -16,7 +16,6 @@ exports.UpdateUserUseCase = void 0;
 const common_1 = require("@nestjs/common");
 const user_id_1 = require("../../domain/value-objects/user-id");
 const usuario_1 = require("../../domain/value-objects/usuario");
-const role_id_1 = require("../../domain/value-objects/role-id");
 let UpdateUserUseCase = class UpdateUserUseCase {
     constructor(userRepository, roleRepository) {
         this.userRepository = userRepository;
@@ -44,12 +43,12 @@ let UpdateUserUseCase = class UpdateUserUseCase {
         if (dto.senha !== undefined) {
             await user.updatePassword(dto.senha);
         }
-        if (dto.roleId !== undefined) {
-            const roleId = new role_id_1.RoleId(dto.roleId);
-            const role = await this.roleRepository.findById(roleId);
+        if (dto.role !== undefined) {
+            const role = await this.roleRepository.findByName(dto.role);
             if (!role) {
                 throw new Error('Role não encontrada');
             }
+            const roleId = role.id;
             user.updateRole(roleId, role);
         }
         if (dto.ativo !== undefined) {

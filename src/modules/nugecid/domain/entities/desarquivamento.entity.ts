@@ -1,32 +1,25 @@
 import {
   DesarquivamentoId,
-  CodigoBarras,
-  NumeroRegistro,
   StatusDesarquivamento,
   StatusDesarquivamentoEnum,
-  TipoSolicitacao,
-  TipoSolicitacaoEnum,
 } from '../value-objects';
 
 export interface DesarquivamentoDomainProps {
   id?: DesarquivamentoId;
-  codigoBarras: CodigoBarras;
-  tipoSolicitacao: TipoSolicitacao;
+  tipoDesarquivamento: string;
   status: StatusDesarquivamento;
-  nomeSolicitante: string;
-  requerente: string;
-  nomeVitima?: string;
-  numeroRegistro: NumeroRegistro;
-  numeroProcesso?: string;
-  tipoDocumento?: string;
-  dataFato?: Date;
-  prazoAtendimento?: Date;
-  dataAtendimento?: Date;
-  resultadoAtendimento?: string;
-  finalidade?: string;
-  observacoes?: string;
-  urgente: boolean;
-  localizacaoFisica?: string;
+  nomeCompleto: string;
+  numeroNicLaudoAuto: string;
+  numeroProcesso: string;
+  tipoDocumento: string;
+  dataSolicitacao: Date;
+  dataDesarquivamentoSAG?: Date;
+  dataDevolucaoSetor?: Date;
+  setorDemandante: string;
+  servidorResponsavel: string;
+  finalidadeDesarquivamento: string;
+  solicitacaoProrrogacao: boolean;
+  urgente?: boolean;
   criadoPorId: number;
   responsavelId?: number;
   createdAt: Date;
@@ -37,23 +30,20 @@ export interface DesarquivamentoDomainProps {
 export class DesarquivamentoDomain {
   private constructor(
     private readonly _id: DesarquivamentoId | undefined,
-    private readonly _codigoBarras: CodigoBarras,
-    private readonly _tipoSolicitacao: TipoSolicitacao,
+    private readonly _tipoDesarquivamento: string,
     private _status: StatusDesarquivamento,
-    private readonly _nomeSolicitante: string,
-    private readonly _requerente: string,
-    private readonly _nomeVitima: string | undefined,
-    private readonly _numeroRegistro: NumeroRegistro,
-    private readonly _numeroProcesso: string | undefined,
-    private readonly _tipoDocumento: string | undefined,
-    private readonly _dataFato: Date | undefined,
-    private _prazoAtendimento: Date | undefined,
-    private _dataAtendimento: Date | undefined,
-    private _resultadoAtendimento: string | undefined,
-    private readonly _finalidade: string | undefined,
-    private readonly _observacoes: string | undefined,
-    private readonly _urgente: boolean,
-    private _localizacaoFisica: string | undefined,
+    private readonly _nomeCompleto: string,
+    private readonly _numeroNicLaudoAuto: string,
+    private readonly _numeroProcesso: string,
+    private readonly _tipoDocumento: string,
+    private readonly _dataSolicitacao: Date,
+    private _dataDesarquivamentoSAG: Date | undefined,
+    private _dataDevolucaoSetor: Date | undefined,
+    private readonly _setorDemandante: string,
+    private readonly _servidorResponsavel: string,
+    private readonly _finalidadeDesarquivamento: string,
+    private readonly _solicitacaoProrrogacao: boolean,
+    private readonly _urgente: boolean | undefined,
     private readonly _criadoPorId: number,
     private _responsavelId: number | undefined,
     private readonly _createdAt: Date,
@@ -71,27 +61,20 @@ export class DesarquivamentoDomain {
 
     return new DesarquivamentoDomain(
       undefined, // ID será gerado pelo repositório
-      props.codigoBarras,
-      props.tipoSolicitacao,
-      props.status || StatusDesarquivamento.createPendente(),
-      props.nomeSolicitante,
-      props.requerente,
-      props.nomeVitima,
-      props.numeroRegistro,
+      props.tipoDesarquivamento,
+      props.status || StatusDesarquivamento.createSolicitado(),
+      props.nomeCompleto,
+      props.numeroNicLaudoAuto,
       props.numeroProcesso,
       props.tipoDocumento,
-      props.dataFato,
-      props.prazoAtendimento ||
-        DesarquivamentoDomain.calculateDefaultDeadline(
-          props.tipoSolicitacao,
-          props.urgente,
-        ),
-      props.dataAtendimento,
-      props.resultadoAtendimento,
-      props.finalidade,
-      props.observacoes,
+      props.dataSolicitacao,
+      props.dataDesarquivamentoSAG,
+      props.dataDevolucaoSetor,
+      props.setorDemandante,
+      props.servidorResponsavel,
+      props.finalidadeDesarquivamento,
+      props.solicitacaoProrrogacao,
       props.urgente,
-      props.localizacaoFisica,
       props.criadoPorId,
       props.responsavelId,
       now,
@@ -104,23 +87,20 @@ export class DesarquivamentoDomain {
   static reconstruct(props: DesarquivamentoDomainProps): DesarquivamentoDomain {
     return new DesarquivamentoDomain(
       props.id,
-      props.codigoBarras,
-      props.tipoSolicitacao,
+      props.tipoDesarquivamento,
       props.status,
-      props.nomeSolicitante,
-      props.requerente,
-      props.nomeVitima,
-      props.numeroRegistro,
+      props.nomeCompleto,
+      props.numeroNicLaudoAuto,
       props.numeroProcesso,
       props.tipoDocumento,
-      props.dataFato,
-      props.prazoAtendimento,
-      props.dataAtendimento,
-      props.resultadoAtendimento,
-      props.finalidade,
-      props.observacoes,
+      props.dataSolicitacao,
+      props.dataDesarquivamentoSAG,
+      props.dataDevolucaoSetor,
+      props.setorDemandante,
+      props.servidorResponsavel,
+      props.finalidadeDesarquivamento,
+      props.solicitacaoProrrogacao,
       props.urgente,
-      props.localizacaoFisica,
       props.criadoPorId,
       props.responsavelId,
       props.createdAt,
@@ -134,72 +114,60 @@ export class DesarquivamentoDomain {
     return this._id;
   }
 
-  get codigoBarras(): CodigoBarras {
-    return this._codigoBarras;
-  }
-
-  get tipoSolicitacao(): TipoSolicitacao {
-    return this._tipoSolicitacao;
+  get tipoDesarquivamento(): string {
+    return this._tipoDesarquivamento;
   }
 
   get status(): StatusDesarquivamento {
     return this._status;
   }
 
-  get nomeSolicitante(): string {
-    return this._nomeSolicitante;
+  get nomeCompleto(): string {
+    return this._nomeCompleto;
   }
 
-  get requerente(): string {
-    return this._requerente;
+  get numeroNicLaudoAuto(): string {
+    return this._numeroNicLaudoAuto;
   }
 
-  get nomeVitima(): string | undefined {
-    return this._nomeVitima;
-  }
-
-  get numeroRegistro(): NumeroRegistro {
-    return this._numeroRegistro;
-  }
-
-  get numeroProcesso(): string | undefined {
+  get numeroProcesso(): string {
     return this._numeroProcesso;
   }
 
-  get tipoDocumento(): string | undefined {
+  get tipoDocumento(): string {
     return this._tipoDocumento;
   }
 
-  get dataFato(): Date | undefined {
-    return this._dataFato;
+  get dataSolicitacao(): Date {
+    return this._dataSolicitacao;
   }
 
-  get prazoAtendimento(): Date | undefined {
-    return this._prazoAtendimento;
+  get dataDesarquivamentoSAG(): Date | undefined {
+    return this._dataDesarquivamentoSAG;
   }
 
-  get dataAtendimento(): Date | undefined {
-    return this._dataAtendimento;
+  get dataDevolucaoSetor(): Date | undefined {
+    return this._dataDevolucaoSetor;
   }
 
-  get resultadoAtendimento(): string | undefined {
-    return this._resultadoAtendimento;
+  get setorDemandante(): string {
+    return this._setorDemandante;
   }
 
-  get finalidade(): string | undefined {
-    return this._finalidade;
+  get servidorResponsavel(): string {
+    return this._servidorResponsavel;
   }
 
-  get observacoes(): string | undefined {
-    return this._observacoes;
+  get finalidadeDesarquivamento(): string {
+    return this._finalidadeDesarquivamento;
   }
 
-  get urgente(): boolean {
+  get solicitacaoProrrogacao(): boolean {
+    return this._solicitacaoProrrogacao;
+  }
+
+  get urgente(): boolean | undefined {
     return this._urgente;
-  }
-
-  get localizacaoFisica(): string | undefined {
-    return this._localizacaoFisica;
   }
 
   get criadoPorId(): number {
@@ -224,24 +192,36 @@ export class DesarquivamentoDomain {
 
   // Métodos de negócio
   private validate(): void {
-    if (!this._nomeSolicitante || this._nomeSolicitante.trim().length === 0) {
-      throw new Error('Nome do solicitante é obrigatório');
+    if (!this._nomeCompleto || this._nomeCompleto.trim().length === 0) {
+      throw new Error('Nome completo é obrigatório');
     }
 
-    if (this._nomeSolicitante.length > 255) {
-      throw new Error('Nome do solicitante deve ter no máximo 255 caracteres');
+    if (this._nomeCompleto.length > 255) {
+      throw new Error('Nome completo deve ter no máximo 255 caracteres');
     }
 
-    if (this._nomeVitima && this._nomeVitima.length > 255) {
-      throw new Error('Nome da vítima deve ter no máximo 255 caracteres');
+    if (!this._numeroNicLaudoAuto || this._numeroNicLaudoAuto.trim().length === 0) {
+      throw new Error('Número NIC/Laudo/Auto é obrigatório');
     }
 
-    if (this._tipoDocumento && this._tipoDocumento.length > 100) {
-      throw new Error('Tipo do documento deve ter no máximo 100 caracteres');
+    if (!this._numeroProcesso || this._numeroProcesso.trim().length === 0) {
+      throw new Error('Número do processo é obrigatório');
     }
 
-    if (this._localizacaoFisica && this._localizacaoFisica.length > 255) {
-      throw new Error('Localização física deve ter no máximo 255 caracteres');
+    if (!this._tipoDocumento || this._tipoDocumento.trim().length === 0) {
+      throw new Error('Tipo do documento é obrigatório');
+    }
+
+    if (!this._setorDemandante || this._setorDemandante.trim().length === 0) {
+      throw new Error('Setor demandante é obrigatório');
+    }
+
+    if (!this._servidorResponsavel || this._servidorResponsavel.trim().length === 0) {
+      throw new Error('Servidor responsável é obrigatório');
+    }
+
+    if (!this._finalidadeDesarquivamento || this._finalidadeDesarquivamento.trim().length === 0) {
+      throw new Error('Finalidade do desarquivamento é obrigatória');
     }
 
     if (this._criadoPorId <= 0) {
@@ -257,21 +237,10 @@ export class DesarquivamentoDomain {
     }
   }
 
-  // Calcula prazo padrão baseado no tipo e urgência
-  private static calculateDefaultDeadline(
-    tipo: TipoSolicitacao,
-    urgente: boolean,
-  ): Date {
-    const days = urgente
-      ? Math.ceil(tipo.getDefaultDeadlineDays() / 2)
-      : tipo.getDefaultDeadlineDays();
-    const deadline = new Date();
-    deadline.setDate(deadline.getDate() + days);
-    return deadline;
-  }
 
   // Verifica se pode ser acessado por um usuário
   canBeAccessedBy(userId: number, userRoles: string[]): boolean {
+    const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
     // Criador sempre pode acessar
     if (this._criadoPorId === userId) {
       return true;
@@ -283,14 +252,14 @@ export class DesarquivamentoDomain {
     }
 
     // Administradores podem acessar tudo
-    if (userRoles.includes('ADMIN')) {
+    if (upperCaseUserRoles.includes('ADMIN')) {
       return true;
     }
 
     // Usuários com role específica podem acessar
     if (
-      userRoles.includes('NUGECID_VIEWER') ||
-      userRoles.includes('NUGECID_OPERATOR')
+      upperCaseUserRoles.includes('NUGECID_VIEWER') ||
+      upperCaseUserRoles.includes('NUGECID_OPERATOR')
     ) {
       return true;
     }
@@ -300,6 +269,7 @@ export class DesarquivamentoDomain {
 
   // Verifica se pode ser editado por um usuário
   canBeEditedBy(userId: number, userRoles: string[]): boolean {
+    const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
     // Não pode editar se estiver concluído
     if (this._status.isFinal()) {
       return false;
@@ -316,7 +286,7 @@ export class DesarquivamentoDomain {
     }
 
     // Administradores e operadores podem editar
-    if (userRoles.includes('ADMIN') || userRoles.includes('NUGECID_OPERATOR')) {
+    if (upperCaseUserRoles.includes('ADMIN') || upperCaseUserRoles.includes('NUGECID_OPERATOR')) {
       return true;
     }
 
@@ -333,22 +303,26 @@ export class DesarquivamentoDomain {
     return this._status.canBeCompleted();
   }
 
-  // Verifica se está vencido
+  // Verifica se está vencido (baseado na data de solicitação + 30 dias)
   isOverdue(): boolean {
-    if (!this._prazoAtendimento || this._status.isFinal()) {
+    if (this._status.isFinal()) {
       return false;
     }
-    return new Date() > this._prazoAtendimento;
+    const deadline = new Date(this._dataSolicitacao);
+    deadline.setDate(deadline.getDate() + 30); // 30 dias padrão
+    return new Date() > deadline;
   }
 
   // Calcula dias restantes até o vencimento
   getDaysUntilDeadline(): number | null {
-    if (!this._prazoAtendimento || this._status.isFinal()) {
+    if (this._status.isFinal()) {
       return null;
     }
 
+    const deadline = new Date(this._dataSolicitacao);
+    deadline.setDate(deadline.getDate() + 30); // 30 dias padrão
     const now = new Date();
-    const diffTime = this._prazoAtendimento.getTime() - now.getTime();
+    const diffTime = deadline.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return diffDays;
@@ -365,12 +339,12 @@ export class DesarquivamentoDomain {
     this._status = newStatus;
     this._updatedAt = new Date();
 
-    // Se foi concluído, define data de atendimento
+    // Se foi concluído, define data de desarquivamento se não foi definida
     if (
-      newStatus.value === StatusDesarquivamentoEnum.CONCLUIDO &&
-      !this._dataAtendimento
+      newStatus.value === StatusDesarquivamentoEnum.FINALIZADO &&
+      !this._dataDesarquivamentoSAG
     ) {
-      this._dataAtendimento = new Date();
+      this._dataDesarquivamentoSAG = new Date();
     }
   }
 
@@ -385,33 +359,32 @@ export class DesarquivamentoDomain {
 
     // Se estava pendente, muda para em andamento
     if (this._status.isPending()) {
-      this._status = StatusDesarquivamento.createEmAndamento();
+      this._status = StatusDesarquivamento.createDesarquivado();
     }
   }
 
-  // Define localização física
-  setPhysicalLocation(localizacao: string): void {
-    if (localizacao && localizacao.length > 255) {
-      throw new Error('Localização física deve ter no máximo 255 caracteres');
-    }
+  // Define data de desarquivamento SAG
+  setDataDesarquivamentoSAG(data: Date): void {
+    this._dataDesarquivamentoSAG = data;
+    this._updatedAt = new Date();
+  }
 
-    this._localizacaoFisica = localizacao;
+  // Define data de devolução ao setor
+  setDataDevolucaoSetor(data: Date): void {
+    this._dataDevolucaoSetor = data;
     this._updatedAt = new Date();
   }
 
   // Conclui o atendimento
-  complete(resultado: string): void {
+  complete(): void {
     if (!this._status.canBeCompleted()) {
       throw new Error('Desarquivamento não pode ser concluído no status atual');
     }
 
-    if (!resultado || resultado.trim().length === 0) {
-      throw new Error('Resultado do atendimento é obrigatório para conclusão');
+    this._status = StatusDesarquivamento.createFinalizado();
+    if (!this._dataDesarquivamentoSAG) {
+      this._dataDesarquivamentoSAG = new Date();
     }
-
-    this._status = StatusDesarquivamento.createConcluido();
-    this._resultadoAtendimento = resultado.trim();
-    this._dataAtendimento = new Date();
     this._updatedAt = new Date();
   }
 
@@ -421,10 +394,8 @@ export class DesarquivamentoDomain {
       throw new Error('Desarquivamento não pode ser cancelado no status atual');
     }
 
-    this._status = StatusDesarquivamento.createCancelado();
-    if (motivo) {
-      this._resultadoAtendimento = `Cancelado: ${motivo}`;
-    }
+    // Cancel functionality not available in new status structure
+    throw new Error('Cancelamento não está disponível na nova estrutura de status');
     this._updatedAt = new Date();
   }
 
@@ -444,6 +415,12 @@ export class DesarquivamentoDomain {
     this._updatedAt = new Date();
   }
 
+  // Marca como excluído (soft delete)
+  markAsDeleted(): void {
+    this._deletedAt = new Date();
+    this._updatedAt = new Date();
+  }
+
   // Verifica se foi excluído
   isDeleted(): boolean {
     return this._deletedAt !== undefined;
@@ -453,21 +430,20 @@ export class DesarquivamentoDomain {
   toPlainObject(): any {
     return {
       id: this._id?.value,
-      codigoBarras: this._codigoBarras.value,
-      tipoSolicitacao: this._tipoSolicitacao.value,
+      tipoDesarquivamento: this._tipoDesarquivamento,
       status: this._status.value,
-      nomeSolicitante: this._nomeSolicitante,
-      nomeVitima: this._nomeVitima,
-      numeroRegistro: this._numeroRegistro.value,
+      nomeCompleto: this._nomeCompleto,
+      numeroNicLaudoAuto: this._numeroNicLaudoAuto,
+      numeroProcesso: this._numeroProcesso,
       tipoDocumento: this._tipoDocumento,
-      dataFato: this._dataFato,
-      prazoAtendimento: this._prazoAtendimento,
-      dataAtendimento: this._dataAtendimento,
-      resultadoAtendimento: this._resultadoAtendimento,
-      finalidade: this._finalidade,
-      observacoes: this._observacoes,
+      dataSolicitacao: this._dataSolicitacao,
+      dataDesarquivamentoSAG: this._dataDesarquivamentoSAG,
+      dataDevolucaoSetor: this._dataDevolucaoSetor,
+      setorDemandante: this._setorDemandante,
+      servidorResponsavel: this._servidorResponsavel,
+      finalidadeDesarquivamento: this._finalidadeDesarquivamento,
+      solicitacaoProrrogacao: this._solicitacaoProrrogacao,
       urgente: this._urgente,
-      localizacaoFisica: this._localizacaoFisica,
       criadoPorId: this._criadoPorId,
       responsavelId: this._responsavelId,
       createdAt: this._createdAt,

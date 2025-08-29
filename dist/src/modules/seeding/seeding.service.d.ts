@@ -8,6 +8,7 @@ export declare class SeedingService implements OnModuleInit {
     private readonly logger;
     constructor(userRepository: Repository<User>, roleRepository: Repository<Role>);
     onModuleInit(): Promise<void>;
+    private updateExistingRoles;
     private seedRoles;
     private seedAdminUser;
 }

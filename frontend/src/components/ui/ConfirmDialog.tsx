@@ -76,7 +76,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
       <Card className="w-full max-w-md mx-auto">
@@ -91,7 +91,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               size="sm"
               onClick={handleCancel}
               disabled={isLoading}
-              className="h-8 w-8 p-0 hover:bg-gray-100"
+              className="h-8 w-8 p-0 hover:bg-accent"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -99,7 +99,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </CardHeader>
         
         <CardContent className="space-y-6">
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-muted-foreground leading-relaxed">
             {description}
           </p>
           

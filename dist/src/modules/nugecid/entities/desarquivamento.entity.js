@@ -9,46 +9,37 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Desarquivamento = exports.StatusDesarquivamento = void 0;
+exports.Desarquivamento = exports.TipoDesarquivamentoEnum = exports.TipoDesarquivamento = exports.TipoSolicitacaoEnum = exports.TipoSolicitacao = exports.StatusDesarquivamentoEnum = exports.StatusDesarquivamento = void 0;
 const typeorm_1 = require("typeorm");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
 const user_entity_1 = require("../../users/entities/user.entity");
 const role_type_enum_1 = require("../../users/enums/role-type.enum");
-const tipo_solicitacao_vo_1 = require("../domain/value-objects/tipo-solicitacao.vo");
-var StatusDesarquivamento;
-(function (StatusDesarquivamento) {
-    StatusDesarquivamento["PENDENTE"] = "PENDENTE";
-    StatusDesarquivamento["EM_ANDAMENTO"] = "EM_ANDAMENTO";
-    StatusDesarquivamento["CONCLUIDO"] = "CONCLUIDO";
-    StatusDesarquivamento["CANCELADO"] = "CANCELADO";
-})(StatusDesarquivamento || (exports.StatusDesarquivamento = StatusDesarquivamento = {}));
+var status_desarquivamento_vo_1 = require("../domain/value-objects/status-desarquivamento.vo");
+Object.defineProperty(exports, "StatusDesarquivamento", { enumerable: true, get: function () { return status_desarquivamento_vo_1.StatusDesarquivamento; } });
+Object.defineProperty(exports, "StatusDesarquivamentoEnum", { enumerable: true, get: function () { return status_desarquivamento_vo_1.StatusDesarquivamentoEnum; } });
+var tipo_solicitacao_vo_1 = require("../domain/value-objects/tipo-solicitacao.vo");
+Object.defineProperty(exports, "TipoSolicitacao", { enumerable: true, get: function () { return tipo_solicitacao_vo_1.TipoSolicitacao; } });
+Object.defineProperty(exports, "TipoSolicitacaoEnum", { enumerable: true, get: function () { return tipo_solicitacao_vo_1.TipoSolicitacaoEnum; } });
+var tipo_desarquivamento_vo_1 = require("../domain/value-objects/tipo-desarquivamento.vo");
+Object.defineProperty(exports, "TipoDesarquivamento", { enumerable: true, get: function () { return tipo_desarquivamento_vo_1.TipoDesarquivamento; } });
+Object.defineProperty(exports, "TipoDesarquivamentoEnum", { enumerable: true, get: function () { return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum; } });
 let Desarquivamento = class Desarquivamento {
+    get criadoPorId() {
+        return this.createdBy;
+    }
+    set criadoPorId(value) {
+        this.createdBy = value;
+    }
     setDefaultValues() {
-        if (!this.codigoBarras) {
-            this.codigoBarras = this.generateBarcode();
-        }
     }
     updateTimestamp() {
     }
-    generateBarcode() {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const timestamp = now.getTime().toString().slice(-4);
-        return `DES${year}${month}${day}${timestamp}`;
-    }
-    isOverdue() {
-        if (!this.prazoAtendimento)
-            return false;
-        return (new Date() > this.prazoAtendimento &&
-            this.status !== StatusDesarquivamento.CONCLUIDO &&
-            this.status !== StatusDesarquivamento.CANCELADO);
+    isFinalized() {
+        return this.status === 'FINALIZADO';
     }
     canBeAccessedBy(user) {
-        if (user.role?.name === role_type_enum_1.RoleType.ADMIN ||
-            user.role?.name === role_type_enum_1.RoleType.COORDENADOR) {
+        if (user.role?.name === role_type_enum_1.RoleType.ADMIN) {
             return true;
         }
         if (this.criadoPor.id === user.id)
@@ -58,20 +49,18 @@ let Desarquivamento = class Desarquivamento {
         return false;
     }
     canBeEditedBy(user) {
-        if (user.role?.name === role_type_enum_1.RoleType.ADMIN ||
-            user.role?.name === role_type_enum_1.RoleType.COORDENADOR) {
+        if (user.role?.name === role_type_enum_1.RoleType.ADMIN) {
             return true;
         }
-        if (this.status === StatusDesarquivamento.CONCLUIDO ||
-            this.status === StatusDesarquivamento.CANCELADO) {
+        if (this.status === 'FINALIZADO') {
             return false;
         }
         if (this.criadoPor.id === user.id &&
-            this.status === StatusDesarquivamento.PENDENTE) {
+            this.status === 'SOLICITADO') {
             return true;
         }
         if (this.responsavelId === user.id &&
-            this.status === StatusDesarquivamento.EM_ANDAMENTO) {
+            this.status === 'DESARQUIVADO') {
             return true;
         }
         return false;
@@ -81,66 +70,47 @@ let Desarquivamento = class Desarquivamento {
     }
     getStatusDisplay() {
         const statusMap = {
-            [StatusDesarquivamento.PENDENTE]: 'Pendente',
-            [StatusDesarquivamento.EM_ANDAMENTO]: 'Em Andamento',
-            [StatusDesarquivamento.CONCLUIDO]: 'Concluído',
-            [StatusDesarquivamento.CANCELADO]: 'Cancelado',
+            'FINALIZADO': 'Finalizado',
+            'DESARQUIVADO': 'Desarquivado',
+            'NAO_COLETADO': 'Não Coletado',
+            'SOLICITADO': 'Solicitado',
+            'REARQUIVAMENTO_SOLICITADO': 'Rearquivamento Solicitado',
+            'RETIRADO_PELO_SETOR': 'Retirado pelo Setor',
+            'NAO_LOCALIZADO': 'Não Localizado',
         };
         return statusMap[this.status] || this.status;
     }
     getStatusColor() {
         const colors = {
-            [StatusDesarquivamento.PENDENTE]: 'warning',
-            [StatusDesarquivamento.EM_ANDAMENTO]: 'info',
-            [StatusDesarquivamento.CONCLUIDO]: 'success',
-            [StatusDesarquivamento.CANCELADO]: 'danger',
+            'FINALIZADO': 'success',
+            'DESARQUIVADO': 'info',
+            'NAO_COLETADO': 'warning',
+            'SOLICITADO': 'primary',
+            'REARQUIVAMENTO_SOLICITADO': 'secondary',
+            'RETIRADO_PELO_SETOR': 'info',
+            'NAO_LOCALIZADO': 'danger',
         };
         return colors[this.status] || 'secondary';
     }
     getStatusLabel() {
-        const labels = {
-            [StatusDesarquivamento.PENDENTE]: 'Pendente',
-            [StatusDesarquivamento.EM_ANDAMENTO]: 'Em Andamento',
-            [StatusDesarquivamento.CONCLUIDO]: 'Concluído',
-            [StatusDesarquivamento.CANCELADO]: 'Cancelado',
-        };
-        return labels[this.status] || 'Desconhecido';
+        return this.getStatusDisplay();
     }
     canTransitionTo(newStatus) {
         const transitions = {
-            [StatusDesarquivamento.PENDENTE]: [
-                StatusDesarquivamento.EM_ANDAMENTO,
-                StatusDesarquivamento.CANCELADO,
-            ],
-            [StatusDesarquivamento.EM_ANDAMENTO]: [
-                StatusDesarquivamento.CONCLUIDO,
-                StatusDesarquivamento.CANCELADO,
-            ],
-            [StatusDesarquivamento.CONCLUIDO]: [],
-            [StatusDesarquivamento.CANCELADO]: [],
+            'SOLICITADO': ['DESARQUIVADO', 'NAO_LOCALIZADO'],
+            'DESARQUIVADO': ['RETIRADO_PELO_SETOR', 'NAO_COLETADO', 'REARQUIVAMENTO_SOLICITADO'],
+            'RETIRADO_PELO_SETOR': ['FINALIZADO'],
+            'NAO_COLETADO': ['REARQUIVAMENTO_SOLICITADO'],
+            'REARQUIVAMENTO_SOLICITADO': ['FINALIZADO'],
+            'NAO_LOCALIZADO': [],
+            'FINALIZADO': [],
         };
         return transitions[this.status]?.includes(newStatus) || false;
-    }
-    getDaysUntilDeadline() {
-        if (!this.prazoAtendimento)
-            return null;
-        const now = new Date();
-        const deadline = new Date(this.prazoAtendimento);
-        const diffTime = deadline.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
     }
     getPriority() {
         if (this.urgente)
             return 'ALTA';
-        const daysUntilDeadline = this.getDaysUntilDeadline();
-        if (daysUntilDeadline === null)
-            return 'BAIXA';
-        if (daysUntilDeadline <= 3)
-            return 'ALTA';
-        if (daysUntilDeadline <= 7)
-            return 'MEDIA';
-        return 'BAIXA';
+        return 'MEDIA';
     }
 };
 exports.Desarquivamento = Desarquivamento;
@@ -154,137 +124,122 @@ __decorate([
 ], Desarquivamento.prototype, "id", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Código de barras único gerado automaticamente',
-        example: 'DES202401150001',
+        description: 'Tipo do desarquivamento',
+        example: 'FISICO',
+        enum: ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'],
     }),
-    (0, typeorm_1.Column)({ name: 'codigo_barras', unique: true, length: 20 }),
+    (0, typeorm_1.Column)({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false }),
     __metadata("design:type", String)
-], Desarquivamento.prototype, "codigoBarras", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Tipo da solicitação',
-        enum: tipo_solicitacao_vo_1.TipoSolicitacaoEnum,
-        example: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
-    }),
-    (0, typeorm_1.Column)({
-        name: 'tipo_solicitacao',
-        type: 'varchar',
-        default: tipo_solicitacao_vo_1.TipoSolicitacaoEnum.DESARQUIVAMENTO,
-    }),
-    __metadata("design:type", String)
-], Desarquivamento.prototype, "tipoSolicitacao", void 0);
+], Desarquivamento.prototype, "tipoDesarquivamento", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Status atual da solicitação',
-        enum: StatusDesarquivamento,
-        example: StatusDesarquivamento.PENDENTE,
+        enum: ['FINALIZADO', 'DESARQUIVADO', 'NAO_COLETADO', 'SOLICITADO', 'REARQUIVAMENTO_SOLICITADO', 'RETIRADO_PELO_SETOR', 'NAO_LOCALIZADO'],
+        example: 'SOLICITADO',
     }),
-    (0, typeorm_1.Column)({ type: 'varchar', default: StatusDesarquivamento.PENDENTE }),
+    (0, typeorm_1.Column)({ type: 'varchar', default: 'SOLICITADO' }),
     __metadata("design:type", String)
 ], Desarquivamento.prototype, "status", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Nome completo do requerente',
+        description: 'Nome completo do solicitante',
         example: 'João Silva Santos',
     }),
-    (0, typeorm_1.Column)({ name: 'nome_solicitante', length: 255, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'nome_completo', length: 255, nullable: false }),
     __metadata("design:type", String)
-], Desarquivamento.prototype, "nomeSolicitante", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Nome da vítima (quando aplicável)',
-        example: 'Maria Oliveira',
-    }),
-    (0, typeorm_1.Column)({ name: 'nome_vitima', length: 255, nullable: true }),
-    __metadata("design:type", String)
-], Desarquivamento.prototype, "nomeVitima", void 0);
+], Desarquivamento.prototype, "nomeCompleto", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Número do registro/processo',
+        description: 'Número do NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA',
         example: '2024.001.123456',
     }),
-    (0, typeorm_1.Column)({ name: 'numero_registro', length: 50, nullable: false }),
+    (0, typeorm_1.Column)({ name: 'numero_nic_laudo_auto', length: 100, nullable: false, unique: true }),
     __metadata("design:type", String)
-], Desarquivamento.prototype, "numeroRegistro", void 0);
+], Desarquivamento.prototype, "numeroNicLaudoAuto", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Tipo do documento solicitado',
+    (0, swagger_1.ApiProperty)({
+        description: 'Número do processo',
+        example: '2024.001.123456',
+    }),
+    (0, typeorm_1.Column)({ name: 'numero_processo', length: 100, nullable: false }),
+    __metadata("design:type", String)
+], Desarquivamento.prototype, "numeroProcesso", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Tipo do documento',
         example: 'Laudo Pericial',
     }),
-    (0, typeorm_1.Column)({ name: 'tipo_documento', length: 100, nullable: true }),
+    (0, typeorm_1.Column)({ name: 'tipo_documento', length: 100, nullable: false }),
     __metadata("design:type", String)
 ], Desarquivamento.prototype, "tipoDocumento", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Data do fato/ocorrência',
-        example: '2024-01-15',
-        type: 'string',
-        format: 'date',
+    (0, swagger_1.ApiProperty)({
+        description: 'Data de solicitação',
+        example: '2024-01-15T08:30:00Z',
     }),
-    (0, typeorm_1.Column)({ name: 'data_fato', type: 'date', nullable: true }),
-    (0, class_transformer_1.Transform)(({ value }) => (value ? value.toISOString().split('T')[0] : null)),
+    (0, typeorm_1.Column)({ name: 'data_solicitacao', type: 'timestamptz', nullable: false }),
     __metadata("design:type", Date)
-], Desarquivamento.prototype, "dataFato", void 0);
+], Desarquivamento.prototype, "dataSolicitacao", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Data limite para atendimento',
-        example: '2024-02-15T10:00:00Z',
-        type: 'string',
-        format: 'date-time',
-    }),
-    (0, typeorm_1.Column)({ name: 'prazo_atendimento', type: 'timestamptz', nullable: true }),
-    __metadata("design:type", Date)
-], Desarquivamento.prototype, "prazoAtendimento", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Data de conclusão da solicitação',
+        description: 'Data do desarquivamento - SAG',
         example: '2024-02-10T14:30:00Z',
         type: 'string',
         format: 'date-time',
     }),
-    (0, typeorm_1.Column)({ name: 'data_atendimento', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true }),
     __metadata("design:type", Date)
-], Desarquivamento.prototype, "dataAtendimento", void 0);
+], Desarquivamento.prototype, "dataDesarquivamentoSAG", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Resultado ou observações do atendimento',
-        example: 'Documento localizado e disponibilizado',
+        description: 'Data da devolução pelo setor',
+        example: '2024-02-15T10:00:00Z',
+        type: 'string',
+        format: 'date-time',
     }),
-    (0, typeorm_1.Column)({ name: 'resultado_atendimento', type: 'text', nullable: true }),
-    __metadata("design:type", String)
-], Desarquivamento.prototype, "resultadoAtendimento", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Finalidade da solicitação',
-        example: 'Processo judicial em andamento',
-    }),
-    (0, typeorm_1.Column)({ name: 'finalidade', type: 'text', nullable: true }),
-    __metadata("design:type", String)
-], Desarquivamento.prototype, "finalidade", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Observações adicionais',
-        example: 'Solicitação urgente para audiência',
-    }),
-    (0, typeorm_1.Column)({ name: 'observacoes', type: 'text', nullable: true }),
-    __metadata("design:type", String)
-], Desarquivamento.prototype, "observacoes", void 0);
+    (0, typeorm_1.Column)({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true }),
+    __metadata("design:type", Date)
+], Desarquivamento.prototype, "dataDevolucaoSetor", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
+        description: 'Setor demandante',
+        example: 'Perícia Criminal',
+    }),
+    (0, typeorm_1.Column)({ name: 'setor_demandante', length: 255, nullable: false }),
+    __metadata("design:type", String)
+], Desarquivamento.prototype, "setorDemandante", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Servidor do ITEP responsável (matrícula)',
+        example: '12345',
+    }),
+    (0, typeorm_1.Column)({ name: 'servidor_responsavel', length: 255, nullable: false }),
+    __metadata("design:type", String)
+], Desarquivamento.prototype, "servidorResponsavel", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Finalidade do desarquivamento',
+        example: 'Processo judicial em andamento',
+    }),
+    (0, typeorm_1.Column)({ name: 'finalidade_desarquivamento', type: 'text', nullable: false }),
+    __metadata("design:type", String)
+], Desarquivamento.prototype, "finalidadeDesarquivamento", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Solicitação de prorrogação de prazo',
+        example: false,
+    }),
+    (0, typeorm_1.Column)({ name: 'solicitacao_prorrogacao', type: 'boolean', default: false }),
+    __metadata("design:type", Boolean)
+], Desarquivamento.prototype, "solicitacaoProrrogacao", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
         description: 'Indica se a solicitação é urgente',
         example: false,
     }),
-    (0, typeorm_1.Column)({ name: 'urgente', type: 'boolean', default: false }),
+    (0, typeorm_1.Column)({ name: 'urgente', type: 'boolean', nullable: true, default: false }),
     __metadata("design:type", Boolean)
 ], Desarquivamento.prototype, "urgente", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Localização física do documento/processo',
-        example: 'Arquivo Central - Estante 15, Prateleira 3',
-    }),
-    (0, typeorm_1.Column)({ name: 'localizacao_fisica', length: 255, nullable: true }),
-    __metadata("design:type", String)
-], Desarquivamento.prototype, "localizacaoFisica", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'ID do usuário responsável pelo atendimento',
@@ -358,10 +313,11 @@ __decorate([
 ], Desarquivamento.prototype, "updateTimestamp", null);
 exports.Desarquivamento = Desarquivamento = __decorate([
     (0, typeorm_1.Entity)('desarquivamentos'),
-    (0, typeorm_1.Index)(['codigoBarras'], { unique: true }),
-    (0, typeorm_1.Index)(['numeroRegistro']),
+    (0, typeorm_1.Index)(['numeroNicLaudoAuto'], { unique: true }),
+    (0, typeorm_1.Index)(['numeroProcesso']),
     (0, typeorm_1.Index)(['status']),
-    (0, typeorm_1.Index)(['tipoSolicitacao']),
-    (0, typeorm_1.Index)(['createdAt'])
+    (0, typeorm_1.Index)(['tipoDesarquivamento']),
+    (0, typeorm_1.Index)(['dataSolicitacao']),
+    (0, typeorm_1.Index)(['createdBy'])
 ], Desarquivamento);
 //# sourceMappingURL=desarquivamento.entity.js.map
