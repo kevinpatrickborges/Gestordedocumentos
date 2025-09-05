@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 
 import { User } from '../users/entities/user.entity';
@@ -43,6 +43,7 @@ export interface LoginV2Response {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private onlineUsers = new Map<number, { lastActivity: Date }>();
 
   constructor(
     @InjectRepository(User)
@@ -62,11 +63,24 @@ export class AuthService {
       `[AuthService] Iniciando validação para o usuário: "${usuario}"`,
     );
     try {
-      // Busca por usuario
-      const user = await this.userRepository.findOne({
+      // Busca por usuario (aceita tanto nome de usuário quanto email)
+      // Se o input contém @, tenta buscar por usuários que tenham email como nome de usuário
+      let user = await this.userRepository.findOne({
         where: { usuario: usuario },
         relations: ['role'],
       });
+
+      // Se não encontrou e o input parece ser um email, tenta buscar pelo nome base
+      if (!user && usuario.includes('@')) {
+        const baseUsername = usuario.split('@')[0];
+        user = await this.userRepository.findOne({
+          where: { usuario: baseUsername },
+          relations: ['role'],
+        });
+        this.logger.debug(
+          `[AuthService] Tentativa de busca alternativa com nome base: "${baseUsername}"`,
+        );
+      }
 
       if (!user) {
         this.logger.warn(
@@ -161,6 +175,9 @@ export class AuthService {
     // Salva auditoria de login bem-sucedido
     await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
 
+    // Adiciona usuário à lista de online
+    this.onlineUsers.set(user.id, { lastActivity: new Date() });
+
     this.logger.log(`Login bem-sucedido para usuário: ${user.usuario}`);
 
     return {
@@ -204,6 +221,9 @@ export class AuthService {
 
     // Salva auditoria de login bem-sucedido
     await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
+
+    // Adiciona usuário à lista de online
+    this.onlineUsers.set(user.id, { lastActivity: new Date() });
 
     this.logger.log(`Login API v2 bem-sucedido para usuário: ${user.usuario}`);
 
@@ -325,6 +345,8 @@ export class AuthService {
     userAgent: string,
   ): Promise<void> {
     await this.saveLogoutAudit(userId, ipAddress, userAgent);
+    // Remove usuário da lista de online
+    this.onlineUsers.delete(userId);
     this.logger.log(`Logout realizado para usuário ID: ${userId}`);
   }
 
@@ -431,6 +453,29 @@ export class AuthService {
         `Erro ao salvar auditoria de logout: ${auditError.message}`,
       );
     }
+  }
+
+  /**
+   * Obtém lista de usuários online
+   */
+  async getOnlineUsers(): Promise<{ id: number; nome: string; usuario: string; role: string; }[]> {
+    const onlineUserIds = Array.from(this.onlineUsers.keys());
+    if (onlineUserIds.length === 0) {
+      return [];
+    }
+
+    const users = await this.userRepository.find({
+      where: { id: In(onlineUserIds) },
+      relations: ['role'],
+      select: ['id', 'nome', 'usuario'],
+    });
+
+    return users.map(user => ({
+      id: user.id,
+      nome: user.nome,
+      usuario: user.usuario,
+      role: user.role?.name || 'user',
+    }));
   }
 
   /**

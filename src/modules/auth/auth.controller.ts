@@ -359,4 +359,35 @@ export class AuthController {
       throw error;
     }
   }
+
+  @Get('online-users')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtém lista de usuários online' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuários online',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          nome: { type: 'string' },
+          usuario: { type: 'string' },
+          role: { type: 'string' },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
+  async getOnlineUsers() {
+    try {
+      const onlineUsers = await this.authService.getOnlineUsers();
+      this.logger.debug(`Usuários online: ${onlineUsers.length}`);
+      return onlineUsers;
+    } catch (error) {
+      this.logger.error(`Erro ao obter usuários online: ${error.message}`);
+      throw error;
+    }
+  }
 }
