@@ -124,7 +124,15 @@ export class NugecidImportService {
             }
 
             // NOME COMPLETO (Coluna C)
-            const nomeRaw = (rowData[2] || '').toString().trim();
+            let nomeRaw = (rowData[2] || '').toString().trim();
+            // Alguns arquivos trazem vários nomes concatenados com "nº <doc> NOME ... nº <doc> NOME ..."
+            // Se começar com "nº", tente extrair apenas o primeiro nome após o primeiro número
+            if (/^n[ºo]/i.test(nomeRaw)) {
+              const m = nomeRaw.match(/n[ºo]\s*[\d\.\-\/]+\s+([^nº]+?)(?=\s*n[ºo]|$)/i);
+              if (m && m[1]) {
+                nomeRaw = m[1].trim();
+              }
+            }
             const nomeClean = nomeRaw.replace(/\s+/g, ' ').trim();
             const nomeUpperNoAccent = nomeClean
               .normalize('NFD')
@@ -142,20 +150,26 @@ export class NugecidImportService {
               });
               continue; // pula esta linha
             }
-            importDto.nomeCompleto = nomeClean || '*';
+            // Limite de 255 caracteres (compatível com schema)
+            importDto.nomeCompleto = (nomeClean || '*').slice(0, 255);
 
             // DOCUMENTO (Coluna D - Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA)
             {
               const nicRaw = (rowData[3] || '').toString().trim();
               const cleaned = nicRaw.replace(/\s+/g, ' ').trim();
-              const cleanedUpper = cleaned.replace(/\s+/g, '').toUpperCase();
-              const isMissingNic = !cleaned || cleanedUpper.length < 3 || ['NA','N/A','N.A','Nº','*','-'].includes(cleanedUpper);
+              // Tenta extrair o primeiro número (após opcional "nº")
+              const match = cleaned.match(/(?:n[ºo]\s*)?([0-9][0-9.\-\/]*)/i);
+              let nic = match ? match[1] : '';
+              // Limpa espaços e limita tamanho conforme coluna (100)
+              nic = (nic || '').trim().slice(0, 100);
+              const cleanedUpper = (nic || '').replace(/\s+/g, '').toUpperCase();
+              const isMissingNic = !nic || cleanedUpper.length < 3;
               if (isMissingNic) {
                 const ts = new Date().toISOString().slice(0,10).replace(/-/g, '');
                 const rand = Math.random().toString(36).slice(2,6).toUpperCase();
                 importDto.numDocumento = `MISSING-${ts}-${rowNumber}-${rand}`;
               } else {
-                importDto.numDocumento = cleaned;
+                importDto.numDocumento = nic;
               }
             }
 
