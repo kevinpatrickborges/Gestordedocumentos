@@ -127,7 +127,19 @@ export class NugecidImportService {
             importDto.nomeCompleto = (rowData[2] || '').toString().trim() || 'N/A';
 
             // DOCUMENTO (Coluna D - Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA)
-            importDto.numDocumento = (rowData[3] || '').toString().trim() || 'N/A';
+            {
+              const nicRaw = (rowData[3] || '').toString().trim();
+              const cleaned = nicRaw.replace(/\s+/g, ' ').trim();
+              const cleanedUpper = cleaned.replace(/\s+/g, '').toUpperCase();
+              const isMissingNic = !cleaned || cleanedUpper.length < 3 || ['NA','N/A','N.A','Nº','*','-'].includes(cleanedUpper);
+              if (isMissingNic) {
+                const ts = new Date().toISOString().slice(0,10).replace(/-/g, '');
+                const rand = Math.random().toString(36).slice(2,6).toUpperCase();
+                importDto.numDocumento = `MISSING-${ts}-${rowNumber}-${rand}`;
+              } else {
+                importDto.numDocumento = cleaned;
+              }
+            }
 
             // PROCESSO (Coluna E - Nº do Processo)
             importDto.numProcesso = (rowData[4] || '').toString().trim() || '';
