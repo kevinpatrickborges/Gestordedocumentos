@@ -22,7 +22,6 @@ O SGC-ITEP v1.0 é um sistema moderno de gestão de conteúdo desenvolvido para 
 - **Banco de Dados**: PostgreSQL em Docker
 - **Autenticação**: JWT + Passport.js
 - **Documentação**: Swagger/OpenAPI 3.0
-- **Testes**: Jest
 - **Validação**: Class-validator + Class-transformer
 
 ### Padrões Arquiteturais
@@ -58,32 +57,6 @@ npm run migration:run
 
 # Execute os seeds (dados iniciais)
 npm run seed
-```
-
-### Configuração do Ambiente
-
-Edite o arquivo `.env` com suas configurações:
-
-```env
-# Aplicação
-NODE_ENV=development
-PORT=3000
-APP_NAME="SGC-ITEP v1.0"
-
-# Banco de Dados
-DATABASE_TYPE=postgres
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD= '@Sanfona1'
-DATABASE_NAME=sgc_itep
-DATABASE_SSL=false
-
-# Autenticação
-JWT_SECRET=your-super-secret-jwt-key
-SESSION_SECRET=your-super-secret-session-key
-
-# ... outras configurações
 ```
 
 ## 🏃‍♂️ Executando o Projeto
@@ -273,3 +246,14 @@ Este projeto é propriedade do Instituto Técnico-Científico de Perícia (ITEP/
 ---
 
 **Desenvolvido para o ITEP/RN**
+
+## Configuração do Ambiente
+
+Para configurar variáveis de ambiente, utilize o arquivo `.env.example` como referência e crie um arquivo `.env` localmente. Não publique senhas nem chaves no README ou no repositório.
+
+- Copie: `cp .env.example .env`
+- Edite o `.env` e defina valores privados, como `DATABASE_PASSWORD`, `JWT_SECRET`, etc.
+- O arquivo `.env` está no `.gitignore` e não é versionado.
+- O `docker-compose.yml` utiliza `POSTGRES_PASSWORD` do ambiente; defina no seu `.env` antes de subir os containers.
+
+Nota: Removemos exemplos anteriores que exibiam valores de senha. Utilize sempre placeholders em documentação pública.
