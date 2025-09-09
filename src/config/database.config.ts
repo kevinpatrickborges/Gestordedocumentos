@@ -7,33 +7,33 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 export class DatabaseConfig implements TypeOrmOptionsFactory {
   private readonly logger = new Logger(DatabaseConfig.name);
 
-  constructor(private configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
-    const databaseType = process.env.DATABASE_TYPE || 'postgres';
     const environment = process.env.NODE_ENV || 'development';
-    
-    // Configuração básica (sem logs detalhados)
-    const dbHost = this.configService.get<string>('DATABASE_HOST') || process.env.DATABASE_HOST || 'localhost';
-    const dbPort = parseInt(this.configService.get<string>('DATABASE_PORT') || process.env.DATABASE_PORT || '5432', 10);
-    const dbName = this.configService.get<string>('DATABASE_NAME') || process.env.DATABASE_NAME || 'sgc_itep';
-    const dbUser = this.configService.get<string>('DATABASE_USERNAME') || process.env.DATABASE_USERNAME || 'postgres';
-    let dbPassword = this.configService.get<string>('DATABASE_PASSWORD') || process.env.DATABASE_PASSWORD;
 
-    // Fallback em desenvolvimento para não travar o watch
-    if (!dbPassword && environment !== 'production') {
-      dbPassword = '@Sanfona1';
-      this.logger.warn('DATABASE_PASSWORD não definido — usando fallback de desenvolvimento.');
+    // Helper: lê primeiro do ConfigService, depois de process.env
+    const env = (key: string, fallback?: string) =>
+      (this.configService.get<string>(key) ?? process.env[key] ?? fallback);
+
+    // Configuração básica
+    const dbHost = env('DATABASE_HOST', 'localhost');
+    const dbPort = parseInt(env('DATABASE_PORT', '5432')!, 10);
+    const dbName = env('DATABASE_NAME', 'sgc_itep');
+    const dbUser = env('DATABASE_USERNAME', 'postgres');
+    let dbPassword = env('DATABASE_PASSWORD');
+    if (!dbPassword) {
+      // suporte a variáveis usadas no docker-compose
+      dbPassword = env('DOCKER_DB_PASSWORD');
     }
 
     if (!dbPassword) {
       this.logger.error('DATABASE_PASSWORD não está definido no ambiente (.env).');
       throw new Error('DATABASE_PASSWORD não definido');
     }
-    
-    // Log essencial
+
     this.logger.log(`Inicializando configuração do banco (${environment}).`);
-    
+
     const baseConfig = {
       synchronize: false,
       logging: ['error', 'warn'],
@@ -44,7 +44,6 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       logger: 'simple-console',
     };
 
-    // Configuração para PostgreSQL usando variáveis de ambiente
     const config = {
       ...baseConfig,
       type: 'postgres',
@@ -53,10 +52,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       username: dbUser,
       password: dbPassword,
       database: dbName,
-      ssl:
-        process.env.DATABASE_SSL === 'true'
-          ? { rejectUnauthorized: false }
-          : false,
+      ssl: env('DATABASE_SSL') === 'true' ? { rejectUnauthorized: false } : false,
       extra: {
         connectionLimit: 10,
         acquireTimeout: 60000,
@@ -66,28 +62,27 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
         max: 10,
         min: 2,
       },
-      // nenhum subscriber configurado
     } as TypeOrmModuleOptions;
-    
-    // Log essencial final
+
     this.logger.log(`Configuração do banco pronta.`);
-    
+
     return config;
   }
 }
 
-// DataSource para migrations e CLI
+// DataSource para migrations/CLI (não usado pelo Nest em runtime)
 let cliDataSourceOptions: DataSourceOptions;
 try {
-  cliDataSourceOptions = new DatabaseConfig(new ConfigService()).createTypeOrmOptions() as DataSourceOptions;
+  cliDataSourceOptions = new DataSource(
+    new DatabaseConfig(new ConfigService()).createTypeOrmOptions() as DataSourceOptions,
+  ).options as DataSourceOptions;
 } catch (e) {
-  // Fallback quando .env ainda não foi carregado (ex.: CLI/ts-node)
   cliDataSourceOptions = {
     type: 'postgres',
     host: process.env.DATABASE_HOST || 'localhost',
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     username: process.env.DATABASE_USERNAME || 'postgres',
-    password: process.env.DATABASE_PASSWORD || '@Sanfona1',
+    password: process.env.DATABASE_PASSWORD || process.env.DOCKER_DB_PASSWORD,
     database: process.env.DATABASE_NAME || 'sgc_itep',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
@@ -101,7 +96,7 @@ export const AppDataSource = new DataSource(cliDataSourceOptions);
 
 export default DatabaseConfig;
 
-// Configuração para o ConfigModule
+// Config para o ConfigModule
 export const databaseConfigFactory = () => ({
   type: process.env.DATABASE_TYPE || 'postgres',
   host: process.env.DATABASE_HOST,
@@ -109,8 +104,8 @@ export const databaseConfigFactory = () => ({
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE_NAME,
-  ssl:
-    process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
   synchronize: false,
   logging: false,
 });
+
