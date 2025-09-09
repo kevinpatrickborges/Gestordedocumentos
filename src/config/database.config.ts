@@ -33,7 +33,6 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       logging: ['error', 'warn'],
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-      subscribers: [__dirname + '/../database/subscribers/*{.ts,.js}'],
       migrationsRun: false,
       autoLoadEntities: true,
       logger: 'simple-console',
@@ -61,9 +60,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
         max: 10,
         min: 2,
       },
-      subscribers: [
-        ...baseConfig.subscribers,
-      ],
+      // nenhum subscriber configurado
     } as TypeOrmModuleOptions;
     
     // Log essencial final

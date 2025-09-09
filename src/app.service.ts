@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 
 import { User } from './modules/users/entities/user.entity';
 import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
@@ -27,19 +27,17 @@ export class AppService {
 
     const desarquivamentosDoMes = await this.desarquivamentoRepository.count({
       where: {
-        createdAt: { $gte: startOfMonth } as any,
+        createdAt: MoreThanOrEqual(startOfMonth),
         deletedAt: null,
       },
     });
 
-    const desarquivamentosDaSemana = await this.desarquivamentoRepository.count(
-      {
-        where: {
-          createdAt: { $gte: startOfWeek } as any,
-          deletedAt: null,
-        },
+    const desarquivamentosDaSemana = await this.desarquivamentoRepository.count({
+      where: {
+        createdAt: MoreThanOrEqual(startOfWeek),
+        deletedAt: null,
       },
-    );
+    });
 
     // Desarquivamentos em posse (status específicos)
     const emPosse = await this.desarquivamentoRepository.count({

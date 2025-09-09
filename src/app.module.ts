@@ -112,30 +112,16 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
     // Static Files
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        // Usar 'any[]' para evitar o erro de tipo do TypeScript
-        const serveStaticOptions: any[] = [
-          {
-            rootPath: join(__dirname, '..', 'public'),
-            serveRoot: '/public',
-          },
-          {
-            rootPath: configService.get<string>('UPLOAD_PATH', './uploads'),
-            serveRoot: '/uploads',
-          },
-        ];
-
-        // Servir os arquivos do frontend apenas em produção
-        if (configService.get<string>('app.environment') === 'production') {
-          serveStaticOptions.push({
-            rootPath: join(__dirname, '..', 'frontend', 'dist'),
-            serveRoot: '/',
-            exclude: ['/api*'],
-          });
-        }
-
-        return serveStaticOptions;
-      },
+      useFactory: (configService: ConfigService) => [
+        {
+          rootPath: join(__dirname, '..', 'public'),
+          serveRoot: '/public',
+        },
+        {
+          rootPath: configService.get<string>('UPLOAD_PATH', './uploads'),
+          serveRoot: '/uploads',
+        },
+      ],
       inject: [ConfigService],
     }),
 
