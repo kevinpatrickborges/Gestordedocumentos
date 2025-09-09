@@ -165,6 +165,15 @@ async function bootstrap() {
   if (environment !== 'production') {
     logger.log(`Docs: http://localhost:${port}/api/docs`);
   }
+
+  // Verificação rápida de conectividade com o banco
+  try {
+    const dataSource = app.get(DataSource);
+    await dataSource.query('SELECT 1');
+    logger.log('Conectividade com o banco OK (SELECT 1)');
+  } catch (e) {
+    logger.error(`Falha na verificação de conexão com o banco: ${e.message}`);
+  }
 }
 
 bootstrap();

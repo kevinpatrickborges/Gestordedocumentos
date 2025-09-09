@@ -33,6 +33,12 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
     }
 
     this.logger.log(`Inicializando configuração do banco (${environment}).`);
+    // Log informativo (não expõe senha)
+    const masked = dbPassword ? dbPassword.replace(/.(?=.{2})/g, '*') : 'undefined';
+    this.logger.log(
+      `DB config resolvido: host=${dbHost}, port=${dbPort}, db=${dbName}, user=${dbUser}, password_set=${!!dbPassword}`,
+    );
+    this.logger.debug(`DB password (masked): ${masked}`);
 
     const baseConfig = {
       synchronize: false,
@@ -108,4 +114,3 @@ export const databaseConfigFactory = () => ({
   synchronize: false,
   logging: false,
 });
-
