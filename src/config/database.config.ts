@@ -14,11 +14,11 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
     const environment = process.env.NODE_ENV || 'development';
     
     // Configuração básica (sem logs detalhados)
-    const dbHost = process.env.DATABASE_HOST || 'localhost';
-    const dbPort = parseInt(process.env.DATABASE_PORT || '5432', 10);
-    const dbName = process.env.DATABASE_NAME || 'sgc_itep';
-    const dbUser = process.env.DATABASE_USERNAME || 'postgres';
-    const dbPassword = process.env.DATABASE_PASSWORD;
+    const dbHost = this.configService.get<string>('DATABASE_HOST') || process.env.DATABASE_HOST || 'localhost';
+    const dbPort = parseInt(this.configService.get<string>('DATABASE_PORT') || process.env.DATABASE_PORT || '5432', 10);
+    const dbName = this.configService.get<string>('DATABASE_NAME') || process.env.DATABASE_NAME || 'sgc_itep';
+    const dbUser = this.configService.get<string>('DATABASE_USERNAME') || process.env.DATABASE_USERNAME || 'postgres';
+    const dbPassword = this.configService.get<string>('DATABASE_PASSWORD') || process.env.DATABASE_PASSWORD;
 
     if (!dbPassword) {
       this.logger.error('DATABASE_PASSWORD não está definido no ambiente (.env).');
@@ -71,11 +71,27 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
 }
 
 // DataSource para migrations e CLI
-export const AppDataSource = new DataSource(
-  new DatabaseConfig(
-    new ConfigService(),
-  ).createTypeOrmOptions() as DataSourceOptions,
-);
+let cliDataSourceOptions: DataSourceOptions;
+try {
+  cliDataSourceOptions = new DatabaseConfig(new ConfigService()).createTypeOrmOptions() as DataSourceOptions;
+} catch (e) {
+  // Fallback quando .env ainda não foi carregado (ex.: CLI/ts-node)
+  cliDataSourceOptions = {
+    type: 'postgres',
+    host: process.env.DATABASE_HOST || 'localhost',
+    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+    username: process.env.DATABASE_USERNAME || 'postgres',
+    password: process.env.DATABASE_PASSWORD || '@Sanfona1',
+    database: process.env.DATABASE_NAME || 'sgc_itep',
+    entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+    migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+    synchronize: false,
+    logging: ['error', 'warn'],
+    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  } as DataSourceOptions;
+}
+
+export const AppDataSource = new DataSource(cliDataSourceOptions);
 
 export default DatabaseConfig;
 
