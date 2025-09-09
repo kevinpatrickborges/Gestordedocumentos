@@ -18,7 +18,13 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
     const dbPort = parseInt(this.configService.get<string>('DATABASE_PORT') || process.env.DATABASE_PORT || '5432', 10);
     const dbName = this.configService.get<string>('DATABASE_NAME') || process.env.DATABASE_NAME || 'sgc_itep';
     const dbUser = this.configService.get<string>('DATABASE_USERNAME') || process.env.DATABASE_USERNAME || 'postgres';
-    const dbPassword = this.configService.get<string>('DATABASE_PASSWORD') || process.env.DATABASE_PASSWORD;
+    let dbPassword = this.configService.get<string>('DATABASE_PASSWORD') || process.env.DATABASE_PASSWORD;
+
+    // Fallback em desenvolvimento para não travar o watch
+    if (!dbPassword && environment !== 'production') {
+      dbPassword = '@Sanfona1';
+      this.logger.warn('DATABASE_PASSWORD não definido — usando fallback de desenvolvimento.');
+    }
 
     if (!dbPassword) {
       this.logger.error('DATABASE_PASSWORD não está definido no ambiente (.env).');
