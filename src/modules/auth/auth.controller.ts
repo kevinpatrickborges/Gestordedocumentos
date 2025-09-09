@@ -6,6 +6,7 @@ import {
   Request,
   Response,
   Get,
+  Render,
   HttpCode,
   HttpStatus,
   Logger,

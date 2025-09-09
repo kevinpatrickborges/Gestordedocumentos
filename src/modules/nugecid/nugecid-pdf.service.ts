@@ -1,6 +1,5 @@
 
 import { Injectable, Logger } from '@nestjs/common';
-import * as PDFDocument from 'pdfkit';
 
 import { DesarquivamentoTypeOrmEntity } from './infrastructure/entities/desarquivamento.typeorm-entity';
 
@@ -10,6 +9,9 @@ export class NugecidPdfService {
 
   async generatePdf(desarquivamento: DesarquivamentoTypeOrmEntity): Promise<Buffer> {
     try {
+      // Carrega pdfkit somente quando necessário para evitar depender do pacote em build
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const PDFDocument: any = require('pdfkit');
       this.logger.log(
         `Iniciando geração de PDF para o desarquivamento ID: ${desarquivamento.id}`,
       );

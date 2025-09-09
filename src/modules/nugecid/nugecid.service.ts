@@ -15,7 +15,6 @@ import {
   DesarquivamentoTypeOrmEntity,
 } from './infrastructure/entities/desarquivamento.typeorm-entity';
 import { TipoDesarquivamentoEnum } from './domain/enums/tipo-desarquivamento.enum';
-import * as PDFDocument from 'pdfkit';
 import { User } from '../users/entities/user.entity';
 import { Auditoria } from '../audit/entities/auditoria.entity';
 import { CreateDesarquivamentoDto } from './dto/create-desarquivamento.dto';
