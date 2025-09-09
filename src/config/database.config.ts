@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { config as dotenvConfig } from 'dotenv';
+import { join } from 'path';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
@@ -10,6 +12,10 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
   constructor(private readonly configService: ConfigService) {}
 
   createTypeOrmOptions(): TypeOrmModuleOptions {
+    // Carrega .env manualmente para garantir disponibilidade das variáveis
+    // .env primeiro, depois .env.local pode sobrescrever
+    dotenvConfig({ path: join(process.cwd(), '.env'), override: false });
+    dotenvConfig({ path: join(process.cwd(), '.env.local'), override: true });
     const environment = process.env.NODE_ENV || 'development';
 
     // Helper: lê primeiro do ConfigService, depois de process.env
