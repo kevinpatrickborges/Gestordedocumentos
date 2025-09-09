@@ -1,1 +1,0 @@
-{"version":3,"file":"role.factory.js","sourceRoot":"","sources":["../../../test/factories/role.factory.ts"],"names":[],"mappings":";;;AAGA,MAAa,WAAW;IACtB,MAAM,CAAC,KAAK,CAAC,OAA0B,EAAE;QACvC,OAAO;YACL,EAAE,EAAE,CAAC;YACL,IAAI,EAAE,MAAM;YACZ,WAAW,EAAE,cAAc;YAC3B,WAAW,EAAE,EAAE;YACf,KAAK,EAAE,IAAI;YACX,GAAG,IAAI;SACR,CAAC;IACJ,CAAC;CACF;AAXD,kCAWC"}
