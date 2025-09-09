@@ -54,6 +54,19 @@ export class ApiService {
       (response) => response,
       async (error) => {
         const originalRequest = error.config
+        
+        console.log('🔍 Interceptor de resposta - erro capturado:', {
+          code: error.code,
+          message: error.message,
+          status: error.response?.status,
+          url: originalRequest?.url
+        })
+
+        // Verificar se é erro de conectividade (backend indisponível)
+        if (error.code === 'ERR_NETWORK' || error.message?.includes('ERR_ABORTED') || error.message?.includes('fetch')) {
+          console.warn('🔌 Backend indisponível - não fazendo logout automático')
+          return Promise.reject(error)
+        }
 
         // Não fazer logout em caso de falha no login
         if (originalRequest.url === '/auth/login') {
@@ -66,26 +79,35 @@ export class ApiService {
           try {
             const refreshToken = localStorage.getItem('refreshToken')
             if (refreshToken) {
+              console.log('🔄 Tentando renovar token via interceptor...')
               const response = await this.api.post('/auth/refresh', { refreshToken })
               const { accessToken } = response.data // Direct access since backend returns { accessToken, expiresIn }
               
               localStorage.setItem('accessToken', accessToken)
+              console.log('✅ Token renovado com sucesso via interceptor')
               
               // Retry the original request with the new token
               originalRequest.headers.Authorization = `Bearer ${accessToken}`
               return this.api(originalRequest)
             }
-          } catch (refreshError) {
-            // Refresh failed, logout user
-            localStorage.removeItem('accessToken')
-            localStorage.removeItem('refreshToken')
-            localStorage.removeItem('user')
-            window.location.href = '/login'
+          } catch (refreshError: any) {
+            console.error('❌ Falha ao renovar token via interceptor:', refreshError)
+            
+            // Só fazer logout se não for erro de conectividade
+            if (refreshError.code !== 'ERR_NETWORK' && !refreshError.message?.includes('ERR_ABORTED')) {
+              console.log('🚪 Fazendo logout devido a falha de autenticação')
+              localStorage.removeItem('accessToken')
+              localStorage.removeItem('refreshToken')
+              localStorage.removeItem('user')
+              window.location.href = '/login'
+            }
             return Promise.reject(refreshError)
           }
         }
         
+        // Só fazer logout para 401 se não for erro de conectividade
         if (error.response?.status === 401) {
+          console.log('🚪 Token inválido - fazendo logout')
           localStorage.removeItem('accessToken')
           localStorage.removeItem('refreshToken')
           localStorage.removeItem('user')
@@ -169,9 +191,67 @@ export class ApiService {
     return response.data
   }
 
-  async deleteDesarquivamento(id: number): Promise<ApiResponse<void>> {
-    const response: AxiosResponse<ApiResponse<void>> = await this.api.delete(`/nugecid/${id}`)
-    return response.data
+  async deleteDesarquivamento(id: string | number): Promise<ApiResponse<void>> {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [ApiService] deleteDesarquivamento INICIADO - ID: ${id} (tipo: ${typeof id})`);
+    
+    try {
+      // Validar se o ID é válido
+      if (id === null || id === undefined || id === '') {
+        throw new Error('ID é obrigatório');
+      }
+      
+      const idStr = String(id).trim();
+      
+      // Converter para número se for string numérica
+      let numericId: number;
+      if (typeof id === 'string') {
+        numericId = parseInt(idStr, 10);
+        if (isNaN(numericId)) {
+          throw new Error(`ID deve ser um número válido. Recebido: '${id}'`);
+        }
+      } else {
+        numericId = id;
+      }
+      
+      // Validar se é um número positivo
+      if (numericId <= 0 || !Number.isInteger(numericId)) {
+        console.error(`[${timestamp}] [ApiService] ❌ ID INVÁLIDO - não é um número positivo: ${numericId}`);
+        throw new Error(
+          `ID deve ser um número inteiro positivo maior que zero. Recebido: ${numericId}`
+        );
+      }
+      
+      console.log(`[${timestamp}] [ApiService] ✅ ID validado com sucesso: ${numericId}`);
+      
+      // Enviar apenas o ID numérico validado
+      const response: AxiosResponse<ApiResponse<void>> = await this.api.delete(`/nugecid/${numericId}`);
+      
+      console.log(`[${timestamp}] [ApiService] deleteDesarquivamento SUCESSO - ID: ${numericId}`, response.data);
+      return response.data;
+    } catch (error: any) {
+      const errorTimestamp = new Date().toISOString();
+      console.error(`[${errorTimestamp}] [ApiService] deleteDesarquivamento ERRO:`, error);
+      
+      if (axios.isAxiosError && axios.isAxiosError(error)) {
+        console.error(`[${errorTimestamp}] 📋 Detalhes do erro:`, {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+          stack: error.stack
+        });
+        
+        // Re-throw com informações mais detalhadas
+        throw new Error(
+          error.response?.data?.message || 
+          error.message || 
+          'Erro ao excluir desarquivamento'
+        );
+      }
+      
+      throw error;
+    }
   }
 
   async getDesarquivamentoByBarcode(barcode: string): Promise<ApiResponse<Desarquivamento>> {
@@ -179,10 +259,22 @@ export class ApiService {
     return response.data
   }
 
+  async importDesarquivamentos(file: File): Promise<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response: AxiosResponse<ApiResponse<any>> = await this.api.post('/nugecid/import-desarquivamentos', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+
   // Users endpoints
   async getUsers(params?: UsersQueryParams): Promise<UsersResponse> {
     try {
-      const response: AxiosResponse<UsersResponse> = await this.api.get('/users', { params })
+      const response: AxiosResponse<UsersResponse> = await this.api.get('/users/api', { params })
       return response.data
     } catch (error: any) {
       // Log for debugging and return a safe fallback so UI can render gracefully
@@ -230,6 +322,50 @@ export class ApiService {
   async reactivateUser(id: number): Promise<UserResponse> {
     const response: AxiosResponse<UserResponse> = await this.api.patch(`/users/${id}/reativar`)
     return response.data
+  }
+
+  // Lixeira endpoints
+  async getDesarquivamentosLixeira(params?: QueryDesarquivamentoDto): Promise<PaginatedResponse<Desarquivamento>> {
+    try {
+      const response: AxiosResponse<PaginatedResponse<Desarquivamento>> = await this.api.get('/nugecid/lixeira', { params })
+      return response.data
+    } catch (error: any) {
+      console.error('[ApiService] getDesarquivamentosLixeira error:', error?.message || error)
+
+      return {
+        success: false,
+        data: [],
+        meta: {
+          total: 0,
+          page: params?.page || 1,
+          limit: params?.limit || 10,
+          totalPages: 0,
+          hasNext: false,
+          hasPrev: false,
+        },
+      } as PaginatedResponse<Desarquivamento>
+    }
+  }
+
+  async restoreDesarquivamento(id: string | number): Promise<ApiResponse<Desarquivamento>> {
+    try {
+      const response: AxiosResponse<ApiResponse<Desarquivamento>> = await this.api.patch(`/nugecid/lixeira/${id}/restaurar`)
+      console.debug('[ApiService] restoreDesarquivamento response:', response.status, response.data)
+      return response.data
+    } catch (error: any) {
+      console.error('[ApiService] restoreDesarquivamento error:', error?.response?.status, error?.response?.data || error?.message)
+      throw error
+    }
+  }
+
+  async deleteDesarquivamentoPermanente(id: string | number): Promise<ApiResponse<void>> {
+    try {
+      const response: AxiosResponse<ApiResponse<void>> = await this.api.delete(`/nugecid/lixeira/${id}/permanente`);
+      return response.data;
+    } catch (error: any) {
+      console.error('[ApiService] deleteDesarquivamentoPermanente error:', error?.response?.status, error?.response?.data || error?.message)
+      throw error;
+    }
   }
 }
 

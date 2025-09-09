@@ -26,21 +26,16 @@ let DatabaseConfig = DatabaseConfig_1 = class DatabaseConfig {
         const dbPort = parseInt(process.env.DATABASE_PORT || '5432', 10);
         const dbName = process.env.DATABASE_NAME || 'sgc_itep';
         const dbUser = process.env.DATABASE_USERNAME || 'postgres';
-        this.logger.log(`🔧 Configurando banco de dados...`);
-        this.logger.log(`📍 Host: ${dbHost}:${dbPort}`);
-        this.logger.log(`🗄️  Database: ${dbName}`);
-        this.logger.log(`👤 Username: ${dbUser}`);
-        this.logger.log(`🌐 Environment: ${environment}`);
+        this.logger.log(`Inicializando configuração do banco (${environment}).`);
         const baseConfig = {
             synchronize: false,
-            logging: environment === 'development' ? ['query', 'error', 'warn', 'info', 'log'] : ['error', 'warn'],
+            logging: ['error', 'warn'],
             entities: [__dirname + '/../**/*.entity{.ts,.js}'],
             migrations: [__dirname + '/../migrations/*{.ts,.js}'],
             subscribers: [__dirname + '/../database/subscribers/*{.ts,.js}'],
             migrationsRun: false,
             autoLoadEntities: true,
-            maxQueryExecutionTime: 5000,
-            logger: environment === 'development' ? 'advanced-console' : 'simple-console',
+            logger: 'simple-console',
         };
         const config = {
             ...baseConfig,
@@ -66,8 +61,7 @@ let DatabaseConfig = DatabaseConfig_1 = class DatabaseConfig {
                 ...baseConfig.subscribers,
             ],
         };
-        this.logger.log(`✅ Configuração do banco criada`);
-        this.logger.log(`🔗 Tentando conectar em: postgres://${dbUser}@${dbHost}:${dbPort}/${dbName}`);
+        this.logger.log(`Configuração do banco pronta.`);
         return config;
     }
 };
@@ -87,7 +81,7 @@ const databaseConfigFactory = () => ({
     database: process.env.DATABASE_NAME,
     ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
     synchronize: false,
-    logging: process.env.NODE_ENV === 'development',
+    logging: false,
 });
 exports.databaseConfigFactory = databaseConfigFactory;
 //# sourceMappingURL=database.config.js.map

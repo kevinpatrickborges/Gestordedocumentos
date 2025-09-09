@@ -79,6 +79,7 @@ const DesarquivamentoForm: React.FC<DesarquivamentoFormProps> = ({
     resolver: zodResolver(desarquivamentoSchema),
     defaultValues: initialData || {
       solicitacaoProrrogacao: false,
+      dataSolicitacao: new Date().toLocaleDateString('sv-SE'),
     },
   })
 

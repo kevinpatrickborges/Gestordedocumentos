@@ -9,21 +9,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Desarquivamento = exports.TipoDesarquivamentoEnum = exports.TipoDesarquivamento = exports.TipoSolicitacaoEnum = exports.TipoSolicitacao = exports.StatusDesarquivamentoEnum = exports.StatusDesarquivamento = void 0;
+exports.Desarquivamento = void 0;
 const typeorm_1 = require("typeorm");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
 const user_entity_1 = require("../../users/entities/user.entity");
 const role_type_enum_1 = require("../../users/enums/role-type.enum");
-var status_desarquivamento_vo_1 = require("../domain/value-objects/status-desarquivamento.vo");
-Object.defineProperty(exports, "StatusDesarquivamento", { enumerable: true, get: function () { return status_desarquivamento_vo_1.StatusDesarquivamento; } });
-Object.defineProperty(exports, "StatusDesarquivamentoEnum", { enumerable: true, get: function () { return status_desarquivamento_vo_1.StatusDesarquivamentoEnum; } });
-var tipo_solicitacao_vo_1 = require("../domain/value-objects/tipo-solicitacao.vo");
-Object.defineProperty(exports, "TipoSolicitacao", { enumerable: true, get: function () { return tipo_solicitacao_vo_1.TipoSolicitacao; } });
-Object.defineProperty(exports, "TipoSolicitacaoEnum", { enumerable: true, get: function () { return tipo_solicitacao_vo_1.TipoSolicitacaoEnum; } });
-var tipo_desarquivamento_vo_1 = require("../domain/value-objects/tipo-desarquivamento.vo");
-Object.defineProperty(exports, "TipoDesarquivamento", { enumerable: true, get: function () { return tipo_desarquivamento_vo_1.TipoDesarquivamento; } });
-Object.defineProperty(exports, "TipoDesarquivamentoEnum", { enumerable: true, get: function () { return tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum; } });
+const status_desarquivamento_enum_1 = require("../domain/enums/status-desarquivamento.enum");
+const tipo_desarquivamento_enum_1 = require("../domain/enums/tipo-desarquivamento.enum");
 let Desarquivamento = class Desarquivamento {
     get criadoPorId() {
         return this.createdBy;
@@ -36,7 +29,7 @@ let Desarquivamento = class Desarquivamento {
     updateTimestamp() {
     }
     isFinalized() {
-        return this.status === 'FINALIZADO';
+        return this.status === status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO;
     }
     canBeAccessedBy(user) {
         if (user.role?.name === role_type_enum_1.RoleType.ADMIN) {
@@ -52,15 +45,15 @@ let Desarquivamento = class Desarquivamento {
         if (user.role?.name === role_type_enum_1.RoleType.ADMIN) {
             return true;
         }
-        if (this.status === 'FINALIZADO') {
+        if (this.status === status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO) {
             return false;
         }
         if (this.criadoPor.id === user.id &&
-            this.status === 'SOLICITADO') {
+            this.status === status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO) {
             return true;
         }
         if (this.responsavelId === user.id &&
-            this.status === 'DESARQUIVADO') {
+            this.status === status_desarquivamento_enum_1.StatusDesarquivamentoEnum.DESARQUIVADO) {
             return true;
         }
         return false;
@@ -70,25 +63,25 @@ let Desarquivamento = class Desarquivamento {
     }
     getStatusDisplay() {
         const statusMap = {
-            'FINALIZADO': 'Finalizado',
-            'DESARQUIVADO': 'Desarquivado',
-            'NAO_COLETADO': 'Não Coletado',
-            'SOLICITADO': 'Solicitado',
-            'REARQUIVAMENTO_SOLICITADO': 'Rearquivamento Solicitado',
-            'RETIRADO_PELO_SETOR': 'Retirado pelo Setor',
-            'NAO_LOCALIZADO': 'Não Localizado',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO]: 'Finalizado',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.DESARQUIVADO]: 'Desarquivado',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_COLETADO]: 'Não Coletado',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO]: 'Solicitado',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO]: 'Rearquivamento Solicitado',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR]: 'Retirado pelo Setor',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_LOCALIZADO]: 'Não Localizado',
         };
         return statusMap[this.status] || this.status;
     }
     getStatusColor() {
         const colors = {
-            'FINALIZADO': 'success',
-            'DESARQUIVADO': 'info',
-            'NAO_COLETADO': 'warning',
-            'SOLICITADO': 'primary',
-            'REARQUIVAMENTO_SOLICITADO': 'secondary',
-            'RETIRADO_PELO_SETOR': 'info',
-            'NAO_LOCALIZADO': 'danger',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO]: 'success',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.DESARQUIVADO]: 'info',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_COLETADO]: 'warning',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO]: 'primary',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO]: 'secondary',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR]: 'info',
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_LOCALIZADO]: 'danger',
         };
         return colors[this.status] || 'secondary';
     }
@@ -97,13 +90,13 @@ let Desarquivamento = class Desarquivamento {
     }
     canTransitionTo(newStatus) {
         const transitions = {
-            'SOLICITADO': ['DESARQUIVADO', 'NAO_LOCALIZADO'],
-            'DESARQUIVADO': ['RETIRADO_PELO_SETOR', 'NAO_COLETADO', 'REARQUIVAMENTO_SOLICITADO'],
-            'RETIRADO_PELO_SETOR': ['FINALIZADO'],
-            'NAO_COLETADO': ['REARQUIVAMENTO_SOLICITADO'],
-            'REARQUIVAMENTO_SOLICITADO': ['FINALIZADO'],
-            'NAO_LOCALIZADO': [],
-            'FINALIZADO': [],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO]: [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.DESARQUIVADO, status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_LOCALIZADO],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.DESARQUIVADO]: [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR, status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_COLETADO, status_desarquivamento_enum_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR]: [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_COLETADO]: [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO]: [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.NAO_LOCALIZADO]: [],
+            [status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO]: [],
         };
         return transitions[this.status]?.includes(newStatus) || false;
     }
@@ -124,20 +117,29 @@ __decorate([
 ], Desarquivamento.prototype, "id", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Tipo do desarquivamento',
+        description: 'Desarquivamento Físico/Digital ou não localizado',
         example: 'FISICO',
-        enum: ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'],
+        enum: tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum,
     }),
-    (0, typeorm_1.Column)({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false }),
+    (0, typeorm_1.Column)({
+        name: 'desarquivamento_fisico_digital',
+        type: 'enum',
+        enum: tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum,
+        nullable: false
+    }),
     __metadata("design:type", String)
-], Desarquivamento.prototype, "tipoDesarquivamento", void 0);
+], Desarquivamento.prototype, "desarquivamentoFisicoDigital", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Status atual da solicitação',
-        enum: ['FINALIZADO', 'DESARQUIVADO', 'NAO_COLETADO', 'SOLICITADO', 'REARQUIVAMENTO_SOLICITADO', 'RETIRADO_PELO_SETOR', 'NAO_LOCALIZADO'],
-        example: 'SOLICITADO',
+        enum: status_desarquivamento_enum_1.StatusDesarquivamentoEnum,
+        example: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO,
     }),
-    (0, typeorm_1.Column)({ type: 'varchar', default: 'SOLICITADO' }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: status_desarquivamento_enum_1.StatusDesarquivamentoEnum,
+        default: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO
+    }),
     __metadata("design:type", String)
 ], Desarquivamento.prototype, "status", void 0);
 __decorate([
@@ -177,7 +179,7 @@ __decorate([
         description: 'Data de solicitação',
         example: '2024-01-15T08:30:00Z',
     }),
-    (0, typeorm_1.Column)({ name: 'data_solicitacao', type: 'timestamptz', nullable: false }),
+    (0, typeorm_1.Column)({ name: 'data_solicitacao', type: 'timestamp', nullable: false }),
     __metadata("design:type", Date)
 ], Desarquivamento.prototype, "dataSolicitacao", void 0);
 __decorate([
@@ -187,7 +189,7 @@ __decorate([
         type: 'string',
         format: 'date-time',
     }),
-    (0, typeorm_1.Column)({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_desarquivamento_sag', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], Desarquivamento.prototype, "dataDesarquivamentoSAG", void 0);
 __decorate([
@@ -197,7 +199,7 @@ __decorate([
         type: 'string',
         format: 'date-time',
     }),
-    (0, typeorm_1.Column)({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_devolucao_setor', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], Desarquivamento.prototype, "dataDevolucaoSetor", void 0);
 __decorate([
@@ -316,7 +318,7 @@ exports.Desarquivamento = Desarquivamento = __decorate([
     (0, typeorm_1.Index)(['numeroNicLaudoAuto'], { unique: true }),
     (0, typeorm_1.Index)(['numeroProcesso']),
     (0, typeorm_1.Index)(['status']),
-    (0, typeorm_1.Index)(['tipoDesarquivamento']),
+    (0, typeorm_1.Index)(['desarquivamentoFisicoDigital']),
     (0, typeorm_1.Index)(['dataSolicitacao']),
     (0, typeorm_1.Index)(['createdBy'])
 ], Desarquivamento);

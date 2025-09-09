@@ -11,28 +11,48 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var UpdateDesarquivamentoUseCase_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateDesarquivamentoUseCase = void 0;
 const common_1 = require("@nestjs/common");
 const domain_1 = require("../../../domain");
 const nugecid_constants_1 = require("../../../domain/nugecid.constants");
-let UpdateDesarquivamentoUseCase = class UpdateDesarquivamentoUseCase {
+let UpdateDesarquivamentoUseCase = UpdateDesarquivamentoUseCase_1 = class UpdateDesarquivamentoUseCase {
     constructor(desarquivamentoRepository) {
         this.desarquivamentoRepository = desarquivamentoRepository;
+        this.logger = new common_1.Logger(UpdateDesarquivamentoUseCase_1.name);
     }
     async execute(request) {
-        this.validateRequest(request);
-        const desarquivamentoId = domain_1.DesarquivamentoId.create(request.id);
-        const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
-        if (!desarquivamento) {
-            throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
+        this.logger.log(`[NUGECID] Iniciando atualização de desarquivamento ID: ${request.id} por usuário ${request.userId}`);
+        this.logger.debug(`[NUGECID] Campos a serem atualizados: ${JSON.stringify({
+            status: request.status,
+            responsavelId: request.responsavelId,
+            dataDesarquivamentoSAG: request.dataDesarquivamentoSAG,
+            dataDevolucaoSetor: request.dataDevolucaoSetor
+        })}`);
+        try {
+            this.validateRequest(request);
+            this.logger.log(`[NUGECID] Validações concluídas para desarquivamento ID: ${request.id}`);
+            const desarquivamentoId = domain_1.DesarquivamentoId.create(request.id);
+            const desarquivamento = await this.desarquivamentoRepository.findById(desarquivamentoId);
+            if (!desarquivamento) {
+                throw new Error(`Desarquivamento com ID ${request.id} não encontrado`);
+            }
+            if (!desarquivamento.canBeEditedBy(request.userId, request.userRoles)) {
+                throw new Error('Acesso negado: você não tem permissão para editar este desarquivamento');
+            }
+            const updatedDesarquivamento = await this.applyUpdates(desarquivamento, request);
+            this.logger.log(`[NUGECID] Salvando atualizações no banco de dados - ID: ${request.id}`);
+            const savedDesarquivamento = await this.desarquivamentoRepository.update(updatedDesarquivamento);
+            this.logger.log(`[NUGECID] Desarquivamento atualizado com sucesso - ID: ${savedDesarquivamento.id.value}, Status: ${savedDesarquivamento.status.value}`);
+            const response = this.mapToResponse(savedDesarquivamento);
+            this.logger.debug(`[NUGECID] Resposta de atualização gerada: ${JSON.stringify({ id: response.id, status: response.status })}`);
+            return response;
         }
-        if (!desarquivamento.canBeEditedBy(request.userId, request.userRoles)) {
-            throw new Error('Acesso negado: você não tem permissão para editar este desarquivamento');
+        catch (error) {
+            this.logger.error(`[NUGECID] Erro ao atualizar desarquivamento ID ${request.id}: ${error.message}`, error.stack);
+            throw error;
         }
-        const updatedDesarquivamento = await this.applyUpdates(desarquivamento, request);
-        const savedDesarquivamento = await this.desarquivamentoRepository.update(updatedDesarquivamento);
-        return this.mapToResponse(savedDesarquivamento);
     }
     validateRequest(request) {
         if (!request.id || request.id <= 0 || !Number.isInteger(request.id)) {
@@ -151,7 +171,7 @@ let UpdateDesarquivamentoUseCase = class UpdateDesarquivamentoUseCase {
     }
 };
 exports.UpdateDesarquivamentoUseCase = UpdateDesarquivamentoUseCase;
-exports.UpdateDesarquivamentoUseCase = UpdateDesarquivamentoUseCase = __decorate([
+exports.UpdateDesarquivamentoUseCase = UpdateDesarquivamentoUseCase = UpdateDesarquivamentoUseCase_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(nugecid_constants_1.DESARQUIVAMENTO_REPOSITORY_TOKEN)),
     __metadata("design:paramtypes", [Object])

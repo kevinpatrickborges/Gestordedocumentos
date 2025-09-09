@@ -13,6 +13,27 @@ const desarquivamento_typeorm_entity_1 = require("../entities/desarquivamento.ty
 const value_objects_1 = require("../../domain/value-objects");
 const status_desarquivamento_vo_1 = require("../../domain/value-objects/status-desarquivamento.vo");
 let DesarquivamentoMapper = class DesarquivamentoMapper {
+    mapStatusStringToEnum(statusString) {
+        switch (statusString?.toUpperCase()) {
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.FINALIZADO.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.FINALIZADO;
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.DESARQUIVADO.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.DESARQUIVADO;
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.NAO_COLETADO.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.NAO_COLETADO;
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.SOLICITADO.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.SOLICITADO;
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO;
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR;
+            case status_desarquivamento_vo_1.StatusDesarquivamentoEnum.NAO_LOCALIZADO.toUpperCase():
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.NAO_LOCALIZADO;
+            default:
+                console.warn(`Status desconhecido do banco: ${statusString}, usando SOLICITADO como padrão`);
+                return status_desarquivamento_vo_1.StatusDesarquivamentoEnum.SOLICITADO;
+        }
+    }
     toTypeOrm(domain) {
         const entity = new desarquivamento_typeorm_entity_1.DesarquivamentoTypeOrmEntity();
         if (domain.id) {
@@ -40,9 +61,14 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
         return entity;
     }
     toDomain(entity) {
-        const id = entity.id ? value_objects_1.DesarquivamentoId.create(entity.id) : undefined;
-        const status = value_objects_1.StatusDesarquivamento.create(entity.status);
-        return desarquivamento_entity_1.DesarquivamentoDomain.reconstruct({
+        if (!entity.id || entity.id <= 0) {
+            throw new Error(`Entidade TypeORM com ID inválido encontrada: ${entity.id}`);
+        }
+        const id = value_objects_1.DesarquivamentoId.create(entity.id);
+        const deletedAt = entity.deletedAt || undefined;
+        const statusEnum = this.mapStatusStringToEnum(entity.status);
+        const status = value_objects_1.StatusDesarquivamento.create(statusEnum);
+        const domainData = {
             id,
             tipoDesarquivamento: entity.tipoDesarquivamento,
             status,
@@ -62,8 +88,9 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
             responsavelId: entity.responsavelId,
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
-            deletedAt: entity.deletedAt,
-        });
+            deletedAt: deletedAt,
+        };
+        return desarquivamento_entity_1.DesarquivamentoDomain.reconstruct(domainData);
     }
     toDomainList(entities) {
         return entities.map(entity => this.toDomain(entity));
@@ -72,8 +99,11 @@ let DesarquivamentoMapper = class DesarquivamentoMapper {
         return domains.map(domain => this.toTypeOrm(domain));
     }
     toPlainObject(domain) {
+        if (!domain.id?.value || domain.id.value <= 0) {
+            throw new Error(`Tentativa de converter desarquivamento com ID inválido: ${domain.id?.value}`);
+        }
         return {
-            id: domain.id?.value,
+            id: domain.id.value,
             tipoDesarquivamento: domain.tipoDesarquivamento,
             status: domain.status.value,
             nomeCompleto: domain.nomeCompleto,

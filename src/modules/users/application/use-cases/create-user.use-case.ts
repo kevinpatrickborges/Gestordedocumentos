@@ -15,11 +15,27 @@ export class CreateUserUseCase {
   ) {}
 
   async execute(dto: CreateUserDto): Promise<User> {
-    // Validar se o usuario já existe
+    // Validar se o usuario já existe (ativo)
     const usuario = new Usuario(dto.usuario);
-    const usuarioExists = await this.userRepository.exists(usuario);
-    if (usuarioExists) {
+    const existingUser = await this.userRepository.findByUsuario(usuario);
+    if (existingUser && !existingUser.isDeleted) {
       throw new Error('Usuário já está em uso');
+    }
+
+    // Se existir mas estiver deletado, reativar em vez de criar novo
+    if (existingUser && existingUser.isDeleted) {
+      // Reativar o usuário antigo com dados novos
+      const role = await this.roleRepository.findByName(dto.role);
+      if (!role) {
+        throw new Error('Role não encontrada');
+      }
+
+      existingUser.updateNome(dto.nome);
+      existingUser.updateRole(role.id, role);
+      await existingUser.updatePassword(dto.senha);
+      existingUser.restore();
+
+      return await this.userRepository.update(existingUser);
     }
 
     // Validar se a role existe e obter o ID

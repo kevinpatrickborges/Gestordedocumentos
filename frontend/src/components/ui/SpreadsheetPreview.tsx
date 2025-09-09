@@ -1,6 +1,5 @@
 import React from 'react';
-import { ScrollArea, ScrollBar } from '@/components/ui/ScrollArea';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 export type SheetRow = Record<string, any>;
 export type SheetData = SheetRow[];
@@ -30,8 +29,8 @@ export const SpreadsheetPreview: React.FC<SpreadsheetPreviewProps> = ({
 
   return (
     <div className={cn("border rounded-lg overflow-hidden", className)}>
-      <ScrollArea className={cn("w-full", maxHeight)}>
-        <div className="relative">
+      <div className={cn("w-full overflow-auto", maxHeight)}>
+        <div className="relative min-w-max">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800 border-b">
               <tr>
@@ -78,8 +77,7 @@ export const SpreadsheetPreview: React.FC<SpreadsheetPreviewProps> = ({
             </tbody>
           </table>
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      </div>
       
       <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 border-t text-xs text-gray-500 dark:text-gray-400">
         Exibindo {data.length} linha(s) com {headers.length} coluna(s)

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 
 import { User } from './modules/users/entities/user.entity';
 import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
+import { StatusDesarquivamentoEnum } from './modules/nugecid/domain/enums/status-desarquivamento.enum';
 
 @Injectable()
 export class AppService {
@@ -14,9 +15,6 @@ export class AppService {
     private readonly desarquivamentoRepository: Repository<DesarquivamentoTypeOrmEntity>,
   ) {}
 
-  /**
-   * Obtém dados consolidados para o dashboard
-   */
   async getDashboardData(user: any) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -46,7 +44,7 @@ export class AppService {
     // Desarquivamentos em posse (status específicos)
     const emPosse = await this.desarquivamentoRepository.count({
       where: {
-        status: 'DESARQUIVADO',
+        status: StatusDesarquivamentoEnum.DESARQUIVADO,
         deletedAt: null,
       },
     });
@@ -66,7 +64,7 @@ export class AppService {
         : { createdBy: user.id, deletedAt: null };
 
     const ultimosDesarquivamentos = await this.desarquivamentoRepository.find({
-      where: whereCondition,
+      where: whereCondition as any,
       order: { createdAt: 'DESC' },
       take: 5,
       relations: ['createdByUser'],
@@ -92,7 +90,7 @@ export class AppService {
       status: 'ok',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      version: '2.0.0',
+      version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
     };
   }

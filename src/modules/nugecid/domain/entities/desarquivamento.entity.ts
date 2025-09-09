@@ -293,6 +293,39 @@ export class DesarquivamentoDomain {
     return false;
   }
 
+  // Verifica se pode ser excluído por um usuário (regras específicas para exclusão)
+  canBeDeletedBy(userId: number, userRoles: string[]): boolean {
+    const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
+    
+    // Administradores podem excluir qualquer coisa (exceto em andamento)
+    if (upperCaseUserRoles.includes('ADMIN')) {
+      // Não permitir exclusão de registros em andamento, mesmo para admin
+      if (this._status.isInProgress()) {
+        return false;
+      }
+      return true;
+    }
+
+    // Criador pode excluir apenas suas próprias solicitações que não estão finalizadas ou em andamento
+    if (this._criadoPorId === userId) {
+      // Não pode excluir se finalizado ou em andamento
+      if (this._status.isFinal() || this._status.isInProgress()) {
+        return false;
+      }
+      return true;
+    }
+
+    // Responsável pode excluir apenas se não estiver finalizado
+    if (this._responsavelId === userId) {
+      if (this._status.isFinal()) {
+        return false;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   // Verifica se pode ser cancelado
   canBeCancelled(): boolean {
     return this._status.canBeCancelled();

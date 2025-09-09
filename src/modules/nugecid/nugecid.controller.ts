@@ -74,7 +74,7 @@ export class NugecidController {
     });
   }
 
-  @Post('import-desarquivamentos')
+  @Post('import')
   @ApiOperation({ summary: 'Importar desarquivamentos de planilha Excel' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -98,8 +98,14 @@ export class NugecidController {
     @Res() res: Response,
   ) {
     if (!file) {
-      throw new BadRequestException('Arquivo é obrigatório');
+      throw new BadRequestException('Arquivo não enviado. Por favor, envie um arquivo Excel.');
     }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('O arquivo enviado está vazio. Verifique se o arquivo Excel tem dados.');
+    }
+
+    this.logger.log(`[${new Date().toISOString()}] 📁 Importando arquivo: ${file.originalname} (${file.size} bytes)`);
 
     const result = await this.nugecidImportService.importFromXLSX(
       file,
@@ -141,6 +147,12 @@ export class NugecidController {
         'Nenhum arquivo enviado. Por favor, anexe um arquivo .xlsx ou .csv.',
       );
     }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('O arquivo enviado está vazio. Verifique se o arquivo Excel tem dados.');
+    }
+
+    this.logger.log(`[${new Date().toISOString()}] 📁 Importando registros: ${file.originalname} (${file.size} bytes)`);
 
     const result = await this.nugecidImportService.importRegistrosFromXLSX(
       file,
@@ -185,8 +197,37 @@ export class NugecidController {
     @Query() queryDto: QueryDesarquivamentoDto,
     @CurrentUser() currentUser: User,
   ) {
+    // Mapear Query DTO -> filtros esperados pelo use case/repositório
+    const filters = {
+      search: queryDto.search,
+      // Suporte a múltiplos status
+      statusList: Array.isArray(queryDto.status) ? queryDto.status : undefined,
+      status: Array.isArray(queryDto.status) ? undefined : (queryDto as any).status,
+      tipoDesarquivamento: Array.isArray(queryDto.tipoDesarquivamento)
+        ? queryDto.tipoDesarquivamento[0]
+        : (queryDto as any).tipoDesarquivamento,
+      criadoPorId: (queryDto as any).usuarioId,
+      responsavelId: (queryDto as any).responsavelId,
+      urgente: (queryDto as any).urgente,
+      dataInicio: (queryDto as any).startDate
+        ? new Date((queryDto as any).startDate as any)
+        : (queryDto as any).dataInicio
+        ? new Date((queryDto as any).dataInicio as any)
+        : undefined,
+      dataFim: (queryDto as any).endDate
+        ? new Date((queryDto as any).endDate as any)
+        : (queryDto as any).dataFim
+        ? new Date((queryDto as any).dataFim as any)
+        : undefined,
+      incluirExcluidos: (queryDto as any).incluirExcluidos || false,
+    };
+
     const result = await this.findAllDesarquivamentosUseCase.execute({
-      ...queryDto,
+      page: queryDto.page,
+      limit: queryDto.limit,
+      sortBy: (queryDto as any).sortBy,
+      sortOrder: (queryDto as any).sortOrder,
+      filters,
       userId: currentUser.id,
       userRoles: [currentUser.role?.name || 'USER'],
     });
@@ -203,6 +244,106 @@ export class NugecidController {
     };
   }
 
+  @Get('lixeira')
+  @Roles(RoleType.ADMIN, RoleType.USUARIO)
+  @ApiOperation({ summary: 'Listar desarquivamentos excluídos (lixeira)' })
+  @ApiQuery({ type: QueryDesarquivamentoDto })
+  @ApiBearerAuth()
+  async findDeleted(
+    @Query() queryDto: QueryDesarquivamentoDto,
+    @CurrentUser() currentUser: User,
+    @Req() req: any,
+  ) {
+    const timestamp = new Date().toISOString();
+    
+    // Log detalhado dos parâmetros recebidos para debug
+    this.logger.log(`[${timestamp}] 🗑️ Buscando itens da lixeira - Usuário: ${currentUser.usuario}`);
+    this.logger.log(`[${timestamp}] 📋 Query params recebidos:`, JSON.stringify(req.query, null, 2));
+    this.logger.log(`[${timestamp}] 📋 DTO validado:`, JSON.stringify(queryDto, null, 2));
+    
+    const filters = {
+      search: queryDto.search,
+      statusList: Array.isArray(queryDto.status) ? queryDto.status : undefined,
+      status: Array.isArray(queryDto.status) ? undefined : (queryDto as any).status,
+      tipoDesarquivamento: Array.isArray(queryDto.tipoDesarquivamento)
+        ? queryDto.tipoDesarquivamento[0]
+        : (queryDto as any).tipoDesarquivamento,
+      criadoPorId: (queryDto as any).usuarioId,
+      responsavelId: (queryDto as any).responsavelId,
+      urgente: (queryDto as any).urgente,
+      dataInicio: (queryDto as any).startDate
+        ? new Date((queryDto as any).startDate as any)
+        : (queryDto as any).dataInicio
+        ? new Date((queryDto as any).dataInicio as any)
+        : undefined,
+      dataFim: (queryDto as any).endDate
+        ? new Date((queryDto as any).endDate as any)
+        : (queryDto as any).dataFim
+        ? new Date((queryDto as any).dataFim as any)
+        : undefined,
+      incluirExcluidos: true,
+    };
+
+    const result = await this.findAllDesarquivamentosUseCase.execute({
+      page: queryDto.page,
+      limit: queryDto.limit,
+      sortBy: (queryDto as any).sortBy,
+      sortOrder: (queryDto as any).sortOrder,
+      filters,
+      userId: currentUser.id,
+      userRoles: [currentUser.role?.name || 'USER'],
+    });
+    
+    // Filtra apenas os itens que foram excluídos (têm deletedAt)
+    const deletedItems = result.data.filter(item => item.deletedAt);
+    
+    this.logger.log(`[${timestamp}] 📊 Encontrados ${deletedItems.length} itens na lixeira`);
+    
+    return {
+       success: true,
+       data: deletedItems,
+       meta: {
+         page: result.page,
+         limit: result.limit,
+         total: deletedItems.length,
+         totalPages: Math.ceil(deletedItems.length / result.limit),
+       },
+     };
+   }
+
+   @Patch('lixeira/:id/restaurar')
+   @Roles(RoleType.ADMIN, RoleType.USUARIO)
+   @ApiOperation({ summary: 'Restaurar desarquivamento da lixeira' })
+   @ApiBearerAuth()
+   async restore(
+     @Param('id') id: string,
+     @CurrentUser() currentUser: User,
+   ) {
+     const timestamp = new Date().toISOString();
+     this.logger.log(`[${timestamp}] 🔄 Iniciando restauração - ID: ${id}, Usuário: ${currentUser.usuario}`);
+     
+     try {
+       const result = await this.restoreDesarquivamentoUseCase.execute({
+         id: Number(id),
+         userId: currentUser.id,
+         userRoles: [currentUser.role?.name || 'USER'],
+       });
+       
+       this.logger.log(`[${timestamp}] ✅ Desarquivamento restaurado com sucesso - ID: ${id}`);
+       
+       return {
+         success: true,
+         message: 'Desarquivamento restaurado com sucesso',
+         data: result,
+         restoredAt: timestamp,
+         restoredBy: currentUser.usuario,
+       };
+     } catch (error) {
+       this.logger.error(`[${timestamp}] ❌ Erro ao restaurar desarquivamento - ID: ${id}`, error.stack);
+       throw error;
+     }
+   }
+
   @Get('dashboard')
   @ApiOperation({ summary: 'Obter estatísticas do dashboard' })
   @Roles(RoleType.ADMIN, RoleType.USUARIO)
@@ -214,6 +355,49 @@ export class NugecidController {
       success: true,
       data: stats,
     };
+  }
+
+  @Delete('lixeira/:id/permanente')
+  @Roles(RoleType.ADMIN)
+  @ApiOperation({ summary: 'Excluir permanentemente desarquivamento da lixeira (IRREVERSÍVEL)' })
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  async hardDelete(
+    @Param('id') idParam: string,
+    @CurrentUser() currentUser: User,
+  ) {
+    const timestamp = new Date().toISOString();
+    this.logger.log(`[${timestamp}] 🔥 EXCLUSÃO PERMANENTE SOLICITADA - ID: ${idParam}, Usuário: ${currentUser.usuario}`);
+
+    // Reutilizar a mesma validação de ID do método remove
+    let id: number;
+    try {
+      const cleanId = idParam.trim();
+      if (!/^\d+$/.test(cleanId)) {
+        throw new BadRequestException('ID inválido. Deve ser um número inteiro.');
+      }
+      id = parseInt(cleanId, 10);
+    } catch (error) {
+      throw new BadRequestException('ID inválido. Deve ser um número inteiro positivo.');
+    }
+
+    try {
+      const result = await this.deleteDesarquivamentoUseCase.execute({
+        id,
+        userId: currentUser.id,
+        userRoles: [currentUser.role?.name || 'USER'],
+        permanent: true,
+      });
+
+      return {
+        success: true,
+        message: 'Desarquivamento excluído permanentemente',
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(`[${new Date().toISOString()}] ❌ Erro exclusão permanente - ID: ${id}`, error.stack);
+      throw new BadRequestException(error.message || 'Erro ao excluir permanentemente');
+    }
   }
 
   @Get('export')
@@ -310,47 +494,110 @@ export class NugecidController {
   }
 
   @Delete(':id')
-  @Roles(RoleType.ADMIN)
   @ApiOperation({ summary: 'Remover desarquivamento' })
   @ApiParam({ name: 'id', description: 'ID do desarquivamento', type: 'integer' })
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') idParam: string,
     @CurrentUser() currentUser: User,
   ) {
-    await this.deleteDesarquivamentoUseCase.execute({
-      id,
-      userId: currentUser.id,
-      userRoles: [currentUser.role?.name || 'USER'],
-      permanent: false,
-    });
+    const timestamp = new Date().toISOString();
+    this.logger.log(`[${timestamp}] [NugecidController] EXCLUSÃO INICIADA - ID param: '${idParam}', Usuário: ${currentUser?.id} (${currentUser?.usuario}), Tipo: SOFT DELETE`);
+    
+    // Validar se o ID é um número válido (não UUID)
+    let id: number;
+    try {
+      const cleanId = idParam.trim();
+      
+      // Verificar se é um UUID (padrão: 8-4-4-4-12 caracteres hexadecimais)
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidPattern.test(cleanId)) {
+        this.logger.error(`[${timestamp}] [NugecidController] ❌ UUID DETECTADO: '${idParam}' - Este endpoint espera um ID numérico`);
+        throw new BadRequestException(
+          `ID inválido: '${idParam}'. ` +
+          `Detectado UUID, mas este endpoint espera um ID numérico (ex: 1, 2, 3...). ` +
+          `Verifique se você está usando o ID correto do desarquivamento.`
+        );
+      }
+      
+      // Verificar se contém apenas dígitos
+      if (!/^\d+$/.test(cleanId)) {
+        this.logger.error(`[${timestamp}] [NugecidController] ❌ ID INVÁLIDO - contém caracteres não numéricos: '${idParam}'`);
+        throw new BadRequestException(
+          `ID deve conter apenas números. Recebido: '${idParam}'. ` +
+          `Formato esperado: número inteiro positivo (ex: 1, 2, 3...).`
+        );
+      }
+      
+      id = parseInt(cleanId, 10);
+      if (isNaN(id) || id <= 0) {
+        this.logger.error(`[${timestamp}] [NugecidController] ❌ ID INVÁLIDO - não é um número positivo: '${idParam}'`);
+        throw new BadRequestException(
+          `ID inválido: '${idParam}'. Deve ser um número inteiro positivo maior que zero.`
+        );
+      }
+      
+      this.logger.log(`[${timestamp}] [NugecidController] ✅ ID validado com sucesso: ${id}`);
+    } catch (error) {
+      // Se já é uma BadRequestException, re-throw
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Erro genérico de conversão
+      this.logger.error(`[${timestamp}] [NugecidController] ❌ ERRO NA VALIDAÇÃO DO ID: '${idParam}' - ${error.message}`);
+      throw new BadRequestException(
+        `ID inválido: '${idParam}'. Deve ser um número inteiro positivo. ` +
+        `Se você está tentando usar um UUID, verifique se está usando o endpoint correto.`
+      );
+    }
+    
+    try {
+      const result = await this.deleteDesarquivamentoUseCase.execute({
+        id,
+        userId: currentUser.id,
+        userRoles: [currentUser.role?.name || 'USER'],
+        permanent: false,
+      });
 
-    return {
-      success: true,
-      message: 'Desarquivamento removido com sucesso',
-    };
+      const completedTimestamp = new Date().toISOString();
+      this.logger.log(`[${completedTimestamp}] [NugecidController] ✅ EXCLUSÃO CONCLUÍDA COM SUCESSO - ID: ${id} foi EXCLUÍDO DO BANCO DE DADOS (soft delete), Usuário: ${currentUser?.id}`);
+      
+      return {
+        success: true,
+        message: 'Desarquivamento removido com sucesso',
+        data: {
+          id,
+          deletedAt: completedTimestamp,
+          deletedBy: currentUser.id,
+          type: 'soft_delete'
+        }
+      };
+    } catch (error) {
+      const errorTimestamp = new Date().toISOString();
+      this.logger.error(`[${errorTimestamp}] [NugecidController] ❌ ERRO NA EXCLUSÃO - ID: ${id}, Usuário: ${currentUser?.id}, Erro: ${error.message}`);
+      
+      // Melhorar mensagens de erro para o usuário
+      if (error.message.includes('Acesso negado')) {
+        throw new ForbiddenException('Você não tem permissão para excluir este desarquivamento');
+      }
+      
+      if (error.message.includes('ID') && error.message.includes('não encontrado')) {
+        throw new NotFoundException('Desarquivamento não encontrado');
+      }
+      
+      if (error.message.includes('em andamento')) {
+        throw new BadRequestException('Não é possível excluir desarquivamento em andamento');
+      }
+      
+      if (error.message.includes('concluídos')) {
+        throw new ForbiddenException('Apenas administradores podem excluir desarquivamentos concluídos');
+      }
+      
+      // Erro genérico
+      throw new BadRequestException(error.message || 'Erro ao excluir desarquivamento');
+    }
   }
 
-  @Post(':id/restore')
-  @ApiOperation({ summary: 'Restaurar desarquivamento excluído' })
-  @ApiParam({ name: 'id', description: 'ID do desarquivamento', type: 'integer' })
-  @Roles(RoleType.ADMIN)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  async restore(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() currentUser: User,
-  ) {
-    const result = await this.restoreDesarquivamentoUseCase.execute({
-      id,
-      userId: currentUser.id,
-      userRoles: [currentUser.role?.name || 'USER'],
-    });
-
-    return {
-      success: true,
-      message: result.message,
-    };
-  }
 }

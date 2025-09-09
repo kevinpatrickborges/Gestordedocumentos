@@ -51,6 +51,7 @@ export interface CreateDesarquivamentoResponse {
 }
 export declare class CreateDesarquivamentoUseCase {
     private readonly desarquivamentoRepository;
+    private readonly logger;
     constructor(desarquivamentoRepository: IDesarquivamentoRepository);
     execute(request: CreateDesarquivamentoRequest): Promise<CreateDesarquivamentoResponse>;
     private validateRequest;

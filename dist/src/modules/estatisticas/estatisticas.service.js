@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const desarquivamento_typeorm_entity_1 = require("../nugecid/infrastructure/entities/desarquivamento.typeorm-entity");
+const status_desarquivamento_enum_1 = require("../nugecid/domain/enums/status-desarquivamento.enum");
 let EstatisticasService = class EstatisticasService {
     constructor(desarquivamentoRepo) {
         this.desarquivamentoRepo = desarquivamentoRepo;
@@ -28,7 +29,7 @@ let EstatisticasService = class EstatisticasService {
         const [total, pendentes, esteMes] = await Promise.all([
             this.desarquivamentoRepo.count(),
             this.desarquivamentoRepo.count({
-                where: { status: 'SOLICITADO' },
+                where: { status: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO },
             }),
             this.desarquivamentoRepo
                 .createQueryBuilder('d')

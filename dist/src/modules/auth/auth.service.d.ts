@@ -33,6 +33,7 @@ export declare class AuthService {
     private readonly auditoriaRepository;
     private readonly jwtService;
     private readonly logger;
+    private onlineUsers;
     constructor(userRepository: Repository<User>, roleRepository: Repository<Role>, auditoriaRepository: Repository<Auditoria>, jwtService: JwtService);
     validateUser(usuario: string, password: string): Promise<User | null>;
     login(loginDto: LoginDto, ipAddress: string, userAgent: string): Promise<LoginResponse>;
@@ -49,5 +50,11 @@ export declare class AuthService {
     private handleSuccessfulLogin;
     private saveLoginAudit;
     private saveLogoutAudit;
+    getOnlineUsers(): Promise<{
+        id: number;
+        nome: string;
+        usuario: string;
+        role: string;
+    }[]>;
     private sanitizeUser;
 }

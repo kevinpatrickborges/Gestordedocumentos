@@ -24,9 +24,20 @@ let CreateUserUseCase = class CreateUserUseCase {
     }
     async execute(dto) {
         const usuario = new usuario_1.Usuario(dto.usuario);
-        const usuarioExists = await this.userRepository.exists(usuario);
-        if (usuarioExists) {
+        const existingUser = await this.userRepository.findByUsuario(usuario);
+        if (existingUser && !existingUser.isDeleted) {
             throw new Error('Usuário já está em uso');
+        }
+        if (existingUser && existingUser.isDeleted) {
+            const role = await this.roleRepository.findByName(dto.role);
+            if (!role) {
+                throw new Error('Role não encontrada');
+            }
+            existingUser.updateNome(dto.nome);
+            existingUser.updateRole(role.id, role);
+            await existingUser.updatePassword(dto.senha);
+            existingUser.restore();
+            return await this.userRepository.update(existingUser);
         }
         const role = await this.roleRepository.findByName(dto.role);
         if (!role) {

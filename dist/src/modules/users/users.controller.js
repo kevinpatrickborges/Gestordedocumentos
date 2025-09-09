@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
+const parse_user_id_pipe_1 = require("../../common/pipes/parse-user-id.pipe");
 const swagger_1 = require("@nestjs/swagger");
 const use_cases_1 = require("./application/use-cases");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
@@ -305,7 +306,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Busca usuário por ID' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Dados do usuário' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', parse_user_id_pipe_1.ParseUserIdPipe)),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object]),
@@ -315,7 +316,7 @@ __decorate([
     (0, common_1.Get)(':id/detalhe'),
     (0, common_1.Render)('usuarios/detalhe'),
     (0, swagger_1.ApiOperation)({ summary: 'Renderiza página de detalhes do usuário' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', parse_user_id_pipe_1.ParseUserIdPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
@@ -326,7 +327,7 @@ __decorate([
     (0, roles_decorator_1.Roles)('admin'),
     (0, common_1.Render)('usuarios/editar'),
     (0, swagger_1.ApiOperation)({ summary: 'Renderiza página de edição do usuário' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', parse_user_id_pipe_1.ParseUserIdPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
@@ -339,7 +340,7 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Dados inválidos' }),
     (0, swagger_1.ApiResponse)({ status: 403, description: 'Acesso negado' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', parse_user_id_pipe_1.ParseUserIdPipe)),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, current_user_decorator_1.CurrentUser)()),
     __param(3, (0, common_1.Request)()),
@@ -357,7 +358,7 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 204, description: 'Usuário removido com sucesso' }),
     (0, swagger_1.ApiResponse)({ status: 403, description: 'Acesso negado' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', parse_user_id_pipe_1.ParseUserIdPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __param(2, (0, common_1.Request)()),
     __param(3, (0, common_1.Response)()),
@@ -373,7 +374,7 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Usuário reativado com sucesso' }),
     (0, swagger_1.ApiResponse)({ status: 403, description: 'Acesso negado' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Usuário não encontrado' }),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id', parse_user_id_pipe_1.ParseUserIdPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __param(2, (0, common_1.Request)()),
     __param(3, (0, common_1.Response)()),

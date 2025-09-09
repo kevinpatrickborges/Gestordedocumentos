@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;

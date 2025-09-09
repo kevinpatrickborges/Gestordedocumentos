@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { DesarquivamentoTypeOrmEntity } from './infrastructure/entities/desarquivamento.typeorm-entity';
+import { StatusDesarquivamentoEnum } from './domain/enums/status-desarquivamento.enum';
 
 export interface DashboardStats {
   total: number;
@@ -29,15 +30,15 @@ export class NugecidStatsService {
     const total = await this.desarquivamentoRepository.count();
 
     const pendentes = await this.desarquivamentoRepository.count({
-      where: { status: 'SOLICITADO' },
+      where: { status: StatusDesarquivamentoEnum.SOLICITADO },
     });
 
     const emAndamento = await this.desarquivamentoRepository.count({
-      where: { status: 'DESARQUIVADO' },
+      where: { status: StatusDesarquivamentoEnum.DESARQUIVADO },
     });
 
     const concluidos = await this.desarquivamentoRepository.count({
-      where: { status: 'FINALIZADO' },
+      where: { status: StatusDesarquivamentoEnum.FINALIZADO },
     });
 
     const thirtyDaysAgo = new Date();

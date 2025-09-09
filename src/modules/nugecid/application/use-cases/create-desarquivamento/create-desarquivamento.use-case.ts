@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import {
   DesarquivamentoDomain,
   DesarquivamentoId,
@@ -9,6 +9,7 @@ import {
   StatusDesarquivamento,
   IDesarquivamentoRepository,
 } from '../../../domain';
+import { TipoDesarquivamentoEnum } from '../../../domain/enums/tipo-desarquivamento.enum';
 
 import { DESARQUIVAMENTO_REPOSITORY_TOKEN } from '../../../domain/nugecid.constants';
 
@@ -67,6 +68,8 @@ export interface CreateDesarquivamentoResponse {
 
 @Injectable()
 export class CreateDesarquivamentoUseCase {
+  private readonly logger = new Logger(CreateDesarquivamentoUseCase.name);
+
   constructor(
     @Inject(DESARQUIVAMENTO_REPOSITORY_TOKEN)
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
@@ -75,15 +78,25 @@ export class CreateDesarquivamentoUseCase {
   async execute(
     request: CreateDesarquivamentoRequest,
   ): Promise<CreateDesarquivamentoResponse> {
-    // Validações de entrada
-    await this.validateRequest(request);
+    this.logger.log(`[NUGECID] Iniciando criação de desarquivamento para usuário ${request.criadoPorId}`);
+    this.logger.debug(`[NUGECID] Dados recebidos: ${JSON.stringify({
+      tipoDesarquivamento: request.tipoDesarquivamento,
+      nomeCompleto: request.nomeCompleto,
+      numeroProcesso: request.numeroProcesso,
+      urgente: request.urgente
+    })}`);
+
+    try {
+      // Validações de entrada
+      await this.validateRequest(request);
+      this.logger.log(`[NUGECID] Validações concluídas com sucesso para processo ${request.numeroProcesso}`);
 
     // Criar entidade de domínio usando as propriedades corretas
     const statusVO = StatusDesarquivamento.createSolicitado();
 
     // Criar entidade de domínio
     const desarquivamento = DesarquivamentoDomain.create({
-      tipoDesarquivamento: request.tipoDesarquivamento,
+      tipoDesarquivamento: request.tipoDesarquivamento as TipoDesarquivamentoEnum,
       status: statusVO,
       nomeCompleto: request.nomeCompleto,
       numeroNicLaudoAuto: request.numeroNicLaudoAuto,
@@ -101,12 +114,22 @@ export class CreateDesarquivamentoUseCase {
       responsavelId: request.responsavelId,
     });
 
-    // Persistir no repositório
-    const savedDesarquivamento =
-      await this.desarquivamentoRepository.create(desarquivamento);
+      // Persistir no repositório
+      this.logger.log(`[NUGECID] Salvando desarquivamento no banco de dados - Processo: ${request.numeroProcesso}`);
+      const savedDesarquivamento =
+        await this.desarquivamentoRepository.create(desarquivamento);
+      
+      this.logger.log(`[NUGECID] Desarquivamento criado com sucesso - ID: ${savedDesarquivamento.id.value}, NIC/Laudo: ${savedDesarquivamento.numeroNicLaudoAuto}`);
 
-    // Retornar resposta
-    return this.mapToResponse(savedDesarquivamento);
+      // Retornar resposta
+      const response = this.mapToResponse(savedDesarquivamento);
+      this.logger.debug(`[NUGECID] Resposta gerada: ${JSON.stringify({ id: response.id, codigoBarras: response.codigoBarras, status: response.status })}`);
+      
+      return response;
+    } catch (error) {
+      this.logger.error(`[NUGECID] Erro ao criar desarquivamento para processo ${request.numeroProcesso}: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   private async validateRequest(
@@ -144,8 +167,8 @@ export class CreateDesarquivamentoUseCase {
     }
 
     // Validar tipo de desarquivamento
-    const tiposValidos = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
-    if (!tiposValidos.includes(request.tipoDesarquivamento)) {
+    const tiposValidos = Object.values(TipoDesarquivamentoEnum);
+    if (!tiposValidos.includes(request.tipoDesarquivamento as TipoDesarquivamentoEnum)) {
       throw new Error(
         `Tipo de desarquivamento inválido. Valores aceitos: ${tiposValidos.join(', ')}`,
       );

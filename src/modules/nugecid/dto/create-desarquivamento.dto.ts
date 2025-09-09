@@ -6,19 +6,39 @@ import {
   IsDateString,
   MaxLength,
   MinLength,
+  IsEnum,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { TipoDesarquivamentoEnum } from '../domain/enums/tipo-desarquivamento.enum';
 
 export class CreateDesarquivamentoDto {
   @ApiProperty({
-    description: 'Tipo de desarquivamento (Físico ou Digital)',
+    description: 'Desarquivamento Físico/Digital ou não localizado',
     example: 'FISICO',
+    enum: ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'],
   })
-  @IsString()
+  @Transform(({ value, obj }) => {
+    let v = value ?? obj?.desarquivamentoFisicoDigital;
+    if (typeof v !== 'string') return v;
+    return v.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  })
   @IsNotEmpty({ message: 'Tipo de desarquivamento é obrigatório' })
-  @Transform(({ value }) => value?.trim())
   tipoDesarquivamento: string;
+
+  @ApiProperty({
+    description: 'Desarquivamento Físico/Digital ou não localizado (compatibilidade)',
+    example: TipoDesarquivamentoEnum.FISICO,
+    enum: TipoDesarquivamentoEnum,
+  })
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return value;
+    return value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  })
+  @IsOptional()
+  @IsEnum(TipoDesarquivamentoEnum, { message: 'Tipo de desarquivamento deve ser FISICO, DIGITAL ou NAO_LOCALIZADO' })
+  @IsNotEmpty({ message: 'Tipo de desarquivamento é obrigatório' })
+  desarquivamentoFisicoDigital?: TipoDesarquivamentoEnum;
 
   @ApiProperty({
     description: 'Nome completo do solicitante',
@@ -90,7 +110,7 @@ export class CreateDesarquivamentoDto {
 
   @ApiProperty({
     description: 'Setor que está solicitando o desarquivamento',
-    example: 'Delegacia de Plantão da Zona Sul',
+    example: 'Instituto de Identificação',
   })
   @IsString()
   @IsNotEmpty({ message: 'Setor demandante é obrigatório' })

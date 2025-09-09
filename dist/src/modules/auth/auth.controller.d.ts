@@ -50,4 +50,10 @@ export declare class AuthController {
         accessToken: string;
         expiresIn: string;
     }>;
+    getOnlineUsers(): Promise<{
+        id: number;
+        nome: string;
+        usuario: string;
+        role: string;
+    }[]>;
 }

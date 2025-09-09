@@ -91,16 +91,26 @@ exports.AppModule = AppModule = __decorate([
             }),
             serve_static_1.ServeStaticModule.forRootAsync({
                 imports: [config_1.ConfigModule],
-                useFactory: (configService) => [
-                    {
-                        rootPath: (0, path_1.join)(__dirname, '..', 'public'),
-                        serveRoot: '/public',
-                    },
-                    {
-                        rootPath: configService.get('UPLOAD_PATH', './uploads'),
-                        serveRoot: '/uploads',
-                    },
-                ],
+                useFactory: (configService) => {
+                    const serveStaticOptions = [
+                        {
+                            rootPath: (0, path_1.join)(__dirname, '..', 'public'),
+                            serveRoot: '/public',
+                        },
+                        {
+                            rootPath: configService.get('UPLOAD_PATH', './uploads'),
+                            serveRoot: '/uploads',
+                        },
+                    ];
+                    if (configService.get('app.environment') === 'production') {
+                        serveStaticOptions.push({
+                            rootPath: (0, path_1.join)(__dirname, '..', 'frontend', 'dist'),
+                            serveRoot: '/',
+                            exclude: ['/api*'],
+                        });
+                    }
+                    return serveStaticOptions;
+                },
                 inject: [config_1.ConfigService],
             }),
             platform_express_1.MulterModule.registerAsync({

@@ -1,11 +1,10 @@
 import { User } from '../../users/entities/user.entity';
-export { StatusDesarquivamento, StatusDesarquivamentoEnum } from '../domain/value-objects/status-desarquivamento.vo';
-export { TipoSolicitacao, TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
-export { TipoDesarquivamento, TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
+import { StatusDesarquivamentoEnum } from '../domain/enums/status-desarquivamento.enum';
+import { TipoDesarquivamentoEnum } from '../domain/enums/tipo-desarquivamento.enum';
 export declare class Desarquivamento {
     id: number;
-    tipoDesarquivamento: string;
-    status: string;
+    desarquivamentoFisicoDigital: TipoDesarquivamentoEnum;
+    status: StatusDesarquivamentoEnum;
     nomeCompleto: string;
     numeroNicLaudoAuto: string;
     numeroProcesso: string;
@@ -36,6 +35,6 @@ export declare class Desarquivamento {
     getStatusDisplay(): string;
     getStatusColor(): string;
     getStatusLabel(): string;
-    canTransitionTo(newStatus: string): boolean;
+    canTransitionTo(newStatus: StatusDesarquivamentoEnum): boolean;
     getPriority(): 'ALTA' | 'MEDIA' | 'BAIXA';
 }

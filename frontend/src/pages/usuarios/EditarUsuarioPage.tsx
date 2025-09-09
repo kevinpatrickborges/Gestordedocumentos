@@ -4,14 +4,42 @@ import { ArrowLeft, Edit, Loader2 } from 'lucide-react'
 import { useUser, useUpdateUser, useUserPermissions } from '@/hooks/useUsers'
 import { UpdateUserDto } from '@/types'
 import UsuarioForm from '@/components/usuarios/UsuarioForm'
+import { isValidUserIdFormat, parseNumericId } from '@/utils/validation'
 
 const EditarUsuarioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const userId = parseInt(id || '0', 10)
+  
+  // Validação do ID antes de fazer a conversão
+  const userId = parseNumericId(id);
+  
+  // Se o ID não for válido, mostrar erro
+  if (id && !isValidUserIdFormat(id)) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Edit className="h-16 w-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Erro: ID de Usuário Inválido
+          </h2>
+          <p className="text-gray-600 mb-4">
+            O ID fornecido "{id}" não é válido para um usuário. 
+            IDs de usuários devem ser números inteiros.
+          </p>
+          <Link
+            to="/usuarios"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar para Usuários
+          </Link>
+        </div>
+      </div>
+    )
+  }
   
   const { canManageUsers } = useUserPermissions()
-  const { data: userResponse, isLoading: isLoadingUser, error } = useUser(userId)
+  const { data: userResponse, isLoading: isLoadingUser, error } = useUser(userId!)
   const updateUserMutation = useUpdateUser()
 
   // Redirecionar se não tiver permissão

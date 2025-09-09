@@ -1,470 +1,748 @@
-# SGC-ITEP - Documentação Técnica Completa
+# Documentação Técnica: Sistema de Gestão de Conteúdo - ITEP (SGC-ITEP)
 
-**Autor:** Kevin Patrick Borges\
-**Versão:** 1.0.0\
-**Data:** Janeiro 2025
+**Versão:** 1.0\
+**Data:** Jun 2025\
+**Status:** Em Produção\
+**Autor:** Kevin Patrick Borges
 
-## 1. Visão Geral do Sistema
+***
 
-O SGC-ITEP v1.0 (Sistema de Gestão de Conteúdo - ITEP) é um sistema moderno de gestão documental desenvolvido para o Instituto Técnico-Científico de Perícia do Rio Grande do Norte (ITEP/RN). O sistema foi projetado com arquitetura moderna, implementando princípios de Clean Architecture e Domain-Driven Design (DDD).
-
-### 1.1 Propósito
-
-* **Gestão de Desarquivamentos (NUGECID)**: Controle completo do processo de desarquivamento de documentos periciais
-
-* **Controle de Acesso Baseado em Funções (RBAC)**: Sistema robusto de autenticação e autorização
-
-* **Auditoria Completa**: Rastreamento de todas as ações realizadas no sistema
-
-* **Interface Web Responsiva**: Frontend moderno desenvolvido em React
-
-* **API RESTful Documentada**: Backend escalável com documentação Swagger
-
-### 1.2 Características Principais
-
-* Arquitetura Hexagonal no módulo Nugecid
-
-* Sistema de autenticação JWT
-
-* Controle de acesso baseado em roles
-
-* Auditoria completa de ações
-
-* Upload e processamento de arquivos Excel
-
-* Geração de PDFs
-
-* Interface responsiva com Tailwind CSS
-
-## 2. Arquitetura Geral
-
-### 2.1 Stack Tecnológico
-
-#### Backend
-
-* **Framework**: NestJS 10.x
-
-* **Linguagem**: TypeScript
-
-* **Banco de Dados**: SQLite (desenvolvimento) / PostgreSQL (produção)
-
-* **ORM**: TypeORM
-
-* **Autenticação**: JWT + Passport
-
-* **Documentação**: Swagger/OpenAPI
-
-#### Frontend
-
-* **Framework**: React 18.x
-
-* **Linguagem**: TypeScript
-
-* **Build Tool**: Vite
-
-* **Estilização**: Tailwind CSS
-
-* **Componentes**: Radix UI
-
-* **Roteamento**: React Router
-
-* **Estado**: Context API
-
-* **Notificações**: Sonner
-
-#### Infraestrutura
-
-* **Cache**: Redis (opcional)
-
-* **Rate Limiting**: Throttler
-
-* **File Upload**: Multer
-
-* **Compressão**: Compression
-
-* **Segurança**: Helmet
-
-### 2.2 Diagrama de Arquitetura
+## 1. Arquitetura do Sistema
 
 ```mermaid
 graph TB
-    subgraph "Frontend Layer"
-        A[React App]
-        B[Tailwind CSS]
-        C[React Router]
+    subgraph "Cliente (Browser)"
+        A[React 18 + TypeScript]
+        B[Tailwind CSS + Radix UI]
+        C[React Router + Axios]
     end
     
-    subgraph "API Gateway"
+    subgraph "Servidor de Aplicação"
         D[NestJS Application]
-        E[JWT Guards]
-        F[Rate Limiting]
+        E[JWT Authentication + Passport]
+        F[Guards + Interceptors]
+        G[Rate Limiting + Helmet]
     end
     
-    subgraph "Business Layer"
-        G[Auth Module]
-        H[Users Module]
-        I[Nugecid Module - Hexagonal]
-        J[Audit Module]
-        K[Statistics Module]
+    subgraph "Camada de Negócio"
+        H[Auth Module]
+        I[Users Module]
+        J[Nugecid Module - Hexagonal]
+        K[Audit Module]
+        L[Statistics Module]
+        M[Registers Module]
     end
     
-    subgraph "Data Layer"
-        L[TypeORM]
-        M[SQLite/PostgreSQL]
-        N[File System]
+    subgraph "Camada de Dados"
+        N[TypeORM]
+        O[SQLite/PostgreSQL]
+        P[File System]
     end
     
-    subgraph "External Services"
-        O[Redis Cache]
-        P[Email Service]
+    subgraph "Serviços Externos"
+        Q[SEIRN API - Futuro]
+        R[Email Service - Futuro]
     end
     
     A --> D
     D --> E
     D --> F
-    E --> G
+    D --> G
     E --> H
     E --> I
     E --> J
     E --> K
-    G --> L
-    H --> L
-    I --> L
-    J --> L
-    K --> L
-    L --> M
-    D --> N
-    D --> O
+    E --> L
+    E --> M
+    H --> N
+    I --> N
+    J --> N
+    K --> N
+    L --> N
+    M --> N
+    N --> O
     D --> P
+    D -.-> Q
+    D -.-> R
 ```
 
-## 3. Estrutura de Módulos
-
-### 3.1 Módulo de Autenticação (Auth)
-
-**Localização**: `src/modules/auth/`
-
-**Responsabilidades**:
-
-* Autenticação de usuários (login/logout)
-
-* Geração e validação de tokens JWT
-
-* Estratégias de autenticação (Local, JWT)
-
-* Guards de proteção de rotas
-
-**Componentes Principais**:
-
-* `AuthController`: Endpoints de autenticação
-
-* `AuthService`: Lógica de negócio de autenticação
-
-* `LocalStrategy`: Estratégia de autenticação local
-
-* `JwtStrategy`: Estratégia de validação JWT
-
-* `JwtAuthGuard`: Guard global de autenticação
-
-* `RolesGuard`: Guard de autorização por roles
-
-### 3.2 Módulo de Usuários (Users)
-
-**Localização**: `src/modules/users/`
-
-**Responsabilidades**:
-
-* Gestão de usuários do sistema
-
-* Controle de roles e permissões
-
-* Operações CRUD de usuários
-
-* Estatísticas de usuários
-
-**Arquitetura**: Implementa parcialmente Clean Architecture com:
-
-* **Application Layer**: Use Cases
-
-* **Domain Layer**: Entities e Repository Interfaces
-
-* **Infrastructure Layer**: Repository Implementations
-
-**Use Cases Implementados**:
-
-* `CreateUserUseCase`
-
-* `UpdateUserUseCase`
-
-* `DeleteUserUseCase`
-
-* `GetUserByIdUseCase`
-
-* `GetUsersUseCase`
-
-* `RestoreUserUseCase`
-
-* `GetUserStatisticsUseCase`
-
-* `GetRolesUseCase`
-
-### 3.3 Módulo Nugecid (Arquitetura Hexagonal)
-
-**Localização**: `src/modules/nugecid/`
-
-**Responsabilidades**:
-
-* Gestão completa de desarquivamentos
-
-* Importação de dados via Excel
-
-* Geração de relatórios e PDFs
-
-* Dashboard com estatísticas
-
-**Arquitetura Hexagonal Completa**:
-
-#### Domain Layer (`domain/`)
-
-* **Entities**: `DesarquivamentoDomain`
-
-* **Value Objects**:
-
-  * `DesarquivamentoId`
-
-  * `CodigoBarras`
-
-  * `NumeroRegistro`
-
-  * `StatusDesarquivamento`
-
-  * `TipoSolicitacao`
-
-* **Repository Interface**: `IDesarquivamentoRepository`
-
-#### Application Layer (`application/`)
-
-* **Use Cases**:
-
-  * `CreateDesarquivamentoUseCase`
-
-  * `FindAllDesarquivamentosUseCase`
-
-  * `FindDesarquivamentoByIdUseCase`
-
-  * `UpdateDesarquivamentoUseCase`
-
-  * `DeleteDesarquivamentoUseCase`
-
-  * `GenerateTermoEntregaUseCase`
-
-  * `GetDashboardStatsUseCase`
-
-  * `ImportDesarquivamentoUseCase`
-
-#### Infrastructure Layer (`infrastructure/`)
-
-* **Entities**: `DesarquivamentoTypeOrmEntity`
-
-* **Repositories**: `DesarquivamentoTypeOrmRepository`
-
-* **Mappers**: `DesarquivamentoMapper`
-
-### 3.4 Módulo de Auditoria (Audit)
-
-**Localização**: `src/modules/audit/`
-
-**Responsabilidades**:
-
-* Registro de todas as ações do sistema
-
-* Rastreamento de alterações
-
-* Logs de segurança
-
-### 3.5 Módulo de Estatísticas (Estatisticas)
-
-**Localização**: `src/modules/estatisticas/`
-
-**Responsabilidades**:
-
-* Geração de relatórios estatísticos
-
-* Dashboards analíticos
-
-* Métricas de performance
-
-### 3.6 Módulo de Registros (Registros)
-
-**Localização**: `src/modules/registros/`
-
-**Responsabilidades**:
-
-* Gestão de registros gerais
-
-* Operações CRUD básicas
-
-### 3.7 Módulo de Seeding (Seeding)
-
-**Localização**: `src/modules/seeding/`
-
-**Responsabilidades**:
-
-* Inicialização do banco de dados
-
-* Criação de dados padrão
-
-* Usuário administrador inicial
-
-## 4. Fluxos de Autenticação e Autorização
-
-### 4.1 Fluxo de Autenticação
+## 2. Stack Tecnológico
+
+* **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS + Radix UI + ShadcnUI
+
+* **Backend:** NestJS + TypeScript + TypeORM + Passport JWT
+
+* **Banco de Dados:** PostgreSQL (Docker)
+
+* **Autenticação:** Session-based with NestJS
+
+* **Documentação:** Swagger/OpenAPI
+
+* **Testes:** Jest + Supertest
+
+* **Build:** Vite (frontend) + TSC (backend)
+
+* **Deploy:** Vercel (Frontend) + Docker (Backend + Database)
+
+## 3. Definições de Rotas
+
+### 3.1 Rotas do Frontend
+
+| Rota                                 | Componente                  | Propósito                                                          | Proteção                |
+| ------------------------------------ | --------------------------- | ------------------------------------------------------------------ | ----------------------- |
+| `/login`                             | LoginPage                   | Autenticação de usuários                                           | Público                 |
+| `/`                                  | Dashboard                   | Dashboard principal com total de solicitações e alertas de atenção | Autenticado             |
+| `/dashboard`                         | Dashboard                   | Dashboard principal                                                | Autenticado             |
+| `/nugecid`                           | NugecidListPage             | Lista principal do módulo Nugecid                                  | Autenticado             |
+| `/nugecid/desarquivamentos`          | ListaDesarquivamentosPage   | Lista de solicitações de desarquivamento                           | Autenticado             |
+| `/nugecid/desarquivamentos/create`   | NovoDesarquivamentoPage     | Formulário para criar nova solicitação                             | Autenticado             |
+| `/nugecid/desarquivamentos/:id`      | DetalhesDesarquivamentoPage | Detalhes de uma solicitação específica                             | Autenticado             |
+| `/nugecid/desarquivamentos/:id/edit` | EditarDesarquivamentoPage   | Edição de solicitação existente                                    | Autenticado + Permissão |
+| `/usuarios`                          | UsuariosPage                | Gestão de usuários                                                 | Admin/Coordenador       |
+| `/usuarios/create`                   | CreateUserPage              | Criar novo usuário                                                 | Admin/Coordenador       |
+| `/usuarios/:id/edit`                 | EditUserPage                | Editar usuário existente                                           | Admin/Coordenador       |
+| `/configuracoes`                     | ConfiguracoesPage           | Configurações gerais do sistema                                    | Autenticado             |
+
+### 3.2 Estrutura de Componentes React
+
+```
+src/
+├── components/
+│   ├── ui/                    # Componentes base (Radix UI)
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   ├── Modal.tsx
+│   │   └── Table.tsx
+│   ├── layout/
+│   │   ├── Layout.tsx         # Layout principal
+│   │   ├── Sidebar.tsx        # Navegação lateral
+│   │   └── Header.tsx         # Cabeçalho
+│   └── forms/
+│       ├── DesarquivamentoForm.tsx
+│       └── UserForm.tsx
+├── pages/
+│   ├── auth/
+│   │   └── LoginPage.tsx
+│   ├── dashboard/
+│   │   └── Dashboard.tsx
+│   ├── desarquivamentos/
+│   │   ├── ListaDesarquivamentosPage.tsx
+│   │   ├── NovoDesarquivamentoPage.tsx
+│   │   ├── DetalhesDesarquivamentoPage.tsx
+│   │   └── EditarDesarquivamentoPage.tsx
+│   ├── nugecid/
+│   │   ├── NugecidListPage.tsx
+│   │   ├── NugecidCreatePage.tsx
+│   │   ├── NugecidEditPage.tsx
+│   │   └── NugecidDetailPage.tsx
+│   └── usuarios/
+│       └── UsuariosPage.tsx
+├── contexts/
+│   ├── AuthContext.tsx        # Contexto de autenticação
+│   └── ThemeContext.tsx       # Contexto de tema
+├── services/
+│   ├── api.ts                 # Cliente Axios configurado
+│   ├── auth.service.ts        # Serviços de autenticação
+│   └── nugecid.service.ts     # Serviços NUGECID
+└── types/
+    ├── auth.types.ts
+    ├── nugecid.types.ts
+    └── common.types.ts
+```
+
+## 4. APIs e Endpoints
+
+### 4.1 Core API
+
+**Autenticação**
+
+```
+POST /api/auth/login
+```
+
+Request:
+
+| Param Name | Param Type | isRequired | Description      |
+| ---------- | ---------- | ---------- | ---------------- |
+| email      | string     | true       | Email do usuário |
+| password   | string     | true       | Senha do usuário |
+
+Response:
+
+| Param Name | Param Type | Description                  |
+| ---------- | ---------- | ---------------------------- |
+| success    | boolean    | Status da autenticação       |
+| user       | User       | Dados do usuário autenticado |
+| token      | string     | Token de sessão              |
+
+**Nugecid - Desarquivamentos**
+
+```
+GET /api/nugecid/desarquivamentos
+POST /api/nugecid/desarquivamentos
+GET /api/nugecid/desarquivamentos/:id
+PUT /api/nugecid/desarquivamentos/:id
+DELETE /api/nugecid/desarquivamentos/:id
+GET /api/nugecid/desarquivamentos/:id/pdf
+```
+
+**Usuários**
+
+```
+GET /api/users
+POST /api/users
+GET /api/users/:id
+PUT /api/users/:id
+DELETE /api/users/:id
+```
+
+**Dashboard e Estatísticas**
+
+```
+GET /api/stats/dashboard
+GET /api/stats/alertas
+```
+
+### 4.2 Módulo NUGECID (Desarquivamentos)
+
+#### Listar Desarquivamentos
+
+```
+GET /nugecid?page=1&limit=10&search=termo&status=ativo
+```
+
+**Query Parameters:**
+
+| Parâmetro    | Tipo   | Descrição                     |
+| ------------ | ------ | ----------------------------- |
+| page         | number | Página atual (padrão: 1)      |
+| limit        | number | Itens por página (padrão: 10) |
+| search       | string | Termo de busca                |
+| status       | string | Filtro por status             |
+| solicitante  | string | Filtro por solicitante        |
+| data\_inicio | string | Data inicial (YYYY-MM-DD)     |
+| data\_fim    | string | Data final (YYYY-MM-DD)       |
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "codigo_barras": "DES20250101001",
+      "tipo_solicitacao": "Laudo",
+      "status": "Em Andamento",
+      "nome_solicitante": "João Silva",
+      "numero_registro": "2025/001",
+      "created_at": "2025-01-01T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 150,
+    "totalPages": 15
+  }
+}
+```
+
+#### Criar Desarquivamento
+
+```
+POST /nugecid
+```
+
+**Request:**
+
+```json
+{
+  "tipo_solicitacao": "Laudo",
+  "nome_solicitante": "João Silva",
+  "nome_vitima": "Maria Santos",
+  "numero_registro": "2025/001",
+  "tipo_documento": "Laudo Pericial",
+  "data_fato": "2024-12-15",
+  "finalidade": "Processo judicial",
+  "urgente": false,
+  "observacoes": "Solicitação urgente"
+}
+```
+
+#### Gerar PDF do Termo
+
+```
+GET /nugecid/:id/pdf
+```
+
+**Response:** Arquivo PDF com o termo de desarquivamento preenchido
+
+#### Importar Planilha Excel
+
+```
+POST /nugecid/import
+Content-Type: multipart/form-data
+```
+
+**Request:**
+
+* `file`: Arquivo Excel (.xlsx)
+
+### 4.3 Módulo de Usuários
+
+#### Listar Usuários
+
+```
+GET /users?page=1&limit=10&ativo=true
+```
+
+#### Criar Usuário
+
+```
+POST /users
+```
+
+**Request:**
+
+```json
+{
+  "nome": "Novo Usuário",
+  "usuario": "novo.usuario",
+  "senha": "senha123",
+  "roles": ["operador"]
+}
+```
+
+### 4.4 Módulo de Estatísticas
+
+#### Dashboard Principal
+
+```
+GET /nugecid/dashboard
+```
+
+**Response:**
+
+```json
+{
+  "total_registros": 1250,
+  "registros_mes": 85,
+  "pendentes": 23,
+  "finalizados": 1180,
+  "grafico_mensal": [
+    {"mes": "Jan", "total": 95},
+    {"mes": "Fev", "total": 87}
+  ],
+  "top_solicitantes": [
+    {"nome": "João Silva", "total": 15}
+  ]
+}
+```
+
+## 5. Arquitetura do Servidor
+
+### 5.1 Estrutura de Módulos NestJS
 
 ```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant A as AuthController
-    participant AS as AuthService
-    participant DB as Database
+graph TD
+    A[App Module] --> B[Auth Module]
+    A --> C[Users Module]
+    A --> D[Nugecid Module]
+    A --> E[Audit Module]
+    A --> F[Statistics Module]
+    A --> G[Registers Module]
     
-    U->>F: Login (email, password)
-    F->>A: POST /auth/login
-    A->>AS: validateUser(email, password)
-    AS->>DB: findUser(email)
-    DB-->>AS: User data
-    AS->>AS: validatePassword(password)
-    AS-->>A: User validated
-    A->>AS: login(user)
-    AS->>AS: generateJWT(user)
-    AS-->>A: JWT token
-    A-->>F: { access_token, user }
-    F->>F: Store token
-    F-->>U: Redirect to dashboard
+    B --> B1[Auth Controller]
+    B --> B2[Auth Service]
+    B --> B3[JWT Strategy]
+    B --> B4[Local Strategy]
+    
+    C --> C1[Users Controller]
+    C --> C2[Users Service]
+    C --> C3[User Entity]
+    C --> C4[Role Entity]
+    
+    D --> D1[Nugecid Controller]
+    D --> D2[Nugecid Service]
+    D --> D3[Create Use Case]
+    D --> D4[Update Use Case]
+    D --> D5[Import Service]
+    D --> D6[Stats Service]
+    D --> D7[Desarquivamento Entity]
 ```
 
-### 4.2 Sistema de Roles
+### 5.2 Camadas da Aplicação
 
-**Roles Disponíveis**:
-
-* `ADMIN`: Acesso total ao sistema
-
-* `COORDENADOR`: Gestão de desarquivamentos e usuários
-
-* `OPERADOR`: Operações básicas de consulta e atualização
-
-* `VISUALIZADOR`: Apenas visualização de dados
-
-**Hierarquia de Permissões**:
-
-```
-ADMIN > COORDENADOR > OPERADOR > VISUALIZADOR
+```mermaid
+graph TD
+    A[Controllers] --> B[Services/Use Cases]
+    B --> C[Repositories]
+    C --> D[Entities/Models]
+    D --> E[Database]
+    
+    F[Guards] --> A
+    G[Interceptors] --> A
+    H[Pipes] --> A
+    I[Filters] --> A
 ```
 
-### 4.3 Guards Implementados
-
-1. **JwtAuthGuard**: Validação global de tokens JWT
-2. **RolesGuard**: Controle de acesso baseado em roles
-3. **LocalAuthGuard**: Autenticação local para login
-
-## 5. APIs e Endpoints
-
-### 5.1 Autenticação
+### 5.3 Estrutura de Pastas Backend
 
 ```
-POST /auth/login          # Login do usuário
-POST /auth/logout         # Logout do usuário
-GET  /auth/profile        # Perfil do usuário logado
-POST /auth/refresh        # Renovar token
+src/
+├── auth/
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── auth.module.ts
+│   ├── guards/
+│   │   ├── jwt-auth.guard.ts
+│   │   └── roles.guard.ts
+│   ├── strategies/
+│   │   ├── jwt.strategy.ts
+│   │   └── local.strategy.ts
+│   └── dto/
+│       └── login.dto.ts
+├── users/
+│   ├── users.controller.ts
+│   ├── users.service.ts
+│   ├── users.module.ts
+│   ├── entities/
+│   │   ├── user.entity.ts
+│   │   └── role.entity.ts
+│   └── dto/
+│       ├── create-user.dto.ts
+│       └── update-user.dto.ts
+├── nugecid/
+│   ├── nugecid.controller.ts
+│   ├── nugecid.service.ts
+│   ├── nugecid.module.ts
+│   ├── entities/
+│   │   └── desarquivamento.entity.ts
+│   ├── dto/
+│   │   ├── create-desarquivamento.dto.ts
+│   │   └── update-desarquivamento.dto.ts
+│   ├── use-cases/
+│   │   ├── create-desarquivamento.use-case.ts
+│   │   ├── update-desarquivamento.use-case.ts
+│   │   └── delete-desarquivamento.use-case.ts
+│   └── services/
+│       ├── nugecid-import.service.ts
+│       └── nugecid-stats.service.ts
+├── audit/
+│   ├── audit.service.ts
+│   ├── audit.module.ts
+│   ├── entities/
+│   │   └── auditoria.entity.ts
+│   └── interceptors/
+│       └── audit.interceptor.ts
+├── common/
+│   ├── decorators/
+│   ├── filters/
+│   ├── guards/
+│   ├── interceptors/
+│   └── pipes/
+└── config/
+    ├── database.config.ts
+    ├── jwt.config.ts
+    └── app.config.ts
 ```
 
-### 5.2 Usuários
+## 6. Modelo de Dados
 
+### 6.1 Diagrama Entidade-Relacionamento
+
+```mermaid
+erDiagram
+    USERS ||--o{ USER_ROLES : has
+    ROLES ||--o{ USER_ROLES : assigned_to
+    USERS ||--o{ DESARQUIVAMENTOS : creates
+    USERS ||--o{ DESARQUIVAMENTOS : responsible_for
+    USERS ||--o{ AUDITORIA : performs
+    DESARQUIVAMENTOS ||--o{ AUDITORIA : audited
+    USERS ||--o{ REGISTERS : creates
+    
+    USERS {
+        int id PK
+        string nome
+        string usuario UK
+        string senha
+        boolean ativo
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+    
+    ROLES {
+        int id PK
+        string name UK
+        string description
+        datetime created_at
+    }
+    
+    USER_ROLES {
+        int user_id FK
+        int role_id FK
+        datetime created_at
+    }
+    
+    DESARQUIVAMENTOS {
+        int id PK
+        string tipoDesarquivamento
+        string status
+        string nomecompleto
+        string numeroNicLaudoAuto
+        string numeroProcesso
+        string tipoDocumento
+        date datasolicitacao
+        datetime datadesarquivamentoSAG
+        datetime datadevolucaosetor
+        string setorDemandante
+        string servidorResponsavel
+        text finalidadeDesarquivamento
+        boolean solicitacaoProrrogacao
+        boolean urgente
+        int userId FK
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+    
+    AUDITORIA {
+        int id PK
+        int user_id FK
+        string action
+        string entity
+        int entity_id
+        text old_values
+        text new_values
+        string ip_address
+        text user_agent
+        datetime created_at
+    }
+    
+    REGISTERS {
+        int id PK
+        string type
+        text data
+        int created_by_id FK
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
 ```
-GET    /users             # Listar usuários
-POST   /users             # Criar usuário
-GET    /users/:id         # Buscar usuário por ID
-PUT    /users/:id         # Atualizar usuário
-DELETE /users/:id         # Excluir usuário
-POST   /users/:id/restore # Restaurar usuário
-GET    /users/statistics  # Estatísticas de usuários
-GET    /users/roles       # Listar roles
+
+### 6.2 Definições de Entidades TypeORM
+
+#### Entidade User
+
+```typescript
+@Entity('usuarios')
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 255 })
+  nome: string;
+
+  @Column({ length: 255, unique: true })
+  usuario: string;
+
+  @Column({ length: 255 })
+  senha: string;
+
+  @Column({ default: true })
+  ativo: boolean;
+
+  @ManyToMany(() => Role, role => role.users)
+  @JoinTable({ name: 'user_roles' })
+  roles: Role[];
+
+  @OneToMany(() => Desarquivamento, desarquivamento => desarquivamento.user)
+  desarquivamentosCriados: Desarquivamento[];
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @DeleteDateColumn()
+  deleted_at: Date;
+}
 ```
 
-### 5.3 Nugecid (Desarquivamentos)
+#### Entidade Desarquivamento
 
+```typescript
+@Entity('desarquivamentos')
+export class Desarquivamento {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ length: 100 })
+  tipoDesarquivamento: string;
+
+  @Column({ length: 50, default: 'solicitado' })
+  status: string;
+
+  @Column({ length: 200 })
+  nomecompleto: string;
+
+  @Column({ length: 100, nullable: true })
+  numeroNicLaudoAuto: string;
+
+  @Column({ length: 100 })
+  numeroProcesso: string;
+
+  @Column({ length: 100 })
+  tipoDocumento: string;
+
+  @Column({ type: 'date' })
+  datasolicitacao: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  datadesarquivamentoSAG: Date;
+
+  @Column({ type: 'datetime', nullable: true })
+  datadevolucaosetor: Date;
+
+  @Column({ length: 100 })
+  setorDemandante: string;
+
+  @Column({ length: 200 })
+  servidorResponsavel: string;
+
+  @Column({ type: 'text' })
+  finalidadeDesarquivamento: string;
+
+  @Column({ default: false })
+  solicitacaoProrrogacao: boolean;
+
+  @Column({ default: false })
+  urgente: boolean;
+
+  @ManyToOne(() => User, user => user.desarquivamentosCriados)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @DeleteDateColumn()
+  deleted_at: Date;
+}
 ```
-GET    /nugecid                    # Listar desarquivamentos
-POST   /nugecid                    # Criar desarquivamento
-GET    /nugecid/:id                # Buscar por ID
-PUT    /nugecid/:id                # Atualizar desarquivamento
-DELETE /nugecid/:id                # Excluir desarquivamento
-POST   /nugecid/import             # Importar via Excel
-GET    /nugecid/:id/pdf            # Gerar PDF
-GET    /nugecid/dashboard          # Estatísticas dashboard
-GET    /nugecid/termo-entrega/:id  # Gerar termo de entrega
-```
 
-### 5.4 Auditoria
+### 6.2 Data Definition Language
 
-```
-GET /audit                # Listar logs de auditoria
-GET /audit/:id            # Buscar log específico
-GET /audit/user/:userId   # Logs de um usuário
-```
-
-### 5.5 Estatísticas
-
-```
-GET /estatisticas/dashboard    # Dashboard geral
-GET /estatisticas/relatorios   # Relatórios estatísticos
-```
-
-## 6. Estrutura do Banco de Dados
-
-### 6.1 Entidades Principais
-
-#### Users
+**Tabela de Usuários (users)**
 
 ```sql
 CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_users_usuario ON users(usuario);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_ativo ON users(ativo);
+```
+
+**Tabela de Roles (roles)**
+
+```sql
+CREATE TABLE roles (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(50) UNIQUE NOT NULL,
+    descricao TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+INSERT INTO roles (nome, descricao) VALUES 
+('admin', 'Administrador do sistema'),
+('coordenador', 'Coordenador de setor'),
+('operador', 'Operador padrão');
+```
+
+**Tabela de Desarquivamentos (desarquivamentos)**
+
+```sql
+CREATE TABLE desarquivamentos (
+    id SERIAL PRIMARY KEY,
+    "tipoDesarquivamento" VARCHAR(100) NOT NULL,
+    status VARCHAR(50) DEFAULT 'solicitado',
+    nomecompleto VARCHAR(200) NOT NULL,
+    "numeroNicLaudoAuto" VARCHAR(100),
+    "numeroProcesso" VARCHAR(100) NOT NULL,
+    "tipoDocumento" VARCHAR(100) NOT NULL,
+    datasolicitacao DATE NOT NULL,
+    "datadesarquivamentoSAG" TIMESTAMP WITH TIME ZONE,
+    datadevolucaosetor TIMESTAMP WITH TIME ZONE,
+    "setorDemandante" VARCHAR(100) NOT NULL,
+    "servidorResponsavel" VARCHAR(200) NOT NULL,
+    "finalidadeDesarquivamento" TEXT NOT NULL,
+    "solicitacaoProrrogacao" BOOLEAN DEFAULT false,
+    urgente BOOLEAN DEFAULT false,
+    "userId" INTEGER REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_desarquivamentos_status ON desarquivamentos(status);
+CREATE INDEX idx_desarquivamentos_tipo ON desarquivamentos("tipoDesarquivamento");
+CREATE INDEX idx_desarquivamentos_data ON desarquivamentos(created_at DESC);
+CREATE INDEX idx_desarquivamentos_urgente ON desarquivamentos(urgente);
+CREATE INDEX idx_desarquivamentos_setor ON desarquivamentos("setorDemandante");
+```
+
+### 6.3 Scripts de Migração
+
+#### Criação das Tabelas Principais
+
+```sql
+-- Migration: CreateUsersTable
+CREATE TABLE usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    active BOOLEAN DEFAULT true,
+    nome VARCHAR(255) NOT NULL,
+    usuario VARCHAR(255) UNIQUE NOT NULL,
+    senha VARCHAR(255) NOT NULL,
+    ativo BOOLEAN DEFAULT true,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL
 );
-```
 
-#### Roles
-
-```sql
+-- Migration: CreateRolesTable
 CREATE TABLE roles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-```
 
-#### User\_Roles (Many-to-Many)
-
-```sql
+-- Migration: CreateUserRolesTable
 CREATE TABLE user_roles (
     user_id INTEGER,
     role_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (role_id) REFERENCES roles(id)
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
 );
-```
 
-#### Desarquivamentos
-
-```sql
+-- Migration: CreateDesarquivamentosTable
 CREATE TABLE desarquivamentos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     codigo_barras VARCHAR(255) UNIQUE NOT NULL,
@@ -487,200 +765,79 @@ CREATE TABLE desarquivamentos (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL,
-    FOREIGN KEY (criado_por_id) REFERENCES users(id),
-    FOREIGN KEY (responsavel_id) REFERENCES users(id)
+    FOREIGN KEY (criado_por_id) REFERENCES usuarios(id),
+    FOREIGN KEY (responsavel_id) REFERENCES usuarios(id)
 );
+
+-- Índices para Performance
+CREATE INDEX idx_desarquivamentos_codigo_barras ON desarquivamentos(codigo_barras);
+CREATE INDEX idx_desarquivamentos_status ON desarquivamentos(status);
+CREATE INDEX idx_desarquivamentos_solicitante ON desarquivamentos(nome_solicitante);
+CREATE INDEX idx_desarquivamentos_created_at ON desarquivamentos(created_at DESC);
+CREATE INDEX idx_desarquivamentos_criado_por ON desarquivamentos(criado_por_id);
+
+-- Dados Iniciais
+INSERT INTO roles (name, description) VALUES 
+('admin', 'Administrador do sistema'),
+('coordenador', 'Coordenador de equipe'),
+('operador', 'Operador básico'),
+('visualizador', 'Apenas visualização');
+
+-- Usuário Administrador Padrão
+INSERT INTO usuarios (nome, usuario, senha, ativo) VALUES 
+('Administrador', 'admin', '$2b$12$hash_da_senha_123456', true);
+
+INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
 ```
 
-#### Auditoria
+## 7. Configurações e Deployment
 
-```sql
-CREATE TABLE auditoria (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    action VARCHAR(100) NOT NULL,
-    entity VARCHAR(100) NOT NULL,
-    entity_id INTEGER,
-    old_values TEXT,
-    new_values TEXT,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-
-### 6.2 Relacionamentos
-
-```mermaid
-erDiagram
-    USERS ||--o{ USER_ROLES : has
-    ROLES ||--o{ USER_ROLES : assigned_to
-    USERS ||--o{ DESARQUIVAMENTOS : creates
-    USERS ||--o{ DESARQUIVAMENTOS : responsible_for
-    USERS ||--o{ AUDITORIA : performs
-    DESARQUIVAMENTOS ||--o{ AUDITORIA : audited
-```
-
-## 7. Frontend React
-
-### 7.1 Estrutura de Componentes
-
-```
-frontend/src/
-├── components/
-│   ├── auth/
-│   │   ├── ProtectedRoute.tsx
-│   │   └── LoginForm.tsx
-│   ├── layout/
-│   │   ├── Layout.tsx
-│   │   ├── Header.tsx
-│   │   ├── Sidebar.tsx
-│   │   └── Footer.tsx
-│   ├── ui/
-│   │   ├── Button.tsx
-│   │   ├── Input.tsx
-│   │   ├── Modal.tsx
-│   │   └── Table.tsx
-│   └── nugecid/
-│       ├── DesarquivamentoForm.tsx
-│       ├── DesarquivamentoList.tsx
-│       └── DesarquivamentoCard.tsx
-├── pages/
-│   ├── LoginPage.tsx
-│   ├── DashboardPage.tsx
-│   ├── DesarquivamentosPage.tsx
-│   ├── NovoDesarquivamentoPage.tsx
-│   └── nugecid/
-│       ├── NugecidListPage.tsx
-│       ├── NugecidCreatePage.tsx
-│       ├── NugecidEditPage.tsx
-│       └── NugecidDetailPage.tsx
-├── contexts/
-│   └── AuthContext.tsx
-├── hooks/
-│   ├── useAuth.ts
-│   ├── useApi.ts
-│   └── useLocalStorage.ts
-├── services/
-│   ├── api.ts
-│   ├── auth.service.ts
-│   └── nugecid.service.ts
-├── types/
-│   ├── auth.types.ts
-│   ├── user.types.ts
-│   └── nugecid.types.ts
-└── utils/
-    ├── formatters.ts
-    ├── validators.ts
-    └── constants.ts
-```
-
-### 7.2 Roteamento
-
-O sistema utiliza React Router com proteção de rotas baseada em autenticação e roles:
-
-* **Rotas Públicas**: `/login`
-
-* **Rotas Protegidas**: Todas as demais rotas requerem autenticação
-
-* **Rotas com Role**: Algumas rotas requerem roles específicos (COORDENADOR, ADMIN)
-
-### 7.3 Estado Global
-
-Utiliza Context API para gerenciamento de estado:
-
-* **AuthContext**: Estado de autenticação do usuário
-
-* **ThemeContext**: Configurações de tema (futuro)
-
-### 7.4 Estilização
-
-* **Tailwind CSS**: Framework CSS utilitário
-
-* **Radix UI**: Componentes acessíveis
-
-* **Responsive Design**: Adaptável para desktop, tablet e mobile
-
-## 8. Configurações e Variáveis de Ambiente
-
-### 8.1 Backend (.env)
+### 7.1 Variáveis de Ambiente
 
 ```env
-# Application
-APP_NAME=SGC-ITEP v2.0
-APP_VERSION=2.0.0
-APP_DESCRIPTION=Sistema de Gestão de Conteúdo - ITEP
-PORT=3000
-HOST=0.0.0.0
-NODE_ENV=development
-
 # Database
-DB_TYPE=sqlite
-DB_PATH=nugecid_itep.sqlite
-# Para PostgreSQL:
-# DB_TYPE=postgres
-# DB_HOST=localhost
-# DB_PORT=5432
-# DB_USERNAME=postgres
-# DB_PASSWORD=password
-# DB_DATABASE=sgc_itep
-# DB_SSL=false
+DATABASE_TYPE=sqlite
+DATABASE_PATH=./database.sqlite
+# Para produção:
+# DATABASE_TYPE=postgres
+# DATABASE_HOST=localhost
+# DATABASE_PORT=5432
+# DATABASE_USERNAME=sgc_user
+# DATABASE_PASSWORD=senha_segura
+# DATABASE_NAME=sgc_itep
 
 # JWT
-JWT_SECRET=sgc-itep-secret-key-change-in-production
+JWT_SECRET=sua_chave_secreta_muito_segura_aqui
 JWT_EXPIRES_IN=24h
-JWT_REFRESH_SECRET=sgc-itep-refresh-secret-key
-JWT_REFRESH_EXPIRES_IN=7d
 
-# Session
-SESSION_SECRET=sgc-itep-session-secret-change-in-production
-SESSION_MAX_AGE=86400000
+# Application
+PORT=3000
+NODE_ENV=development
 
 # Security
-BCRYPT_ROUNDS=12
-MAX_LOGIN_ATTEMPTS=5
-LOCKOUT_DURATION=900000
-
-# Rate Limiting
-THROTTLE_TTL=60
-THROTTLE_LIMIT=10
+RATE_LIMIT_TTL=60
+RATE_LIMIT_LIMIT=100
 
 # File Upload
-UPLOAD_PATH=./uploads
-MAX_FILE_SIZE=10485760
+MAX_FILE_SIZE=10485760  # 10MB
+UPLOAD_DEST=./uploads
 
-# Redis (opcional)
-# REDIS_URL=redis://localhost:6379
-
-# Email (futuro)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=587
-# SMTP_USER=your-email@gmail.com
-# SMTP_PASS=your-password
+# Logging
+LOG_LEVEL=info
+LOG_FILE=./logs/app.log
 ```
 
-### 8.2 Frontend (.env)
+### 7.2 Scripts de Build e Deploy
 
-```env
-VITE_API_URL=http://localhost:3000
-VITE_APP_NAME=SGC-ITEP v2.0
-VITE_APP_VERSION=2.0.0
-```
-
-## 9. Scripts Disponíveis
-
-### 9.1 Backend
+#### package.json (Backend)
 
 ```json
 {
   "scripts": {
-    "build": "nest build && (cd frontend && npm install && npm run build)",
+    "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "dev": "concurrently \"npm:start:backend\" \"npm:start:frontend\"",
-    "start:backend": "nest start --watch",
-    "start:frontend": "cd frontend && npm run dev",
+    "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -688,255 +845,282 @@ VITE_APP_VERSION=2.0.0
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.config.js",
-    "test:e2e:watch": "jest --config ./test/jest-e2e.config.js --watch",
-    "test:playwright": "npx playwright test",
-    "test:playwright:ui": "npx playwright test --ui",
-    "seed": "ts-node -r tsconfig-paths/register src/modules/seeding/seed.ts"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate",
+    "migration:run": "typeorm-ts-node-commonjs migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert"
   }
 }
 ```
 
-### 9.2 Frontend
+#### package.json (Frontend)
 
 ```json
 {
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
   }
 }
 ```
 
-## 10. Como Executar o Projeto
+### 7.3 Configuração Docker
 
-### 10.1 Pré-requisitos
+#### Dockerfile (Backend)
 
-* Node.js >= 18.0.0
+```dockerfile
+FROM node:18-alpine
 
-* npm >= 8.0.0
+WORKDIR /app
 
-* Git
+COPY package*.json ./
+RUN npm ci --only=production
 
-### 10.2 Instalação
+COPY . .
+RUN npm run build
 
-```bash
-# Clone o repositório
-git clone <>
-cd SGC-ITEP-NESTJS
+EXPOSE 3000
 
-# Instale as dependências do backend
-npm install
-
-# Instale as dependências do frontend
-cd frontend
-npm install
-cd ..
-
-# Configure as variáveis de ambiente
-cp .env.example .env
-# Edite o arquivo .env conforme necessário
-
-# Execute as migrações e seed inicial
-npm run seed
+CMD ["npm", "run", "start:prod"]
 ```
 
-### 10.3 Execução em Desenvolvimento
+#### docker-compose.yml
 
-```bash
-# Executar backend e frontend simultaneamente
-npm run dev
+```yaml
+version: '3.8'
 
-# Ou executar separadamente:
-# Backend (porta 3000)
-npm run start:backend
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_TYPE=postgres
+      - DATABASE_HOST=db
+    depends_on:
+      - db
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
 
-# Frontend (porta 3001)
-npm run start:frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: sgc_itep
+      POSTGRES_USER: sgc_user
+      POSTGRES_PASSWORD: senha_segura
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
 ```
 
-### 10.4 Execução em Produção
+## 8. Segurança e Boas Práticas
 
-```bash
-# Build da aplicação
-npm run build
+### 8.1 Implementações de Segurança
 
-# Executar em produção
-npm run start:prod
+* **Autenticação JWT:** Tokens com expiração configurável
+
+* **Hash de Senhas:** bcrypt com 12 rounds de salt
+
+* **Rate Limiting:** Proteção contra ataques de força bruta
+
+* **Helmet:** Headers de segurança HTTP
+
+* **CORS:** Configuração restritiva para origens permitidas
+
+* **Validação:** class-validator em todos os DTOs
+
+* **Sanitização:** Prevenção contra XSS e SQL Injection
+
+* **Auditoria:** Log completo de ações críticas
+
+### 8.2 Guards e Interceptors
+
+```typescript
+// JWT Auth Guard
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
+  }
+}
+
+// Roles Guard
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      'roles',
+      [context.getHandler(), context.getClass()]
+    );
+    
+    if (!requiredRoles) {
+      return true;
+    }
+    
+    const { user } = context.switchToHttp().getRequest();
+    return requiredRoles.some(role => user.roles?.includes(role));
+  }
+}
+
+// Audit Interceptor
+@Injectable()
+export class AuditInterceptor implements NestInterceptor {
+  constructor(private auditService: AuditService) {}
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const { method, url, user, body } = request;
+    
+    return next.handle().pipe(
+      tap(() => {
+        this.auditService.log({
+          userId: user?.id,
+          action: method,
+          entity: this.extractEntity(url),
+          oldValues: null,
+          newValues: body,
+          ipAddress: request.ip,
+          userAgent: request.get('User-Agent')
+        });
+      })
+    );
+  }
+}
 ```
 
-### 10.5 Testes
+## 9. Testes e Qualidade
 
-```bash
-# Testes unitários
-npm test
+### 9.1 Estrutura de Testes
 
-# Testes com coverage
-npm run test:cov
-
-# Testes E2E
-npm run test:e2e
-
-# Testes Playwright
-npm run test:playwright
+```
+test/
+├── unit/
+│   ├── auth/
+│   │   ├── auth.service.spec.ts
+│   │   └── auth.controller.spec.ts
+│   ├── nugecid/
+│   │   ├── nugecid.service.spec.ts
+│   │   └── nugecid.controller.spec.ts
+│   └── users/
+│       ├── users.service.spec.ts
+│       └── users.controller.spec.ts
+├── integration/
+│   ├── auth.e2e-spec.ts
+│   ├── nugecid.e2e-spec.ts
+│   └── users.e2e-spec.ts
+└── fixtures/
+    ├── users.fixture.ts
+    └── desarquivamentos.fixture.ts
 ```
 
-## 11. Funcionalidades Implementadas
-
-### 11.1 Autenticação e Autorização
-
-* ✅ Login/Logout com JWT
-
-* ✅ Controle de acesso baseado em roles
-
-* ✅ Guards de proteção de rotas
-
-* ✅ Refresh token
-
-* ✅ Bloqueio por tentativas de login
-
-### 11.2 Gestão de Usuários
-
-* ✅ CRUD completo de usuários
-
-* ✅ Gestão de roles
-
-* ✅ Soft delete
-
-* ✅ Estatísticas de usuários
-
-### 11.3 Módulo Nugecid
-
-* ✅ CRUD de desarquivamentos
-
-* ✅ Importação via Excel
-
-* ✅ Geração de PDFs
-
-* ✅ Códigos de barras
-
-* ✅ Dashboard com estatísticas
-
-* ✅ Filtros avançados
-
-* ✅ Paginação
-
-### 11.4 Auditoria
-
-* ✅ Log de todas as ações
-
-* ✅ Rastreamento de alterações
-
-* ✅ Informações de IP e User Agent
-
-### 11.5 Frontend
-
-* ✅ Interface responsiva
-
-* ✅ Roteamento protegido
-
-* ✅ Formulários validados
-
-* ✅ Notificações toast
-
-* ✅ Loading states
-
-* ✅ Error handling
-
-## 12. Próximas Implementações
-
-### 12.1 Funcionalidades Planejadas
-
-* 🔄 Sistema de notificações por email
-
-* 🔄 Relatórios avançados
-
-* 🔄 Integração com sistemas externos
-
-* 🔄 API de webhooks
-
-* 🔄 Sistema de backup automático
-
-* 🔄 Logs estruturados
-
-* 🔄 Monitoramento e métricas
-
-### 12.2 Melhorias Técnicas
-
-* 🔄 Implementação completa de Clean Architecture em todos os módulos
-
-* 🔄 Testes de integração mais abrangentes
-
-* 🔄 Documentação automática de APIs
-
-* 🔄 CI/CD pipeline
-
-* 🔄 Containerização com Docker
-
-* 🔄 Kubernetes deployment
-
-## 13. Considerações de Segurança
-
-### 13.1 Implementadas
-
-* ✅ Autenticação JWT segura
-
-* ✅ Hash de senhas com bcrypt
-
-* ✅ Rate limiting
-
-* ✅ Helmet para headers de segurança
-
-* ✅ Validação de entrada
-
-* ✅ Sanitização de dados
-
-* ✅ CORS configurado
-
-### 13.2 Recomendações
-
-* 🔒 Implementar HTTPS em produção
-
-* 🔒 Configurar firewall adequado
-
-* 🔒 Monitoramento de segurança
-
-* 🔒 Backup regular dos dados
-
-* 🔒 Auditoria de segurança periódica
-
-## 14. Performance e Escalabilidade
-
-### 14.1 Otimizações Implementadas
-
-* ✅ Cache com Redis (opcional)
-
-* ✅ Compressão de respostas
-
-* ✅ Paginação de resultados
-
-* ✅ Índices de banco de dados
-
-* ✅ Lazy loading no frontend
-
-### 14.2 Considerações para Escala
-
-* 📈 Load balancer para múltiplas instâncias
-
-* 📈 Separação de banco de dados (read/write)
-
-* 📈 CDN para assets estáticos
-
-* 📈 Microserviços para módulos específicos
-
-* 📈 Queue system para processamento assíncrono
+### 9.2 Configuração Jest
+
+```javascript
+// jest.config.js
+module.exports = {
+  moduleFileExtensions: ['js', 'json', 'ts'],
+  rootDir: 'src',
+  testRegex: '.*\\.spec\\.ts$',
+  transform: {
+    '^.+\\.(t|j)s$': 'ts-jest',
+  },
+  collectCoverageFrom: [
+    '**/*.(t|j)s',
+    '!**/*.spec.ts',
+    '!**/node_modules/**',
+  ],
+  coverageDirectory: '../coverage',
+  testEnvironment: 'node',
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  }
+};
+```
+
+## 10. Monitoramento e Logs
+
+### 10.1 Configuração de Logs
+
+```typescript
+// logger.config.ts
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
+
+export const loggerConfig = WinstonModule.createLogger({
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.colorize(),
+        winston.format.simple()
+      )
+    }),
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    }),
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    })
+  ]
+});
+```
+
+### 10.2 Health Check
+
+```typescript
+// health.controller.ts
+@Controller('health')
+export class HealthController {
+  constructor(
+    private health: HealthCheckService,
+    private db: TypeOrmHealthIndicator
+  ) {}
+
+  @Get()
+  @HealthCheck()
+  check() {
+    return this.health.check([
+      () => this.db.pingCheck('database'),
+    ]);
+  }
+}
+```
 
 ***
 
-**Documentação gerada automaticamente em:** Janeiro 2025\
-**Versão do Sistema:** 2.0.0\
-**Última atualização:** Agosto 2025
-
-Para mais informações técnicas, consulte o código-fonte ou entre em contato com a equipe de desenvolvimento.
+**Documento técnico aprovado por:** Kevin Patrick Borges\
+**Data de aprovação:** Setembro 2025\
+**Próxima revisão:** Outubro 2025\
+**Versão da API:** v1.0

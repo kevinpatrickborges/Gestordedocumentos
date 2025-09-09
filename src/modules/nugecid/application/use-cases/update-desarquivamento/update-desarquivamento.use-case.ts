@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import {
   DesarquivamentoDomain,
   DesarquivamentoId,
@@ -61,6 +61,8 @@ export interface UpdateDesarquivamentoResponse {
 
 @Injectable()
 export class UpdateDesarquivamentoUseCase {
+  private readonly logger = new Logger(UpdateDesarquivamentoUseCase.name);
+
   constructor(
     @Inject(DESARQUIVAMENTO_REPOSITORY_TOKEN)
     private readonly desarquivamentoRepository: IDesarquivamentoRepository,
@@ -69,8 +71,18 @@ export class UpdateDesarquivamentoUseCase {
   async execute(
     request: UpdateDesarquivamentoRequest,
   ): Promise<UpdateDesarquivamentoResponse> {
-    // Validar entrada
-    this.validateRequest(request);
+    this.logger.log(`[NUGECID] Iniciando atualização de desarquivamento ID: ${request.id} por usuário ${request.userId}`);
+    this.logger.debug(`[NUGECID] Campos a serem atualizados: ${JSON.stringify({
+      status: request.status,
+      responsavelId: request.responsavelId,
+      dataDesarquivamentoSAG: request.dataDesarquivamentoSAG,
+      dataDevolucaoSetor: request.dataDevolucaoSetor
+    })}`);
+
+    try {
+      // Validar entrada
+      this.validateRequest(request);
+      this.logger.log(`[NUGECID] Validações concluídas para desarquivamento ID: ${request.id}`);
 
     // Buscar desarquivamento existente
     const desarquivamentoId = DesarquivamentoId.create(request.id);
@@ -94,13 +106,23 @@ export class UpdateDesarquivamentoUseCase {
       request,
     );
 
-    // Salvar no repositório
-    const savedDesarquivamento = await this.desarquivamentoRepository.update(
-      updatedDesarquivamento,
-    );
+      // Salvar no repositório
+      this.logger.log(`[NUGECID] Salvando atualizações no banco de dados - ID: ${request.id}`);
+      const savedDesarquivamento = await this.desarquivamentoRepository.update(
+        updatedDesarquivamento,
+      );
+      
+      this.logger.log(`[NUGECID] Desarquivamento atualizado com sucesso - ID: ${savedDesarquivamento.id.value}, Status: ${savedDesarquivamento.status.value}`);
 
-    // Retornar resposta
-    return this.mapToResponse(savedDesarquivamento);
+      // Retornar resposta
+      const response = this.mapToResponse(savedDesarquivamento);
+      this.logger.debug(`[NUGECID] Resposta de atualização gerada: ${JSON.stringify({ id: response.id, status: response.status })}`);
+      
+      return response;
+    } catch (error) {
+      this.logger.error(`[NUGECID] Erro ao atualizar desarquivamento ID ${request.id}: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   private validateRequest(request: UpdateDesarquivamentoRequest): void {

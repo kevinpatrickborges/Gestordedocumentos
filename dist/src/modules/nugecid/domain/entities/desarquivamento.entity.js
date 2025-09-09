@@ -160,6 +160,28 @@ class DesarquivamentoDomain {
         }
         return false;
     }
+    canBeDeletedBy(userId, userRoles) {
+        const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
+        if (upperCaseUserRoles.includes('ADMIN')) {
+            if (this._status.isInProgress()) {
+                return false;
+            }
+            return true;
+        }
+        if (this._criadoPorId === userId) {
+            if (this._status.isFinal() || this._status.isInProgress()) {
+                return false;
+            }
+            return true;
+        }
+        if (this._responsavelId === userId) {
+            if (this._status.isFinal()) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
     canBeCancelled() {
         return this._status.canBeCancelled();
     }

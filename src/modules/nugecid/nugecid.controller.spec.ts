@@ -22,6 +22,7 @@ import { CreateDesarquivamentoDto } from './dto/create-desarquivamento.dto';
 import { UpdateDesarquivamentoDto } from './dto/update-desarquivamento.dto';
 import { QueryDesarquivamentoDto } from './dto/query-desarquivamento.dto';
 import { TipoDesarquivamentoEnum } from './domain/value-objects/tipo-desarquivamento.vo';
+import { StatusDesarquivamentoEnum } from './domain/value-objects/status-desarquivamento.vo';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../users/entities/role.entity';
 import { ImportResultDto } from './dto/import-result.dto';
@@ -226,7 +227,8 @@ describe('NugecidController', () => {
 
   describe('create', () => {
     const createDto: CreateDesarquivamentoDto = {
-      tipoDesarquivamento: TipoDesarquivamentoEnum.FISICO,
+      tipoDesarquivamento: 'FISICO',
+      desarquivamentoFisicoDigital: TipoDesarquivamentoEnum.FISICO,
       nomeCompleto: 'João Silva',
       numeroNicLaudoAuto: 'NIC-12345',
       numeroProcesso: '12345-PROC',
@@ -334,7 +336,7 @@ describe('NugecidController', () => {
 
   describe('update', () => {
     const updateDto: UpdateDesarquivamentoDto = {
-      status: 'DESARQUIVADO',
+      status: StatusDesarquivamentoEnum.FINALIZADO,
     };
 
     it('should update a desarquivamento successfully', async () => {
@@ -379,7 +381,7 @@ describe('NugecidController', () => {
         redirect: jest.fn(),
       } as any as Response;
 
-      await controller.remove(1, mockAdminUser);
+      await controller.remove('1', mockAdminUser);
 
       expect(deleteDesarquivamentoUseCase.execute).toHaveBeenCalledWith({
         id: 1,

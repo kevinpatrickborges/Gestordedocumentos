@@ -13,8 +13,10 @@ export interface FindAllDesarquivamentosRequest {
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   filters?: {
-    status?: string;
-    tipoDesarquivamento?: string;
+    status?: string | string[];
+    statusList?: string[];
+    tipoDesarquivamento?: string | string[];
+    tipoDesarquivamentoList?: string[];
     nomeSolicitante?: string;
     numeroRegistro?: string;
     codigoBarras?: string;
@@ -51,6 +53,7 @@ export interface FindAllDesarquivamentosResponse {
     responsavelId?: number;
     createdAt: Date;
     updatedAt: Date;
+    deletedAt?: Date;
     isOverdue?: boolean;
     daysUntilDeadline?: number;
   }[];
@@ -176,7 +179,7 @@ export class FindAllDesarquivamentosUseCase {
       }
     }
 
-    // Validar status
+    // Validar status (aceita string ou array)
     if (request.filters?.status) {
       const validStatuses = [
         'FINALIZADO',
@@ -187,17 +190,25 @@ export class FindAllDesarquivamentosUseCase {
         'RETIRADO_PELO_SETOR',
         'NAO_LOCALIZADO'
       ];
-      if (!validStatuses.includes(request.filters.status)) {
+      const statuses = Array.isArray(request.filters.status)
+        ? request.filters.status
+        : [request.filters.status];
+      const allValid = statuses.every((s) => validStatuses.includes(s));
+      if (!allValid) {
         throw new Error(
           `Status inválido. Status válidos: ${validStatuses.join(', ')}`,
         );
       }
     }
 
-    // Validar tipo de desarquivamento
+    // Validar tipo de desarquivamento (aceita string ou array)
     if (request.filters?.tipoDesarquivamento) {
       const validTypes = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
-      if (!validTypes.includes(request.filters.tipoDesarquivamento)) {
+      const tipos = Array.isArray(request.filters.tipoDesarquivamento)
+        ? request.filters.tipoDesarquivamento
+        : [request.filters.tipoDesarquivamento];
+      const allValidTipos = tipos.every((t) => validTypes.includes(t));
+      if (!allValidTipos) {
         throw new Error(
           `Tipo de desarquivamento inválido. Tipos válidos: ${validTypes.join(', ')}`,
         );
@@ -219,23 +230,25 @@ export class FindAllDesarquivamentosUseCase {
     userId: number,
     userRoles: string[],
   ): FindAllOptions['filters'] {
+    // Normaliza roles para maiúsculas para evitar problemas de case-sensitive
+    const upperCaseUserRoles = (userRoles || []).map((r) => r?.toUpperCase?.() || '');
+
     // Administradores podem ver tudo
-    if (userRoles.includes('ADMIN')) {
+    if (upperCaseUserRoles.includes('ADMIN')) {
       return filters;
     }
 
-    // Usuários com role NUGECID_VIEWER podem ver todos os registros
+    // Usuários com role NUGECID_VIEWER/OPERATOR podem ver todos os registros
     if (
-      userRoles.includes('NUGECID_VIEWER') ||
-      userRoles.includes('NUGECID_OPERATOR')
+      upperCaseUserRoles.includes('NUGECID_VIEWER') ||
+      upperCaseUserRoles.includes('NUGECID_OPERATOR')
     ) {
       return filters;
     }
 
-    // Usuários comuns só podem ver seus próprios registros ou onde são responsáveis
+    // Usuários comuns só podem ver seus próprios registros
     return {
       ...filters,
-      // Adicionar filtro para mostrar apenas registros do usuário
       criadoPorId: userId,
     };
   }
@@ -243,8 +256,13 @@ export class FindAllDesarquivamentosUseCase {
   private mapToResponse(
     desarquivamento: DesarquivamentoDomain,
   ): FindAllDesarquivamentosResponse['data'][0] {
+    // Garantir que o ID seja válido
+    if (!desarquivamento.id?.value || desarquivamento.id.value <= 0) {
+      throw new Error(`Desarquivamento com ID inválido encontrado: ${desarquivamento.id?.value}`);
+    }
+    
     return {
-      id: desarquivamento.id?.value || 0,
+      id: desarquivamento.id.value,
       codigoBarras: desarquivamento.numeroNicLaudoAuto, // Using numeroNicLaudoAuto as unique identifier
       tipoDesarquivamento: desarquivamento.tipoDesarquivamento,
       status: desarquivamento.status.value,
@@ -264,6 +282,7 @@ export class FindAllDesarquivamentosUseCase {
       responsavelId: desarquivamento.responsavelId,
       createdAt: desarquivamento.createdAt,
       updatedAt: desarquivamento.updatedAt,
+      deletedAt: desarquivamento.deletedAt,
       isOverdue: desarquivamento.isOverdue ? desarquivamento.isOverdue() : false,
       daysUntilDeadline: desarquivamento.getDaysUntilDeadline ? desarquivamento.getDaysUntilDeadline() : undefined,
     };

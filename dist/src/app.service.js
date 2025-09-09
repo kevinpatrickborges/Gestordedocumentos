@@ -18,6 +18,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const user_entity_1 = require("./modules/users/entities/user.entity");
 const desarquivamento_typeorm_entity_1 = require("./modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity");
+const status_desarquivamento_enum_1 = require("./modules/nugecid/domain/enums/status-desarquivamento.enum");
 let AppService = class AppService {
     constructor(userRepository, desarquivamentoRepository) {
         this.userRepository = userRepository;
@@ -44,7 +45,7 @@ let AppService = class AppService {
         });
         const emPosse = await this.desarquivamentoRepository.count({
             where: {
-                status: 'DESARQUIVADO',
+                status: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.DESARQUIVADO,
                 deletedAt: null,
             },
         });
@@ -79,7 +80,7 @@ let AppService = class AppService {
             status: 'ok',
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
-            version: '2.0.0',
+            version: '1.0.0',
             environment: process.env.NODE_ENV || 'development',
         };
     }

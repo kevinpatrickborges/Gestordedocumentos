@@ -12,6 +12,7 @@ import {
   UserRole
 } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+import { isValidUserIdFormat, parseNumericId } from '../utils/validation'
 
 export const QUERY_KEYS = {
   users: ['users'] as const,
@@ -30,10 +31,17 @@ export function useUsers(params?: UsersQueryParams) {
 
 // Hook para obter um usuário específico
 export function useUser(id: number) {
+  const validId = parseNumericId(id);
+  
   return useQuery({
-    queryKey: QUERY_KEYS.user(id),
-    queryFn: () => apiService.getUser(id),
-    enabled: !!id,
+    queryKey: QUERY_KEYS.user(validId),
+    queryFn: () => {
+      if (!validId || !isValidUserIdFormat(validId)) {
+        throw new Error('ID de usuário inválido. Esperado um número inteiro.');
+      }
+      return apiService.getUser(validId);
+    },
+    enabled: !!validId && isValidUserIdFormat(validId),
     staleTime: 5 * 60 * 1000,
     retry: 2,
   })

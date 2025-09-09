@@ -12,6 +12,7 @@ import * as XLSX from 'xlsx';
 import { NugecidService } from './nugecid.service';
 import { TipoDesarquivamentoEnum } from './domain/value-objects/tipo-desarquivamento.vo';
 import { TipoDesarquivamento } from './domain/value-objects/tipo-desarquivamento.vo';
+import { StatusDesarquivamentoEnum } from './domain/value-objects/status-desarquivamento.vo';
 import { DesarquivamentoTypeOrmEntity } from './infrastructure/entities/desarquivamento.typeorm-entity';
 import { User } from '../users/entities/user.entity';
 import { Auditoria } from '../audit/entities/auditoria.entity';
@@ -135,6 +136,7 @@ describe('NugecidService', () => {
   describe('create', () => {
     const createDto: CreateDesarquivamentoDto = {
       tipoDesarquivamento: TipoDesarquivamentoEnum.FISICO,
+      desarquivamentoFisicoDigital: TipoDesarquivamentoEnum.FISICO,
       nomeCompleto: 'João Silva',
       numeroNicLaudoAuto: 'NIC-2024001',
       numeroProcesso: '2024001-PROC',
@@ -314,7 +316,7 @@ describe('NugecidService', () => {
 
   describe('update', () => {
     const updateDto: UpdateDesarquivamentoDto = {
-      status: 'DESARQUIVADO',
+      status: StatusDesarquivamentoEnum.FINALIZADO,
     };
 
     it('deve atualizar desarquivamento se usuário pode editar', async () => {
@@ -338,7 +340,7 @@ describe('NugecidService', () => {
         mockEditorUser,
       );
       expect(mockDesarquivamentoRepository.save).toHaveBeenCalled();
-      expect(result.status).toBe('DESARQUIVADO');
+      expect(result.status).toBe(StatusDesarquivamentoEnum.FINALIZADO);
     });
 
     it('deve lançar ForbiddenException se usuário não pode editar', async () => {

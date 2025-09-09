@@ -2,12 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DesarquivamentoFactory = void 0;
 const tipo_desarquivamento_vo_1 = require("../../src/modules/nugecid/domain/value-objects/tipo-desarquivamento.vo");
+const status_desarquivamento_enum_1 = require("../../src/modules/nugecid/domain/enums/status-desarquivamento.enum");
 class DesarquivamentoFactory {
     static build(data = {}) {
         const now = new Date();
         return {
             tipoDesarquivamento: data.tipoDesarquivamento || tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
-            status: data.status || 'SOLICITADO',
+            status: data.status || status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO,
             nomeCompleto: data.nomeCompleto || 'Solicitante Teste',
             numeroNicLaudoAuto: data.numeroNicLaudoAuto || `NIC-${Date.now()}`,
             numeroProcesso: data.numeroProcesso || '123456',

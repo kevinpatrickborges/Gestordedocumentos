@@ -28,6 +28,10 @@ let SeedingService = SeedingService_1 = class SeedingService {
         this.logger = new common_1.Logger(SeedingService_1.name);
     }
     async onModuleInit() {
+        if (process.env.NODE_ENV === 'production') {
+            this.logger.log('Ambiente `production` detectado — seeding automático desabilitado.');
+            return;
+        }
         this.logger.log('Iniciando o processo de seeding do banco de dados...');
         await this.seedRoles();
         await this.updateExistingRoles();

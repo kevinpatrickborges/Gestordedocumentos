@@ -8,7 +8,20 @@ export const formatDate = (date: string | Date | null | undefined): string => {
   if (!date) return '-'
   
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date
+    let dateObj: Date
+    
+    if (typeof date === 'string') {
+      // Para evitar problemas de timezone, força interpretação local
+      // Se a string está no formato YYYY-MM-DD, adiciona horário local
+      if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        dateObj = new Date(date + 'T00:00:00')
+      } else {
+        dateObj = parseISO(date)
+      }
+    } else {
+      dateObj = date
+    }
+    
     if (!isValid(dateObj)) return '-'
     
     return format(dateObj, 'dd/MM/yyyy', { locale: ptBR })
@@ -24,7 +37,20 @@ export const formatDateTime = (date: string | Date | null | undefined): string =
   if (!date) return '-'
   
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date
+    let dateObj: Date
+    
+    if (typeof date === 'string') {
+      // Para evitar problemas de timezone, força interpretação local
+      // Se a string está no formato YYYY-MM-DD, adiciona horário local
+      if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        dateObj = new Date(date + 'T00:00:00')
+      } else {
+        dateObj = parseISO(date)
+      }
+    } else {
+      dateObj = date
+    }
+    
     if (!isValid(dateObj)) return '-'
     
     return format(dateObj, 'dd/MM/yyyy HH:mm', { locale: ptBR })

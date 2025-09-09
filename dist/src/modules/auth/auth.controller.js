@@ -164,6 +164,17 @@ let AuthController = AuthController_1 = class AuthController {
             throw error;
         }
     }
+    async getOnlineUsers() {
+        try {
+            const onlineUsers = await this.authService.getOnlineUsers();
+            this.logger.debug(`Usuários online: ${onlineUsers.length}`);
+            return onlineUsers;
+        }
+        catch (error) {
+            this.logger.error(`Erro ao obter usuários online: ${error.message}`);
+            throw error;
+        }
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
@@ -319,6 +330,31 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refreshToken", null);
+__decorate([
+    (0, common_1.Get)('online-users'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtém lista de usuários online' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Lista de usuários online',
+        schema: {
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    id: { type: 'number' },
+                    nome: { type: 'string' },
+                    usuario: { type: 'string' },
+                    role: { type: 'string' },
+                },
+            },
+        },
+    }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Não autorizado' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getOnlineUsers", null);
 exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, swagger_1.ApiTags)('Autenticação'),
     (0, common_1.Controller)('auth'),

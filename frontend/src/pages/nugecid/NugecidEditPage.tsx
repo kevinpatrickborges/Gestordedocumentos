@@ -4,8 +4,7 @@ import { ArrowLeft, Edit, Loader2 } from 'lucide-react'
 import { UpdateDesarquivamentoDto } from '@/types'
 import { useDesarquivamentos } from '@/hooks/useDesarquivamentos'
 import { Button } from '@/components/ui/Button'
-// Componente NugecidForm removido - implementação temporária abaixo
-// import { NugecidForm } from '@/components/nugecid'
+import DesarquivamentoForm from '@/components/nugecid/DesarquivamentoForm'
 import { PageLoading } from '@/components/ui'
 import { toast } from 'sonner'
 import { cn } from '@/utils/cn'
@@ -226,39 +225,16 @@ const NugecidEditPage: React.FC<NugecidEditPageProps> = ({ className }) => {
         </ol>
       </nav>
 
-      {/* Form - Temporariamente desabilitado */}
+      {/* Form */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6">
-          <div className="text-center text-gray-500 py-12">
-            <Edit className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Formulário de edição temporariamente indisponível
-            </h3>
-            <p className="text-gray-600 mb-2">
-              O componente NugecidForm será reimplementado em breve
-            </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Registro: {desarquivamento.codigoBarras}
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Button
-                onClick={handleCancel}
-                variant="outline"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar aos Detalhes
-              </Button>
-              <Button
-                onClick={() => toast.info('Funcionalidade em desenvolvimento')}
-                disabled
-              >
-                {updateDesarquivamento.isPending && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                Salvar Alterações
-              </Button>
-            </div>
-          </div>
+          <DesarquivamentoForm
+            initialData={desarquivamento}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isLoading={updateDesarquivamento.isPending}
+            isEdit={true}
+          />
         </div>
       </div>
 

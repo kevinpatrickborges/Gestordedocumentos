@@ -19,7 +19,7 @@ O SGC-ITEP v1.0 é um sistema moderno de gestão de conteúdo desenvolvido para 
 ### Stack Tecnológica
 
 - **Backend**: Node.js + NestJS + TypeScript
-- **Banco de Dados**: PostgreSQL (produção)
+- **Banco de Dados**: PostgreSQL em Docker
 - **Autenticação**: JWT + Passport.js
 - **Documentação**: Swagger/OpenAPI 3.0
 - **Testes**: Jest
@@ -75,7 +75,7 @@ DATABASE_TYPE=postgres
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
 DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=sua_senha_aqui
+DATABASE_PASSWORD= '@Sanfona1'
 DATABASE_NAME=sgc_itep
 DATABASE_SSL=false
 
@@ -139,23 +139,6 @@ A API utiliza autenticação JWT. Inclua o token no header:
 ```http
 Authorization: Bearer <seu-jwt-token>
 ```
-
-## 🧪 Testes
-
-```bash
-# Testes unitários
-npm run test
-
-# Testes com watch
-npm run test:watch
-
-# Cobertura de testes
-npm run test:cov
-
-# Testes e2e
-npm run test:e2e
-```
-
 ## 📁 Estrutura do Projeto
 
 ```

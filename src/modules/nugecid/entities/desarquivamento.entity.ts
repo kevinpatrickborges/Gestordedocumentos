@@ -17,16 +17,15 @@ import { Exclude } from 'class-transformer';
 import { User } from '../../users/entities/user.entity';
 import { RoleType } from '../../users/enums/role-type.enum';
 
-// Legacy exports for backward compatibility
-export { StatusDesarquivamento, StatusDesarquivamentoEnum } from '../domain/value-objects/status-desarquivamento.vo';
-export { TipoSolicitacao, TipoSolicitacaoEnum } from '../domain/value-objects/tipo-solicitacao.vo';
-export { TipoDesarquivamento, TipoDesarquivamentoEnum } from '../domain/value-objects/tipo-desarquivamento.vo';
+// Enums imports
+import { StatusDesarquivamentoEnum } from '../domain/enums/status-desarquivamento.enum';
+import { TipoDesarquivamentoEnum } from '../domain/enums/tipo-desarquivamento.enum';
 
 @Entity('desarquivamentos')
 @Index(['numeroNicLaudoAuto'], { unique: true })
 @Index(['numeroProcesso'])
 @Index(['status'])
-@Index(['tipoDesarquivamento'])
+@Index(['desarquivamentoFisicoDigital'])
 @Index(['dataSolicitacao'])
 @Index(['createdBy'])
 export class Desarquivamento {
@@ -38,20 +37,29 @@ export class Desarquivamento {
   id: number;
 
   @ApiProperty({
-    description: 'Tipo do desarquivamento',
+    description: 'Desarquivamento Físico/Digital ou não localizado',
     example: 'FISICO',
-    enum: ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'],
+    enum: TipoDesarquivamentoEnum,
   })
-  @Column({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false })
-  tipoDesarquivamento: string;
+  @Column({ 
+    name: 'desarquivamento_fisico_digital', 
+    type: 'enum', 
+    enum: TipoDesarquivamentoEnum,
+    nullable: false 
+  })
+  desarquivamentoFisicoDigital: TipoDesarquivamentoEnum;
 
   @ApiProperty({
     description: 'Status atual da solicitação',
-    enum: ['FINALIZADO', 'DESARQUIVADO', 'NAO_COLETADO', 'SOLICITADO', 'REARQUIVAMENTO_SOLICITADO', 'RETIRADO_PELO_SETOR', 'NAO_LOCALIZADO'],
-    example: 'SOLICITADO',
+    enum: StatusDesarquivamentoEnum,
+    example: StatusDesarquivamentoEnum.SOLICITADO,
   })
-  @Column({ type: 'varchar', default: 'SOLICITADO' })
-  status: string;
+  @Column({ 
+    type: 'enum', 
+    enum: StatusDesarquivamentoEnum, 
+    default: StatusDesarquivamentoEnum.SOLICITADO 
+  })
+  status: StatusDesarquivamentoEnum;
 
   @ApiProperty({
     description: 'Nome completo do solicitante',
@@ -85,7 +93,7 @@ export class Desarquivamento {
     description: 'Data de solicitação',
     example: '2024-01-15T08:30:00Z',
   })
-  @Column({ name: 'data_solicitacao', type: 'timestamptz', nullable: false })
+  @Column({ name: 'data_solicitacao', type: 'timestamp', nullable: false })
   dataSolicitacao: Date;
 
   @ApiPropertyOptional({
@@ -94,7 +102,7 @@ export class Desarquivamento {
     type: 'string',
     format: 'date-time',
   })
-  @Column({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true })
+  @Column({ name: 'data_desarquivamento_sag', type: 'timestamp', nullable: true })
   dataDesarquivamentoSAG?: Date;
 
   @ApiPropertyOptional({
@@ -103,7 +111,7 @@ export class Desarquivamento {
     type: 'string',
     format: 'date-time',
   })
-  @Column({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true })
+  @Column({ name: 'data_devolucao_setor', type: 'timestamp', nullable: true })
   dataDevolucaoSetor?: Date;
 
   @ApiProperty({
@@ -218,7 +226,7 @@ export class Desarquivamento {
    * Verifica se a solicitação está finalizada
    */
   isFinalized(): boolean {
-    return this.status === 'FINALIZADO';
+    return this.status === StatusDesarquivamentoEnum.FINALIZADO;
   }
 
   /**
@@ -249,14 +257,14 @@ export class Desarquivamento {
     }
 
     // Solicitações finalizadas não podem ser editadas
-    if (this.status === 'FINALIZADO') {
+    if (this.status === StatusDesarquivamentoEnum.FINALIZADO) {
       return false;
     }
 
     // Criador pode editar se ainda estiver solicitado
     if (
       this.criadoPor.id === user.id &&
-      this.status === 'SOLICITADO'
+      this.status === StatusDesarquivamentoEnum.SOLICITADO
     ) {
       return true;
     }
@@ -264,7 +272,7 @@ export class Desarquivamento {
     // Responsável pode editar se estiver desarquivado
     if (
       this.responsavelId === user.id &&
-      this.status === 'DESARQUIVADO'
+      this.status === StatusDesarquivamentoEnum.DESARQUIVADO
     ) {
       return true;
     }
@@ -281,13 +289,13 @@ export class Desarquivamento {
    */
   getStatusDisplay(): string {
     const statusMap = {
-      'FINALIZADO': 'Finalizado',
-      'DESARQUIVADO': 'Desarquivado',
-      'NAO_COLETADO': 'Não Coletado',
-      'SOLICITADO': 'Solicitado',
-      'REARQUIVAMENTO_SOLICITADO': 'Rearquivamento Solicitado',
-      'RETIRADO_PELO_SETOR': 'Retirado pelo Setor',
-      'NAO_LOCALIZADO': 'Não Localizado',
+      [StatusDesarquivamentoEnum.FINALIZADO]: 'Finalizado',
+      [StatusDesarquivamentoEnum.DESARQUIVADO]: 'Desarquivado',
+      [StatusDesarquivamentoEnum.NAO_COLETADO]: 'Não Coletado',
+      [StatusDesarquivamentoEnum.SOLICITADO]: 'Solicitado',
+      [StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO]: 'Rearquivamento Solicitado',
+      [StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR]: 'Retirado pelo Setor',
+      [StatusDesarquivamentoEnum.NAO_LOCALIZADO]: 'Não Localizado',
     };
 
     return statusMap[this.status] || this.status;
@@ -295,13 +303,13 @@ export class Desarquivamento {
 
   getStatusColor(): string {
     const colors = {
-      'FINALIZADO': 'success',
-      'DESARQUIVADO': 'info',
-      'NAO_COLETADO': 'warning',
-      'SOLICITADO': 'primary',
-      'REARQUIVAMENTO_SOLICITADO': 'secondary',
-      'RETIRADO_PELO_SETOR': 'info',
-      'NAO_LOCALIZADO': 'danger',
+      [StatusDesarquivamentoEnum.FINALIZADO]: 'success',
+      [StatusDesarquivamentoEnum.DESARQUIVADO]: 'info',
+      [StatusDesarquivamentoEnum.NAO_COLETADO]: 'warning',
+      [StatusDesarquivamentoEnum.SOLICITADO]: 'primary',
+      [StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO]: 'secondary',
+      [StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR]: 'info',
+      [StatusDesarquivamentoEnum.NAO_LOCALIZADO]: 'danger',
     };
     return colors[this.status] || 'secondary';
   }
@@ -313,15 +321,15 @@ export class Desarquivamento {
   /**
    * Verifica se é possível transicionar para um novo status
    */
-  canTransitionTo(newStatus: string): boolean {
+  canTransitionTo(newStatus: StatusDesarquivamentoEnum): boolean {
     const transitions = {
-      'SOLICITADO': ['DESARQUIVADO', 'NAO_LOCALIZADO'],
-      'DESARQUIVADO': ['RETIRADO_PELO_SETOR', 'NAO_COLETADO', 'REARQUIVAMENTO_SOLICITADO'],
-      'RETIRADO_PELO_SETOR': ['FINALIZADO'],
-      'NAO_COLETADO': ['REARQUIVAMENTO_SOLICITADO'],
-      'REARQUIVAMENTO_SOLICITADO': ['FINALIZADO'],
-      'NAO_LOCALIZADO': [],
-      'FINALIZADO': [],
+      [StatusDesarquivamentoEnum.SOLICITADO]: [StatusDesarquivamentoEnum.DESARQUIVADO, StatusDesarquivamentoEnum.NAO_LOCALIZADO],
+      [StatusDesarquivamentoEnum.DESARQUIVADO]: [StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR, StatusDesarquivamentoEnum.NAO_COLETADO, StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO],
+      [StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR]: [StatusDesarquivamentoEnum.FINALIZADO],
+      [StatusDesarquivamentoEnum.NAO_COLETADO]: [StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO],
+      [StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO]: [StatusDesarquivamentoEnum.FINALIZADO],
+      [StatusDesarquivamentoEnum.NAO_LOCALIZADO]: [],
+      [StatusDesarquivamentoEnum.FINALIZADO]: [],
     };
 
     return transitions[this.status]?.includes(newStatus) || false;

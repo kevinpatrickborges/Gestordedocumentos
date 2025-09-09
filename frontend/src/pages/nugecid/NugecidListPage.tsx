@@ -7,10 +7,11 @@ import { useDesarquivamentos } from '../../hooks/useDesarquivamentos'
 import { QueryDesarquivamentoDto } from '../../types'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-// Componentes nugecid removidos - implementações temporárias abaixo
-// import NugecidTable from '@/components/nugecid/NugecidTable'
-// import NugecidFilters from '@/components/nugecid/NugecidFilters'
-// import NugecidStats from '@/components/nugecid/NugecidStats'
+import DesarquivamentosTable from '@/components/nugecid/DesarquivamentosTable'
+import DashboardStats from '@/components/nugecid/DashboardStats'
+import ProrrogacaoNotification from '@/components/nugecid/ProrrogacaoNotification'
+import NotificationBadge from '@/components/nugecid/NotificationBadge'
+import { useNotificacoesProrrogacao } from '@/hooks/useNotificacoesProrrogacao'
 import { PageLoading } from '@/components/ui/Loading'
 import { toast } from 'sonner'
 
@@ -36,6 +37,14 @@ const NugecidListPage: React.FC = () => {
     openImportModal, 
     closeImportModal
   } = useNugecidImport();
+
+  const {
+    notificacoes,
+    notificacoesNaoLidas,
+    marcarTodasComoLidas,
+    processarProrrogacao,
+    atualizarNotificacoes
+  } = useNotificacoesProrrogacao()
 
   const handleSearch = (value: string) => {
     setSearchTerm(value)
@@ -70,6 +79,13 @@ const NugecidListPage: React.FC = () => {
     refetch()
     toast.success('Lista atualizada com sucesso!')
   }
+
+  // Atualizar notificações quando os dados mudarem
+  React.useEffect(() => {
+    if (desarquivamentos) {
+      atualizarNotificacoes(desarquivamentos)
+    }
+  }, [desarquivamentos, atualizarNotificacoes])
 
   const handleExport = () => {
     // TODO: Implementar exportação
@@ -114,6 +130,11 @@ const NugecidListPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationBadge 
+            count={notificacoesNaoLidas}
+            showAnimation={notificacoesNaoLidas > 0}
+          />
+          
           <Button
             onClick={handleRefresh}
             variant="outline"
@@ -154,12 +175,18 @@ const NugecidListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats - Temporariamente desabilitado */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="text-center text-gray-500">
-          <p>Estatísticas temporariamente indisponíveis</p>
-          <p className="text-sm mt-1">Componente NugecidStats será reimplementado</p>
-        </div>
+      {/* Stats */}
+      <DashboardStats
+        desarquivamentos={desarquivamentos}
+        isLoading={isLoading}
+      />
+      
+      {/* Notificações de Prorrogação */}
+      <div id="prorrogacao-notifications">
+        <ProrrogacaoNotification
+          desarquivamentos={desarquivamentos || []}
+          onUpdateProrrogacao={processarProrrogacao}
+        />
       </div>
 
       {/* Search and Filters */}
@@ -224,18 +251,21 @@ const NugecidListPage: React.FC = () => {
         )}
       </div>
 
-      {/* Table - Temporariamente desabilitado */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="text-center text-gray-500">
-          <p>Tabela de desarquivamentos temporariamente indisponível</p>
-          <p className="text-sm mt-1">Componente NugecidTable será reimplementado</p>
-          {desarquivamentos.length > 0 && (
-            <p className="text-sm mt-2 text-blue-600">
-              {desarquivamentos.length} registro(s) encontrado(s)
-            </p>
-          )}
-        </div>
-      </div>
+      {/* Table */}
+      <DesarquivamentosTable
+        desarquivamentos={desarquivamentos}
+        isLoading={isLoading}
+        onEdit={(id) => {
+          // Navegação já é feita pelo Link dentro da tabela
+        }}
+        onDelete={(id) => {
+          // TODO: Implementar lógica de exclusão
+          toast.info('Funcionalidade de exclusão em desenvolvimento')
+        }}
+        onView={(id) => {
+          // Navegação já é feita pelo Link dentro da tabela
+        }}
+      />
 
       {/* Empty State */}
       {!isLoading && desarquivamentos.length === 0 && (

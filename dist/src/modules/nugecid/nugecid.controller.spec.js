@@ -5,6 +5,7 @@ const common_1 = require("@nestjs/common");
 const nugecid_controller_1 = require("./nugecid.controller");
 const use_cases_1 = require("./application/use-cases");
 const tipo_desarquivamento_vo_1 = require("./domain/value-objects/tipo-desarquivamento.vo");
+const status_desarquivamento_vo_1 = require("./domain/value-objects/status-desarquivamento.vo");
 const role_type_enum_1 = require("../users/enums/role-type.enum");
 describe('NugecidController', () => {
     let controller;
@@ -181,7 +182,8 @@ describe('NugecidController', () => {
     });
     describe('create', () => {
         const createDto = {
-            tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+            tipoDesarquivamento: 'FISICO',
+            desarquivamentoFisicoDigital: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
             nomeCompleto: 'João Silva',
             numeroNicLaudoAuto: 'NIC-12345',
             numeroProcesso: '12345-PROC',
@@ -269,7 +271,7 @@ describe('NugecidController', () => {
     });
     describe('update', () => {
         const updateDto = {
-            status: 'DESARQUIVADO',
+            status: status_desarquivamento_vo_1.StatusDesarquivamentoEnum.FINALIZADO,
         };
         it('should update a desarquivamento successfully', async () => {
             const updatedDesarquivamento = { ...mockDesarquivamento, ...updateDto };
@@ -305,7 +307,7 @@ describe('NugecidController', () => {
                 json: jest.fn(),
                 redirect: jest.fn(),
             };
-            await controller.remove(1, mockAdminUser);
+            await controller.remove('1', mockAdminUser);
             expect(deleteDesarquivamentoUseCase.execute).toHaveBeenCalledWith({
                 id: 1,
                 userId: mockAdminUser.id,

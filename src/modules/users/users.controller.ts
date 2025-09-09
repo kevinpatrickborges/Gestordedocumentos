@@ -16,6 +16,7 @@ import {
   Request,
   Response,
 } from '@nestjs/common';
+import { ParseUserIdPipe } from '../../common/pipes/parse-user-id.pipe';
 import {
   ApiTags,
   ApiOperation,
@@ -255,7 +256,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Dados do usuário' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUserIdPipe) id: number,
     @Request() req: ExpressRequest,
   ) {
     const user = await this.getUserByIdUseCase.execute(id);
@@ -276,7 +277,7 @@ export class UsersController {
   @Get(':id/detalhe')
   @Render('usuarios/detalhe')
   @ApiOperation({ summary: 'Renderiza página de detalhes do usuário' })
-  async detailPage(@Param('id', ParseIntPipe) id: number) {
+  async detailPage(@Param('id', ParseUserIdPipe) id: number) {
     const user = await this.getUserByIdUseCase.execute(id);
     const userEntity = UserMapper.toEntity(user);
     return {
@@ -290,7 +291,7 @@ export class UsersController {
   @Roles('admin')
   @Render('usuarios/editar')
   @ApiOperation({ summary: 'Renderiza página de edição do usuário' })
-  async editPage(@Param('id', ParseIntPipe) id: number) {
+  async editPage(@Param('id', ParseUserIdPipe) id: number) {
     const user = await this.getUserByIdUseCase.execute(id);
     const roles = await this.getRolesUseCase.execute();
     const userEntity = UserMapper.toEntity(user);
@@ -309,7 +310,7 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUserIdPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
     @CurrentUser() currentUser: User,
     @Request() req: ExpressRequest,
@@ -348,7 +349,7 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async remove(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUserIdPipe) id: number,
     @CurrentUser() currentUser: User,
     @Request() req: ExpressRequest,
     @Response() res: ExpressResponse,
@@ -380,7 +381,7 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Acesso negado' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
   async reactivate(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUserIdPipe) id: number,
     @CurrentUser() currentUser: User,
     @Request() req: ExpressRequest,
     @Response() res: ExpressResponse,

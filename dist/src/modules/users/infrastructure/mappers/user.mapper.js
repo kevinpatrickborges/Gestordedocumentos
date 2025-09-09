@@ -17,11 +17,14 @@ class UserMapper {
         const roleId = new role_id_1.RoleId(entity.roleId);
         let role;
         if (entity.role) {
+            const permissions = (entity.role.permissions && Array.isArray(entity.role.permissions))
+                ? entity.role.permissions
+                : [];
             role = new role_1.Role({
                 id: new role_id_1.RoleId(entity.role.id),
                 nome: entity.role.name,
                 descricao: entity.role.description,
-                permissoes: entity.role.permissions || [],
+                permissoes: permissions,
                 createdAt: entity.role.createdAt,
                 updatedAt: entity.role.updatedAt,
             });

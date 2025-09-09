@@ -1,5 +1,7 @@
+import { TipoDesarquivamentoEnum } from '../domain/enums/tipo-desarquivamento.enum';
 export declare class CreateDesarquivamentoDto {
     tipoDesarquivamento: string;
+    desarquivamentoFisicoDigital?: TipoDesarquivamentoEnum;
     nomeCompleto: string;
     numeroNicLaudoAuto: string;
     numeroProcesso: string;

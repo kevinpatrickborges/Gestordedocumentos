@@ -58,8 +58,12 @@ let NugecidController = NugecidController_1 = class NugecidController {
     }
     async importDesarquivamentos(file, currentUser, res) {
         if (!file) {
-            throw new common_1.BadRequestException('Arquivo é obrigatório');
+            throw new common_1.BadRequestException('Arquivo não enviado. Por favor, envie um arquivo Excel.');
         }
+        if (!file.buffer || file.buffer.length === 0) {
+            throw new common_1.BadRequestException('O arquivo enviado está vazio. Verifique se o arquivo Excel tem dados.');
+        }
+        this.logger.log(`[${new Date().toISOString()}] 📁 Importando arquivo: ${file.originalname} (${file.size} bytes)`);
         const result = await this.nugecidImportService.importFromXLSX(file, currentUser);
         return res.status(common_1.HttpStatus.OK).json({
             success: true,
@@ -71,6 +75,10 @@ let NugecidController = NugecidController_1 = class NugecidController {
         if (!file) {
             throw new common_1.BadRequestException('Nenhum arquivo enviado. Por favor, anexe um arquivo .xlsx ou .csv.');
         }
+        if (!file.buffer || file.buffer.length === 0) {
+            throw new common_1.BadRequestException('O arquivo enviado está vazio. Verifique se o arquivo Excel tem dados.');
+        }
+        this.logger.log(`[${new Date().toISOString()}] 📁 Importando registros: ${file.originalname} (${file.size} bytes)`);
         const result = await this.nugecidImportService.importRegistrosFromXLSX(file, currentUser);
         return {
             success: true,
@@ -86,8 +94,34 @@ let NugecidController = NugecidController_1 = class NugecidController {
         res.send(buffer);
     }
     async findAll(queryDto, currentUser) {
+        const filters = {
+            search: queryDto.search,
+            statusList: Array.isArray(queryDto.status) ? queryDto.status : undefined,
+            status: Array.isArray(queryDto.status) ? undefined : queryDto.status,
+            tipoDesarquivamento: Array.isArray(queryDto.tipoDesarquivamento)
+                ? queryDto.tipoDesarquivamento[0]
+                : queryDto.tipoDesarquivamento,
+            criadoPorId: queryDto.usuarioId,
+            responsavelId: queryDto.responsavelId,
+            urgente: queryDto.urgente,
+            dataInicio: queryDto.startDate
+                ? new Date(queryDto.startDate)
+                : queryDto.dataInicio
+                    ? new Date(queryDto.dataInicio)
+                    : undefined,
+            dataFim: queryDto.endDate
+                ? new Date(queryDto.endDate)
+                : queryDto.dataFim
+                    ? new Date(queryDto.dataFim)
+                    : undefined,
+            incluirExcluidos: queryDto.incluirExcluidos || false,
+        };
         const result = await this.findAllDesarquivamentosUseCase.execute({
-            ...queryDto,
+            page: queryDto.page,
+            limit: queryDto.limit,
+            sortBy: queryDto.sortBy,
+            sortOrder: queryDto.sortOrder,
+            filters,
             userId: currentUser.id,
             userRoles: [currentUser.role?.name || 'USER'],
         });
@@ -102,12 +136,116 @@ let NugecidController = NugecidController_1 = class NugecidController {
             },
         };
     }
+    async findDeleted(queryDto, currentUser, req) {
+        const timestamp = new Date().toISOString();
+        this.logger.log(`[${timestamp}] 🗑️ Buscando itens da lixeira - Usuário: ${currentUser.usuario}`);
+        this.logger.log(`[${timestamp}] 📋 Query params recebidos:`, JSON.stringify(req.query, null, 2));
+        this.logger.log(`[${timestamp}] 📋 DTO validado:`, JSON.stringify(queryDto, null, 2));
+        const filters = {
+            search: queryDto.search,
+            statusList: Array.isArray(queryDto.status) ? queryDto.status : undefined,
+            status: Array.isArray(queryDto.status) ? undefined : queryDto.status,
+            tipoDesarquivamento: Array.isArray(queryDto.tipoDesarquivamento)
+                ? queryDto.tipoDesarquivamento[0]
+                : queryDto.tipoDesarquivamento,
+            criadoPorId: queryDto.usuarioId,
+            responsavelId: queryDto.responsavelId,
+            urgente: queryDto.urgente,
+            dataInicio: queryDto.startDate
+                ? new Date(queryDto.startDate)
+                : queryDto.dataInicio
+                    ? new Date(queryDto.dataInicio)
+                    : undefined,
+            dataFim: queryDto.endDate
+                ? new Date(queryDto.endDate)
+                : queryDto.dataFim
+                    ? new Date(queryDto.dataFim)
+                    : undefined,
+            incluirExcluidos: true,
+        };
+        const result = await this.findAllDesarquivamentosUseCase.execute({
+            page: queryDto.page,
+            limit: queryDto.limit,
+            sortBy: queryDto.sortBy,
+            sortOrder: queryDto.sortOrder,
+            filters,
+            userId: currentUser.id,
+            userRoles: [currentUser.role?.name || 'USER'],
+        });
+        const deletedItems = result.data.filter(item => item.deletedAt);
+        this.logger.log(`[${timestamp}] 📊 Encontrados ${deletedItems.length} itens na lixeira`);
+        return {
+            success: true,
+            data: deletedItems,
+            meta: {
+                page: result.page,
+                limit: result.limit,
+                total: deletedItems.length,
+                totalPages: Math.ceil(deletedItems.length / result.limit),
+            },
+        };
+    }
+    async restore(id, currentUser) {
+        const timestamp = new Date().toISOString();
+        this.logger.log(`[${timestamp}] 🔄 Iniciando restauração - ID: ${id}, Usuário: ${currentUser.usuario}`);
+        try {
+            const result = await this.restoreDesarquivamentoUseCase.execute({
+                id: Number(id),
+                userId: currentUser.id,
+                userRoles: [currentUser.role?.name || 'USER'],
+            });
+            this.logger.log(`[${timestamp}] ✅ Desarquivamento restaurado com sucesso - ID: ${id}`);
+            return {
+                success: true,
+                message: 'Desarquivamento restaurado com sucesso',
+                data: result,
+                restoredAt: timestamp,
+                restoredBy: currentUser.usuario,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[${timestamp}] ❌ Erro ao restaurar desarquivamento - ID: ${id}`, error.stack);
+            throw error;
+        }
+    }
     async getDashboard() {
         const stats = await this.nugecidStatsService.getDashboardStats();
         return {
             success: true,
             data: stats,
         };
+    }
+    async hardDelete(idParam, currentUser) {
+        const timestamp = new Date().toISOString();
+        this.logger.log(`[${timestamp}] 🔥 EXCLUSÃO PERMANENTE SOLICITADA - ID: ${idParam}, Usuário: ${currentUser.usuario}`);
+        let id;
+        try {
+            const cleanId = idParam.trim();
+            if (!/^\d+$/.test(cleanId)) {
+                throw new common_1.BadRequestException('ID inválido. Deve ser um número inteiro.');
+            }
+            id = parseInt(cleanId, 10);
+        }
+        catch (error) {
+            throw new common_1.BadRequestException('ID inválido. Deve ser um número inteiro positivo.');
+        }
+        try {
+            const result = await this.deleteDesarquivamentoUseCase.execute({
+                id,
+                userId: currentUser.id,
+                userRoles: [currentUser.role?.name || 'USER'],
+                permanent: true,
+            });
+            return {
+                success: true,
+                message: 'Desarquivamento excluído permanentemente',
+                data: result,
+            };
+        }
+        catch (error) {
+            this.logger.error(`[${new Date().toISOString()}] ❌ Erro exclusão permanente - ID: ${id}`, error.stack);
+            throw new common_1.BadRequestException(error.message || 'Erro ao excluir permanentemente');
+        }
     }
     async exportToExcel(queryDto, currentUser, res) {
         const buffer = await this.nugecidExportService.exportToExcel(queryDto, currentUser);
@@ -156,28 +294,76 @@ let NugecidController = NugecidController_1 = class NugecidController {
             data: result,
         };
     }
-    async remove(id, currentUser) {
-        await this.deleteDesarquivamentoUseCase.execute({
-            id,
-            userId: currentUser.id,
-            userRoles: [currentUser.role?.name || 'USER'],
-            permanent: false,
-        });
-        return {
-            success: true,
-            message: 'Desarquivamento removido com sucesso',
-        };
-    }
-    async restore(id, currentUser) {
-        const result = await this.restoreDesarquivamentoUseCase.execute({
-            id,
-            userId: currentUser.id,
-            userRoles: [currentUser.role?.name || 'USER'],
-        });
-        return {
-            success: true,
-            message: result.message,
-        };
+    async remove(idParam, currentUser) {
+        const timestamp = new Date().toISOString();
+        this.logger.log(`[${timestamp}] [NugecidController] EXCLUSÃO INICIADA - ID param: '${idParam}', Usuário: ${currentUser?.id} (${currentUser?.usuario}), Tipo: SOFT DELETE`);
+        let id;
+        try {
+            const cleanId = idParam.trim();
+            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (uuidPattern.test(cleanId)) {
+                this.logger.error(`[${timestamp}] [NugecidController] ❌ UUID DETECTADO: '${idParam}' - Este endpoint espera um ID numérico`);
+                throw new common_1.BadRequestException(`ID inválido: '${idParam}'. ` +
+                    `Detectado UUID, mas este endpoint espera um ID numérico (ex: 1, 2, 3...). ` +
+                    `Verifique se você está usando o ID correto do desarquivamento.`);
+            }
+            if (!/^\d+$/.test(cleanId)) {
+                this.logger.error(`[${timestamp}] [NugecidController] ❌ ID INVÁLIDO - contém caracteres não numéricos: '${idParam}'`);
+                throw new common_1.BadRequestException(`ID deve conter apenas números. Recebido: '${idParam}'. ` +
+                    `Formato esperado: número inteiro positivo (ex: 1, 2, 3...).`);
+            }
+            id = parseInt(cleanId, 10);
+            if (isNaN(id) || id <= 0) {
+                this.logger.error(`[${timestamp}] [NugecidController] ❌ ID INVÁLIDO - não é um número positivo: '${idParam}'`);
+                throw new common_1.BadRequestException(`ID inválido: '${idParam}'. Deve ser um número inteiro positivo maior que zero.`);
+            }
+            this.logger.log(`[${timestamp}] [NugecidController] ✅ ID validado com sucesso: ${id}`);
+        }
+        catch (error) {
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
+            }
+            this.logger.error(`[${timestamp}] [NugecidController] ❌ ERRO NA VALIDAÇÃO DO ID: '${idParam}' - ${error.message}`);
+            throw new common_1.BadRequestException(`ID inválido: '${idParam}'. Deve ser um número inteiro positivo. ` +
+                `Se você está tentando usar um UUID, verifique se está usando o endpoint correto.`);
+        }
+        try {
+            const result = await this.deleteDesarquivamentoUseCase.execute({
+                id,
+                userId: currentUser.id,
+                userRoles: [currentUser.role?.name || 'USER'],
+                permanent: false,
+            });
+            const completedTimestamp = new Date().toISOString();
+            this.logger.log(`[${completedTimestamp}] [NugecidController] ✅ EXCLUSÃO CONCLUÍDA COM SUCESSO - ID: ${id} foi EXCLUÍDO DO BANCO DE DADOS (soft delete), Usuário: ${currentUser?.id}`);
+            return {
+                success: true,
+                message: 'Desarquivamento removido com sucesso',
+                data: {
+                    id,
+                    deletedAt: completedTimestamp,
+                    deletedBy: currentUser.id,
+                    type: 'soft_delete'
+                }
+            };
+        }
+        catch (error) {
+            const errorTimestamp = new Date().toISOString();
+            this.logger.error(`[${errorTimestamp}] [NugecidController] ❌ ERRO NA EXCLUSÃO - ID: ${id}, Usuário: ${currentUser?.id}, Erro: ${error.message}`);
+            if (error.message.includes('Acesso negado')) {
+                throw new common_1.ForbiddenException('Você não tem permissão para excluir este desarquivamento');
+            }
+            if (error.message.includes('ID') && error.message.includes('não encontrado')) {
+                throw new common_1.NotFoundException('Desarquivamento não encontrado');
+            }
+            if (error.message.includes('em andamento')) {
+                throw new common_1.BadRequestException('Não é possível excluir desarquivamento em andamento');
+            }
+            if (error.message.includes('concluídos')) {
+                throw new common_1.ForbiddenException('Apenas administradores podem excluir desarquivamentos concluídos');
+            }
+            throw new common_1.BadRequestException(error.message || 'Erro ao excluir desarquivamento');
+        }
     }
 };
 exports.NugecidController = NugecidController;
@@ -197,7 +383,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NugecidController.prototype, "create", null);
 __decorate([
-    (0, common_1.Post)('import-desarquivamentos'),
+    (0, common_1.Post)('import'),
     (0, swagger_1.ApiOperation)({ summary: 'Importar desarquivamentos de planilha Excel' }),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiBody)({
@@ -276,6 +462,31 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], NugecidController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.Get)('lixeira'),
+    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN, role_type_enum_1.RoleType.USUARIO),
+    (0, swagger_1.ApiOperation)({ summary: 'Listar desarquivamentos excluídos (lixeira)' }),
+    (0, swagger_1.ApiQuery)({ type: query_desarquivamento_dto_1.QueryDesarquivamentoDto }),
+    (0, swagger_1.ApiBearerAuth)(),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [query_desarquivamento_dto_1.QueryDesarquivamentoDto,
+        user_entity_1.User, Object]),
+    __metadata("design:returntype", Promise)
+], NugecidController.prototype, "findDeleted", null);
+__decorate([
+    (0, common_1.Patch)('lixeira/:id/restaurar'),
+    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN, role_type_enum_1.RoleType.USUARIO),
+    (0, swagger_1.ApiOperation)({ summary: 'Restaurar desarquivamento da lixeira' }),
+    (0, swagger_1.ApiBearerAuth)(),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, user_entity_1.User]),
+    __metadata("design:returntype", Promise)
+], NugecidController.prototype, "restore", null);
+__decorate([
     (0, common_1.Get)('dashboard'),
     (0, swagger_1.ApiOperation)({ summary: 'Obter estatísticas do dashboard' }),
     (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN, role_type_enum_1.RoleType.USUARIO),
@@ -284,6 +495,18 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], NugecidController.prototype, "getDashboard", null);
+__decorate([
+    (0, common_1.Delete)('lixeira/:id/permanente'),
+    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: 'Excluir permanentemente desarquivamento da lixeira (IRREVERSÍVEL)' }),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, user_entity_1.User]),
+    __metadata("design:returntype", Promise)
+], NugecidController.prototype, "hardDelete", null);
 __decorate([
     (0, common_1.Get)('export'),
     (0, swagger_1.ApiOperation)({ summary: 'Exportar desarquivamentos para Excel' }),
@@ -335,30 +558,16 @@ __decorate([
 ], NugecidController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN),
     (0, swagger_1.ApiOperation)({ summary: 'Remover desarquivamento' }),
     (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do desarquivamento', type: 'integer' }),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Param)('id')),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, user_entity_1.User]),
+    __metadata("design:paramtypes", [String, user_entity_1.User]),
     __metadata("design:returntype", Promise)
 ], NugecidController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Post)(':id/restore'),
-    (0, swagger_1.ApiOperation)({ summary: 'Restaurar desarquivamento excluído' }),
-    (0, swagger_1.ApiParam)({ name: 'id', description: 'ID do desarquivamento', type: 'integer' }),
-    (0, roles_decorator_1.Roles)(role_type_enum_1.RoleType.ADMIN),
-    (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
-    __param(1, (0, current_user_decorator_1.CurrentUser)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, user_entity_1.User]),
-    __metadata("design:returntype", Promise)
-], NugecidController.prototype, "restore", null);
 exports.NugecidController = NugecidController = NugecidController_1 = __decorate([
     (0, swagger_1.ApiTags)('NUGECID - Desarquivamentos'),
     (0, common_1.Controller)('nugecid'),

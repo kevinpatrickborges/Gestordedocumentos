@@ -12,7 +12,7 @@ exports.default = (0, config_1.registerAs)('app', () => ({
     isDevelopment: process.env.NODE_ENV === 'development',
     isProduction: process.env.NODE_ENV === 'production',
     baseUrl: process.env.BASE_URL || 'http://localhost:3000',
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
     uploadPath: process.env.UPLOAD_PATH || (0, path_1.join)(process.cwd(), 'uploads'),
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760'),
     allowedFileTypes: (process.env.ALLOWED_FILE_TYPES || 'pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif').split(','),
@@ -25,7 +25,7 @@ exports.default = (0, config_1.registerAs)('app', () => ({
     cors: {
         origin: process.env.CORS_ORIGIN
             ? process.env.CORS_ORIGIN.split(',')
-            : ['http://localhost:3000'],
+            : ['http://localhost:3000', 'http://localhost:3001'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

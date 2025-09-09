@@ -77,7 +77,7 @@ __decorate([
     __metadata("design:type", role_entity_1.Role)
 ], User.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'ultimo_login', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'ultimo_login', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], User.prototype, "ultimoLogin", void 0);
 __decorate([
@@ -89,7 +89,7 @@ __decorate([
     __metadata("design:type", Number)
 ], User.prototype, "tentativasLogin", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'bloqueado_ate', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'bloqueado_ate', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], User.prototype, "bloqueadoAte", void 0);
 __decorate([
@@ -97,7 +97,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "tokenReset", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'token_reset_expira', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'token_reset_expira', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], User.prototype, "tokenResetExpira", void 0);
 __decorate([

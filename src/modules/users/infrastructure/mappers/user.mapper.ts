@@ -16,11 +16,15 @@ export class UserMapper {
 
     let role: DomainRole | undefined;
     if (entity.role) {
+      const permissions = (entity.role.permissions && Array.isArray(entity.role.permissions))
+        ? entity.role.permissions
+        : [];
+
       role = new DomainRole({
         id: new RoleId(entity.role.id),
         nome: entity.role.name,
         descricao: entity.role.description,
-        permissoes: entity.role.permissions || [],
+        permissoes: permissions,
         createdAt: entity.role.createdAt,
         updatedAt: entity.role.updatedAt,
       });

@@ -15,6 +15,7 @@ const xlsx = require("xlsx");
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const create_desarquivamento_dto_1 = require("../../../dto/create-desarquivamento.dto");
+const tipo_desarquivamento_enum_1 = require("../../../domain/enums/tipo-desarquivamento.enum");
 const create_desarquivamento_use_case_1 = require("../create-desarquivamento/create-desarquivamento.use-case");
 let ImportDesarquivamentoUseCase = class ImportDesarquivamentoUseCase {
     constructor(createDesarquivamentoUseCase) {
@@ -42,7 +43,7 @@ let ImportDesarquivamentoUseCase = class ImportDesarquivamentoUseCase {
             else {
                 try {
                     const request = {
-                        tipoDesarquivamento: dto.tipoDesarquivamento || 'FISICO',
+                        tipoDesarquivamento: dto.tipoDesarquivamento || tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum.FISICO,
                         nomeCompleto: dto.nomeCompleto,
                         numeroNicLaudoAuto: dto.numeroNicLaudoAuto,
                         numeroProcesso: dto.numeroProcesso || '',

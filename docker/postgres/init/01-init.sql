@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 SET timezone = 'America/Fortaleza';
 
 -- Usuário para aplicação (opcional - mais seguro)
-CREATE USER sgc_app WITH PASSWORD 'sgc_app_password';
+CREATE USER sgc_app WITH PASSWORD '@Sanfona1';
 GRANT CONNECT ON DATABASE sgc_itep TO sgc_app;
 GRANT USAGE ON SCHEMA public TO sgc_app;
 GRANT CREATE ON SCHEMA public TO sgc_app;

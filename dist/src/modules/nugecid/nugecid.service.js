@@ -19,6 +19,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const desarquivamento_typeorm_entity_1 = require("./infrastructure/entities/desarquivamento.typeorm-entity");
 const user_entity_1 = require("../users/entities/user.entity");
+const status_desarquivamento_enum_1 = require("./domain/enums/status-desarquivamento.enum");
 const nugecid_audit_service_1 = require("./nugecid-audit.service");
 let NugecidService = NugecidService_1 = class NugecidService {
     constructor(desarquivamentoRepository, userRepository, nugecidAuditService) {
@@ -31,9 +32,9 @@ let NugecidService = NugecidService_1 = class NugecidService {
         const desarquivamento = this.desarquivamentoRepository.create({
             ...createDesarquivamentoDto,
             criadoPorId: currentUser.id,
-            status: 'SOLICITADO',
+            status: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO,
         });
-        const saved = await this.desarquivamentoRepository.save(desarquivamento);
+        const saved = (await this.desarquivamentoRepository.save(desarquivamento));
         if (Array.isArray(saved)) {
             throw new Error('A operação de salvar retornou um array, mas um único objeto era esperado.');
         }
@@ -54,7 +55,9 @@ let NugecidService = NugecidService_1 = class NugecidService {
             'numeroNicLaudoAuto',
             'numeroProcesso',
             'status',
-            'tipoDesarquivamento',
+            'desarquivamentoFisicoDigital',
+            'setorDemandante',
+            'servidorResponsavel',
         ];
         const sortField = validSortFields.includes(sortBy) ? sortBy : 'dataSolicitacao';
         queryBuilder.orderBy(`desarquivamento.${sortField}`, sortOrder);
@@ -75,7 +78,10 @@ let NugecidService = NugecidService_1 = class NugecidService {
         if (search) {
             queryBuilder.andWhere('(desarquivamento.nomeCompleto ILIKE :search OR ' +
                 'desarquivamento.numeroNicLaudoAuto ILIKE :search OR ' +
-                'desarquivamento.numeroProcesso ILIKE :search)', { search: `%${search}%` });
+                'desarquivamento.numeroProcesso ILIKE :search OR ' +
+                'desarquivamento.setorDemandante ILIKE :search OR ' +
+                'desarquivamento.servidorResponsavel ILIKE :search OR ' +
+                'desarquivamento.tipoDocumento ILIKE :search)', { search: `%${search}%` });
         }
         if (status && status.length > 0) {
             queryBuilder.andWhere('desarquivamento.status IN (:...status)', {
@@ -83,7 +89,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
             });
         }
         if (tipoDesarquivamento && tipoDesarquivamento.length > 0) {
-            queryBuilder.andWhere('desarquivamento.tipoDesarquivamento IN (:...tipoDesarquivamento)', { tipoDesarquivamento });
+            queryBuilder.andWhere('desarquivamento.desarquivamentoFisicoDigital IN (:...tipoDesarquivamento)', { tipoDesarquivamento });
         }
         if (usuarioId) {
             queryBuilder.andWhere('desarquivamento.criadoPor.id = :usuarioId', {
@@ -117,7 +123,7 @@ let NugecidService = NugecidService_1 = class NugecidService {
                 thirtyDaysAgo,
             });
             queryBuilder.andWhere('desarquivamento.status != :finalizado', {
-                finalizado: 'FINALIZADO',
+                finalizado: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.FINALIZADO,
             });
         }
     }
@@ -168,9 +174,49 @@ let NugecidService = NugecidService_1 = class NugecidService {
         if (!currentUser.isAdmin() && desarquivamento.criadoPorId !== currentUser.id) {
             throw new common_1.ForbiddenException('Você não tem permissão para remover este desarquivamento');
         }
-        await this.desarquivamentoRepository.softDelete(id);
+        const result = await this.desarquivamentoRepository.softDelete(id);
+        if (result.affected === 0) {
+            this.logger.warn(`Tentativa de soft delete sem efeito para o ID: ${id}. O registro pode não ter sido encontrado.`);
+            throw new common_1.NotFoundException(`Desarquivamento com ID ${id} não encontrado para remoção.`);
+        }
         await this.nugecidAuditService.saveAudit(currentUser.id, 'DELETE', 'DESARQUIVAMENTO', `Desarquivamento removido: ${desarquivamento.numeroNicLaudoAuto}`, { desarquivamentoId: desarquivamento.id });
         this.logger.log(`Desarquivamento removido: ${desarquivamento.numeroNicLaudoAuto} por ${currentUser.usuario}`);
+    }
+    async findAllDeleted(queryDto) {
+        const { page = 1, limit = 10, sortBy = 'deletedAt', sortOrder = 'DESC', } = queryDto;
+        const queryBuilder = this.desarquivamentoRepository
+            .createQueryBuilder('desarquivamento')
+            .withDeleted()
+            .where('desarquivamento.deletedAt IS NOT NULL')
+            .leftJoinAndSelect('desarquivamento.criadoPor', 'criadoPor')
+            .leftJoinAndSelect('desarquivamento.responsavel', 'responsavel');
+        this.applyFilters(queryBuilder, queryDto);
+        const validSortFields = ['deletedAt', 'nomeCompleto', 'numeroNicLaudoAuto'];
+        const sortField = validSortFields.includes(sortBy) ? sortBy : 'deletedAt';
+        queryBuilder.orderBy(`desarquivamento.${sortField}`, sortOrder);
+        const offset = (page - 1) * limit;
+        queryBuilder.skip(offset).take(limit);
+        const [desarquivamentos, total] = await queryBuilder.getManyAndCount();
+        const totalPages = Math.ceil(total / limit);
+        return {
+            desarquivamentos,
+            total,
+            page,
+            limit,
+            totalPages,
+        };
+    }
+    async restore(id, currentUser) {
+        if (!currentUser.isAdmin()) {
+            throw new common_1.ForbiddenException('Você não tem permissão para restaurar este desarquivamento');
+        }
+        const restoreResult = await this.desarquivamentoRepository.restore(id);
+        if (restoreResult.affected === 0) {
+            throw new common_1.NotFoundException('Desarquivamento não encontrado na lixeira');
+        }
+        const desarquivamento = await this.findOne(id);
+        await this.nugecidAuditService.saveAudit(currentUser.id, 'RESTORE', 'DESARQUIVamento', `Desarquivamento restaurado: ${desarquivamento.numeroNicLaudoAuto}`, { desarquivamentoId: id });
+        this.logger.log(`Desarquivamento restaurado: ${desarquivamento.numeroNicLaudoAuto} por ${currentUser.usuario}`);
     }
 };
 exports.NugecidService = NugecidService;

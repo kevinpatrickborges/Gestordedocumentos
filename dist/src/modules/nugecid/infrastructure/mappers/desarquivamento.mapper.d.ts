@@ -1,6 +1,7 @@
 import { DesarquivamentoDomain } from '../../domain/entities/desarquivamento.entity';
 import { DesarquivamentoTypeOrmEntity } from '../entities/desarquivamento.typeorm-entity';
 export declare class DesarquivamentoMapper {
+    private mapStatusStringToEnum;
     toTypeOrm(domain: DesarquivamentoDomain): DesarquivamentoTypeOrmEntity;
     toDomain(entity: DesarquivamentoTypeOrmEntity): DesarquivamentoDomain;
     toDomainList(entities: DesarquivamentoTypeOrmEntity[]): DesarquivamentoDomain[];

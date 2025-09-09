@@ -46,7 +46,7 @@ export interface User {
 
 export interface Desarquivamento {
   id: number
-  tipoDesarquivamento: string
+  tipoDesarquivamento: TipoDesarquivamento
   status: StatusDesarquivamento
   nomeCompleto: string
   numeroNicLaudoAuto: string
@@ -72,6 +72,7 @@ export interface Desarquivamento {
 // DTOs
 export interface CreateDesarquivamentoDto {
   tipoDesarquivamento: string
+  desarquivamentoFisicoDigital: TipoDesarquivamento
   status?: StatusDesarquivamento
   nomeCompleto: string
   numeroNicLaudoAuto: string

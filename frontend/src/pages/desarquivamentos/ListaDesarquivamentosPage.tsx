@@ -1,20 +1,24 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { Button } from '@/components/ui/Button'
-import { Breadcrumb } from '@/components/ui/Breadcrumb'
-import { Plus, Download, Filter, Upload } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { toast } from 'sonner'
-import AdvancedFilters from '@/components/filters/AdvancedFilters'
-import DesarquivamentosTable from '@/components/tables/DesarquivamentosTable'
-import ListingStats from '@/components/stats/ListingStats'
-import Pagination from '@/components/ui/Pagination'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Plus, Download, Upload, Filter } from 'lucide-react'
+-import { Button } from '@/components/ui/button'
++import { Button } from '@/components/ui/Button'
+import { useAuth } from '@/hooks/useAuth'
 import { useDesarquivamentos, useDeleteDesarquivamento } from '@/hooks/useDesarquivamentos'
 import { useDesarquivamentosImport } from '@/hooks/useDesarquivamentosImport'
-import { ImportModal } from '@/components/ImportModal'
-import { Desarquivamento, StatusDesarquivamento, TipoSolicitacao } from '@/types'
-import { useAuth } from '@/contexts/AuthContext'
-// Remove unused import since formatDate is not used in this file
+import { StatusDesarquivamento } from '@/types/desarquivamento'
+import { Desarquivamento } from '@/types/desarquivamento'
+-import { Breadcrumb } from '@/components/ui/breadcrumb'
++import { Breadcrumb } from '@/components/ui/Breadcrumb'
+import { AdvancedFilters } from '@/components/desarquivamentos/AdvancedFilters'
+import { ListingStats } from '@/components/desarquivamentos/ListingStats'
+import { DesarquivamentosTable } from '@/components/desarquivamentos/DesarquivamentosTable'
+-import { Pagination } from '@/components/ui/pagination'
++import { Pagination } from '@/components/ui/Pagination'
+import { ImportModal } from '@/components/desarquivamentos/ImportModal'
+-import { AdminConfirmDialog } from '@/components/ui/admin-confirm-dialog'
++import { AdminConfirmDialog } from '@/components/ui/AdminConfirmDialog'
+import { toast } from 'sonner'
 
 interface FilterState {
   search: string
@@ -155,18 +159,51 @@ const ListaDesarquivamentosPage: React.FC = () => {
   }
 
   // Handle delete
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta solicitação?')) {
-      return
-    }
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: number | null; item?: any }>({ isOpen: false, id: null })
+
+  const handleDeleteClick = (id: number, item?: any) => {
+    setDeleteConfirm({ isOpen: true, id, item })
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.id) return
 
     try {
-      await deleteDesarquivamento.mutateAsync(parseInt(id))
-      // No need to call refetch() here as the mutation handles cache invalidation
-    } catch (error) {
-      // Error is already handled by the mutation's onError callback
+      // Validar se o ID é um número válido
+      if (deleteConfirm.id <= 0) {
+        toast.error('ID inválido', {
+          description: 'O ID do desarquivamento não é válido.',
+          duration: 5000,
+        })
+        setDeleteConfirm({ isOpen: false, id: null })
+        return
+      }
+
+      const result = await deleteDesarquivamento.mutateAsync(deleteConfirm.id)
+      
+      if (result?.success) {
+        toast.success('Desarquivamento excluído com sucesso!', {
+          description: `O item foi removido do banco de dados e movido para a lixeira.`,
+          duration: 5000,
+        })
+      }
+      
+      setDeleteConfirm({ isOpen: false, id: null })
+    } catch (error: any) {
       console.error('Delete error:', error)
+      
+      const errorMessage = error?.response?.data?.message || error?.message || 'Erro desconhecido'
+      toast.error('Falha ao excluir desarquivamento', {
+        description: `Erro: ${errorMessage}`,
+        duration: 7000,
+      })
+      
+      setDeleteConfirm({ isOpen: false, id: null })
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, id: null })
   }
 
   // Calculate stats from current data
@@ -292,7 +329,7 @@ const ListaDesarquivamentosPage: React.FC = () => {
       <DesarquivamentosTable
         data={data?.data || []}
         isLoading={isLoading}
-        onDelete={(id: number) => handleDelete(id.toString())}
+        onDelete={(id: number) => handleDeleteClick(id)}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onSort={handleSort}
@@ -319,6 +356,18 @@ const ListaDesarquivamentosPage: React.FC = () => {
           setIsImportModalOpen(false)
           // The mutation's cache invalidation will automatically refresh the data
         }}
+      />
+
+      <AdminConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        title="Confirmar Exclusão"
+        description="Tem certeza que deseja excluir este desarquivamento? Esta ação irá mover o item para a lixeira."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
+        isLoading={deleteDesarquivamento.isPending}
       />
     </div>
   )

@@ -22,6 +22,7 @@ export declare class DeleteDesarquivamentoUseCase {
 }
 export declare class RestoreDesarquivamentoUseCase {
     private readonly desarquivamentoRepository;
+    private readonly logger;
     constructor(desarquivamentoRepository: IDesarquivamentoRepository);
     execute(request: {
         id: number;

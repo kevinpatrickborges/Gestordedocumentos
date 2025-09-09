@@ -13,6 +13,7 @@ exports.CreateDesarquivamentoDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
+const tipo_desarquivamento_enum_1 = require("../domain/enums/tipo-desarquivamento.enum");
 class CreateDesarquivamentoDto {
     constructor() {
         this.urgente = false;
@@ -21,14 +22,35 @@ class CreateDesarquivamentoDto {
 exports.CreateDesarquivamentoDto = CreateDesarquivamentoDto;
 __decorate([
     (0, swagger_1.ApiProperty)({
-        description: 'Tipo de desarquivamento (Físico ou Digital)',
+        description: 'Desarquivamento Físico/Digital ou não localizado',
         example: 'FISICO',
+        enum: ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'],
     }),
-    (0, class_validator_1.IsString)(),
+    (0, class_transformer_1.Transform)(({ value, obj }) => {
+        let v = value ?? obj?.desarquivamentoFisicoDigital;
+        if (typeof v !== 'string')
+            return v;
+        return v.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    }),
     (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de desarquivamento é obrigatório' }),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
 ], CreateDesarquivamentoDto.prototype, "tipoDesarquivamento", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Desarquivamento Físico/Digital ou não localizado (compatibilidade)',
+        example: tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum.FISICO,
+        enum: tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum,
+    }),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (typeof value !== 'string')
+            return value;
+        return value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum, { message: 'Tipo de desarquivamento deve ser FISICO, DIGITAL ou NAO_LOCALIZADO' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'Tipo de desarquivamento é obrigatório' }),
+    __metadata("design:type", String)
+], CreateDesarquivamentoDto.prototype, "desarquivamentoFisicoDigital", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Nome completo do solicitante',
@@ -107,7 +129,7 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiProperty)({
         description: 'Setor que está solicitando o desarquivamento',
-        example: 'Delegacia de Plantão da Zona Sul',
+        example: 'Instituto de Identificação',
     }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)({ message: 'Setor demandante é obrigatório' }),

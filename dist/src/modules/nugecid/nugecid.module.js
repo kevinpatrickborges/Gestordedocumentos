@@ -10,9 +10,7 @@ exports.NugecidModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const platform_express_1 = require("@nestjs/platform-express");
-const config_1 = require("@nestjs/config");
-const multer_1 = require("multer");
-const path_1 = require("path");
+const multer = require("multer");
 const nugecid_controller_1 = require("./nugecid.controller");
 const use_cases_1 = require("./application/use-cases");
 const desarquivamento_repository_module_1 = require("./infrastructure/desarquivamento-repository.module");
@@ -37,37 +35,25 @@ exports.NugecidModule = NugecidModule = __decorate([
                 user_entity_1.User,
                 auditoria_entity_1.Auditoria,
             ]),
-            platform_express_1.MulterModule.registerAsync({
-                imports: [config_1.ConfigModule],
-                useFactory: async (configService) => ({
-                    storage: (0, multer_1.diskStorage)({
-                        destination: (req, file, cb) => {
-                            const uploadPath = configService.get('UPLOAD_PATH', './uploads');
-                            cb(null, uploadPath);
-                        },
-                        filename: (req, file, cb) => {
-                            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-                            cb(null, `${file.fieldname}-${uniqueSuffix}${(0, path_1.extname)(file.originalname)}`);
-                        },
-                    }),
-                    fileFilter: (req, file, cb) => {
-                        const allowedMimes = [
-                            'application/vnd.ms-excel',
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                            'text/csv',
-                        ];
-                        if (allowedMimes.includes(file.mimetype)) {
-                            cb(null, true);
-                        }
-                        else {
-                            cb(new Error('Apenas arquivos .xls, .xlsx e .csv são permitidos.'), false);
-                        }
-                    },
-                    limits: {
-                        fileSize: 10 * 1024 * 1024,
-                    },
-                }),
-                inject: [config_1.ConfigService],
+            platform_express_1.MulterModule.register({
+                storage: multer.memoryStorage(),
+                fileFilter: (req, file, cb) => {
+                    const allowedMimes = [
+                        'application/vnd.ms-excel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        'text/csv',
+                        'application/vnd.ms-excel.sheet.macroEnabled.12',
+                    ];
+                    if (allowedMimes.includes(file.mimetype)) {
+                        cb(null, true);
+                    }
+                    else {
+                        cb(new Error('Apenas arquivos .xls, .xlsx, .xlsm e .csv são permitidos.'), false);
+                    }
+                },
+                limits: {
+                    fileSize: 10 * 1024 * 1024,
+                },
             }),
         ],
         controllers: [nugecid_controller_1.NugecidController],

@@ -51,6 +51,7 @@ export interface UpdateDesarquivamentoResponse {
 }
 export declare class UpdateDesarquivamentoUseCase {
     private readonly desarquivamentoRepository;
+    private readonly logger;
     constructor(desarquivamentoRepository: IDesarquivamentoRepository);
     execute(request: UpdateDesarquivamentoRequest): Promise<UpdateDesarquivamentoResponse>;
     private validateRequest;

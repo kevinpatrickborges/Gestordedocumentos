@@ -18,16 +18,59 @@ import {
   XCircle,
   Eye
 } from 'lucide-react'
-import { formatDate, getStatusLabel, getTipoLabel } from '@/utils/format'
+import { getStatusLabel } from '@/utils/format'
 import { StatusDesarquivamento } from '@/types'
 
 const DetalhesDesarquivamentoPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { data: desarquivamento, isLoading, error } = useDesarquivamento(id!)
 
-  const canEdit = user?.role === 'admin' || user?.role === 'coordenador'
+  const { data: response, isLoading, error } = useDesarquivamento(id);
+  const desarquivamento = response?.data;
+  const isIdValid = id ? !isNaN(parseInt(id, 10)) : false;
+
+  const canEdit = user?.role?.name === 'admin' || user?.role?.name === 'coordenador'
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Data inválida';
+    }
+  };
+
+  if (isLoading) {
+    return <PageLoading />
+  }
+
+  if (!isIdValid) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            ID Inválido
+          </h3>
+          <p className="text-gray-600 mb-4">
+            O ID fornecido na URL é inválido.
+          </p>
+          <Button onClick={() => navigate('/desarquivamentos')} variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar para lista
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return <PageLoading />
@@ -55,11 +98,11 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
 
   const getStatusIcon = (status: StatusDesarquivamento) => {
     switch (status) {
-      case StatusDesarquivamento.APROVADO:
+      case StatusDesarquivamento.FINALIZADO:
         return <CheckCircle className="h-5 w-5 text-green-600" />
-      case StatusDesarquivamento.REJEITADO:
+      case StatusDesarquivamento.NAO_LOCALIZADO:
         return <XCircle className="h-5 w-5 text-red-600" />
-      case StatusDesarquivamento.EM_ANALISE:
+      case StatusDesarquivamento.DESARQUIVADO:
         return <Eye className="h-5 w-5 text-blue-600" />
       default:
         return <Clock className="h-5 w-5 text-yellow-600" />
@@ -68,19 +111,19 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
 
   const getStatusColor = (status: StatusDesarquivamento) => {
     switch (status) {
-      case StatusDesarquivamento.APROVADO:
+      case StatusDesarquivamento.FINALIZADO:
         return 'default'
-      case StatusDesarquivamento.REJEITADO:
+      case StatusDesarquivamento.NAO_LOCALIZADO:
         return 'destructive'
-      case StatusDesarquivamento.EM_ANALISE:
+      case StatusDesarquivamento.DESARQUIVADO:
         return 'secondary'
       default:
         return 'outline'
     }
   }
 
-  const isPrazoVencido = desarquivamento.prazoVencimento && 
-    new Date(desarquivamento.prazoVencimento) < new Date()
+  // Removido prazoVencimento pois não existe na entidade
+  const isPrazoVencido = false
 
   return (
     <div className="space-y-6">
@@ -98,7 +141,7 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Solicitação #{desarquivamento.codigoBarras}
+              Solicitação #{desarquivamento.numeroNicLaudoAuto}
             </h1>
             <p className="text-gray-600 mt-1">
               Detalhes da solicitação de desarquivamento
@@ -139,28 +182,21 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-600">Data de Criação</p>
-              <p className="font-medium">{formatDate(desarquivamento.createdAt)}</p>
+              <p className="text-gray-900">
+                {formatDate(desarquivamento.createdAt)}
+              </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Última Atualização</p>
-              <p className="font-medium">{formatDate(desarquivamento.updatedAt)}</p>
-            </div>
+            {desarquivamento.updatedAt && desarquivamento.updatedAt !== desarquivamento.createdAt && (
+              <div>
+                <p className="text-sm text-gray-600">Última Atualização</p>
+                <p className="text-gray-900">
+                  {formatDate(desarquivamento.updatedAt)}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-sm text-gray-600">Prazo de Vencimento</p>
-              {desarquivamento.prazoVencimento ? (
-                <p className={`font-medium ${
-                  isPrazoVencido ? 'text-red-600' : 'text-gray-900'
-                }`}>
-                  {formatDate(desarquivamento.prazoVencimento)}
-                  {isPrazoVencido && (
-                    <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
-                      Vencido
-                    </span>
-                  )}
-                </p>
-              ) : (
-                <p className="text-gray-400">Não definido</p>
-              )}
+              <p className="text-gray-400">Não definido</p>
             </div>
           </div>
         </CardContent>
@@ -177,27 +213,49 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-gray-600">Código de Barras</p>
-              <p className="font-mono text-lg font-medium">{desarquivamento.codigoBarras}</p>
+              <p className="text-sm text-gray-600">Número NIC/LAUDO/AUTO</p>
+              <p className="font-mono text-lg font-medium">{desarquivamento.numeroNicLaudoAuto || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Tipo de Solicitação</p>
+              <p className="text-sm text-gray-600">Número do Processo</p>
+              <p className="font-mono text-lg font-medium">{desarquivamento.numeroProcesso}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Tipo de Desarquivamento</p>
               <Badge variant="outline" className="mt-1">
-                {getTipoLabel(desarquivamento.tipo)}
+                {desarquivamento.tipoDesarquivamento}
               </Badge>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Justificativa</p>
-              <p className="text-gray-900 whitespace-pre-wrap">
-                {desarquivamento.justificativa}
+              <p className="text-sm text-gray-600">Tipo de Documento</p>
+              <p className="text-gray-900">
+                {desarquivamento.tipoDocumento}
               </p>
             </div>
-            {desarquivamento.observacoes && (
+            <div>
+              <p className="text-sm text-gray-600">Finalidade do Desarquivamento</p>
+              <p className="text-gray-900 whitespace-pre-wrap">
+                {desarquivamento.finalidadeDesarquivamento}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Setor Demandante</p>
+              <p className="text-gray-900">
+                {desarquivamento.setorDemandante}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Servidor Responsável</p>
+              <p className="text-gray-900">
+                {desarquivamento.servidorResponsavel}
+              </p>
+            </div>
+            {desarquivamento.solicitacaoProrrogacao && (
               <div>
-                <p className="text-sm text-gray-600">Observações</p>
-                <p className="text-gray-900 whitespace-pre-wrap">
-                  {desarquivamento.observacoes}
-                </p>
+                <p className="text-sm text-gray-600">Solicitação de Prorrogação</p>
+                <Badge variant="secondary" className="mt-1">
+                  Sim
+                </Badge>
               </div>
             )}
           </CardContent>
@@ -214,26 +272,34 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-gray-600">Nome Completo</p>
-              <p className="font-medium">{desarquivamento.requerente}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">CPF</p>
-                <p className="font-mono">{desarquivamento.cpfRequerente}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Telefone</p>
-                <p className="font-mono">{desarquivamento.telefoneRequerente}</p>
-              </div>
+              <p className="font-medium">{desarquivamento.nomeCompleto}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Email</p>
-              <p className="text-blue-600 hover:underline">
-                <a href={`mailto:${desarquivamento.emailRequerente}`}>
-                  {desarquivamento.emailRequerente}
-                </a>
-              </p>
+              <p className="text-sm text-gray-600">Usuário Solicitante</p>
+              <p className="font-medium">{desarquivamento.usuario?.nome || 'N/A'}</p>
             </div>
+            {desarquivamento.responsavel && (
+              <div>
+                <p className="text-sm text-gray-600">Responsável pelo Atendimento</p>
+                <p className="font-medium">{desarquivamento.responsavel.nome}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-sm text-gray-600">Data de Solicitação</p>
+              <p className="font-medium">{formatDate(desarquivamento.dataSolicitacao)}</p>
+            </div>
+            {desarquivamento.dataDesarquivamentoSAG && (
+              <div>
+                <p className="text-sm text-gray-600">Data do Desarquivamento - SAG</p>
+                <p className="font-medium">{formatDate(desarquivamento.dataDesarquivamentoSAG)}</p>
+              </div>
+            )}
+            {desarquivamento.dataDevolucaoSetor && (
+              <div>
+                <p className="text-sm text-gray-600">Data da Devolução pelo Setor</p>
+                <p className="font-medium">{formatDate(desarquivamento.dataDevolucaoSetor)}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -283,11 +349,11 @@ const DetalhesDesarquivamentoPage: React.FC = () => {
               </div>
             )}
 
-            {desarquivamento.status !== StatusDesarquivamento.PENDENTE && (
+            {desarquivamento.status !== StatusDesarquivamento.SOLICITADO && (
               <div className="flex items-start gap-3">
                 <div className={`w-2 h-2 rounded-full mt-2 ${
-                  desarquivamento.status === StatusDesarquivamento.APROVADO ? 'bg-green-500' :
-                  desarquivamento.status === StatusDesarquivamento.REJEITADO ? 'bg-red-500' :
+                  desarquivamento.status === StatusDesarquivamento.FINALIZADO ? 'bg-green-500' :
+                  desarquivamento.status === StatusDesarquivamento.NAO_LOCALIZADO ? 'bg-red-500' :
                   'bg-blue-500'
                 }`} />
                 <div className="flex-1">

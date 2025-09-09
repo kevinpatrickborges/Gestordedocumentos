@@ -5,8 +5,10 @@ export interface FindAllDesarquivamentosRequest {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
     filters?: {
-        status?: string;
-        tipoDesarquivamento?: string;
+        status?: string | string[];
+        statusList?: string[];
+        tipoDesarquivamento?: string | string[];
+        tipoDesarquivamentoList?: string[];
         nomeSolicitante?: string;
         numeroRegistro?: string;
         codigoBarras?: string;
@@ -42,6 +44,7 @@ export interface FindAllDesarquivamentosResponse {
         responsavelId?: number;
         createdAt: Date;
         updatedAt: Date;
+        deletedAt?: Date;
         isOverdue?: boolean;
         daysUntilDeadline?: number;
     }[];

@@ -52,6 +52,7 @@ export declare class NugecidController {
             responsavelId?: number;
             createdAt: Date;
             updatedAt: Date;
+            deletedAt?: Date;
             isOverdue?: boolean;
             daysUntilDeadline?: number;
         }[];
@@ -62,9 +63,58 @@ export declare class NugecidController {
             totalPages: number;
         };
     }>;
+    findDeleted(queryDto: QueryDesarquivamentoDto, currentUser: User, req: any): Promise<{
+        success: boolean;
+        data: {
+            id: number;
+            codigoBarras?: string;
+            tipoDesarquivamento: string;
+            status: string;
+            nomeCompleto: string;
+            numeroNicLaudoAuto: string;
+            numeroProcesso: string;
+            tipoDocumento?: string;
+            dataSolicitacao: Date;
+            dataDesarquivamentoSAG?: Date;
+            dataDevolucaoSetor?: Date;
+            setorDemandante: string;
+            servidorResponsavel: string;
+            finalidadeDesarquivamento: string;
+            solicitacaoProrrogacao: boolean;
+            urgente?: boolean;
+            criadoPorId: number;
+            responsavelId?: number;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt?: Date;
+            isOverdue?: boolean;
+            daysUntilDeadline?: number;
+        }[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    restore(id: string, currentUser: User): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            success: boolean;
+            message: string;
+        };
+        restoredAt: string;
+        restoredBy: string;
+    }>;
     getDashboard(): Promise<{
         success: boolean;
         data: import("./nugecid-stats.service").DashboardStats;
+    }>;
+    hardDelete(idParam: string, currentUser: User): Promise<{
+        success: boolean;
+        message: string;
+        data: import("./application/use-cases").DeleteDesarquivamentoResponse;
     }>;
     exportToExcel(queryDto: QueryDesarquivamentoDto, currentUser: User, res: Response): Promise<void>;
     findOne(id: number, currentUser: User): Promise<{
@@ -94,6 +144,7 @@ export declare class NugecidController {
             responsavelId?: number;
             createdAt: Date;
             updatedAt: Date;
+            deletedAt?: Date;
             isOverdue?: boolean;
             daysUntilDeadline?: number;
         };
@@ -103,12 +154,14 @@ export declare class NugecidController {
         message: string;
         data: import("./application/use-cases").UpdateDesarquivamentoResponse;
     }>;
-    remove(id: number, currentUser: User): Promise<{
+    remove(idParam: string, currentUser: User): Promise<{
         success: boolean;
         message: string;
-    }>;
-    restore(id: number, currentUser: User): Promise<{
-        success: boolean;
-        message: string;
+        data: {
+            id: number;
+            deletedAt: string;
+            deletedBy: number;
+            type: string;
+        };
     }>;
 }

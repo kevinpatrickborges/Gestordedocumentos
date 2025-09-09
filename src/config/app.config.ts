@@ -19,7 +19,7 @@ export default registerAs('app', () => ({
 
   // URLs
   baseUrl: process.env.BASE_URL || 'http://localhost:3000',
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
 
   // File Upload
   uploadPath: process.env.UPLOAD_PATH || join(process.cwd(), 'uploads'),
@@ -42,7 +42,7 @@ export default registerAs('app', () => ({
   cors: {
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(',')
-      : ['http://localhost:3000'],
+      : ['http://localhost:3000', 'http://localhost:3001'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

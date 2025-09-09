@@ -3,6 +3,7 @@ import * as xlsx from 'xlsx';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { CreateDesarquivamentoDto } from '../../../dto/create-desarquivamento.dto';
+import { TipoDesarquivamentoEnum } from '../../../domain/enums/tipo-desarquivamento.enum';
 import {
   CreateDesarquivamentoUseCase,
   CreateDesarquivamentoRequest,
@@ -49,7 +50,7 @@ export class ImportDesarquivamentoUseCase {
         try {
           // Criar request para o use case
           const request: CreateDesarquivamentoRequest = {
-            tipoDesarquivamento: dto.tipoDesarquivamento || 'FISICO',
+            tipoDesarquivamento: dto.tipoDesarquivamento || TipoDesarquivamentoEnum.FISICO,
             nomeCompleto: dto.nomeCompleto,
             numeroNicLaudoAuto: dto.numeroNicLaudoAuto,
             numeroProcesso: dto.numeroProcesso || '',

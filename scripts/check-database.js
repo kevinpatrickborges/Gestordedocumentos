@@ -106,7 +106,7 @@ async function checkDatabaseConnection() {
 
     // Teste 5: Verificar tabelas esperadas
     log.info('🔍 Teste 5: Verificando tabelas esperadas...');
-    const expectedTables = ['usuarios', 'roles', 'desarquivamentos', 'auditorias'];
+    const expectedTables = ['usuarios', 'roles', 'desarquivamentos', 'auditorias', 'audit_logs', 'migrations'];
     const foundTableNames = tables.map(t => t.table_name);
 
     for (const expectedTable of expectedTables) {

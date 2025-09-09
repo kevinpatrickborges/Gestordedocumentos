@@ -5,6 +5,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const common_1 = require("@nestjs/common");
 const nugecid_service_1 = require("./nugecid.service");
 const tipo_desarquivamento_vo_1 = require("./domain/value-objects/tipo-desarquivamento.vo");
+const status_desarquivamento_vo_1 = require("./domain/value-objects/status-desarquivamento.vo");
 const desarquivamento_typeorm_entity_1 = require("./infrastructure/entities/desarquivamento.typeorm-entity");
 const user_entity_1 = require("../users/entities/user.entity");
 const auditoria_entity_1 = require("../audit/entities/auditoria.entity");
@@ -106,6 +107,7 @@ describe('NugecidService', () => {
     describe('create', () => {
         const createDto = {
             tipoDesarquivamento: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
+            desarquivamentoFisicoDigital: tipo_desarquivamento_vo_1.TipoDesarquivamentoEnum.FISICO,
             nomeCompleto: 'João Silva',
             numeroNicLaudoAuto: 'NIC-2024001',
             numeroProcesso: '2024001-PROC',
@@ -230,7 +232,7 @@ describe('NugecidService', () => {
     });
     describe('update', () => {
         const updateDto = {
-            status: 'DESARQUIVADO',
+            status: status_desarquivamento_vo_1.StatusDesarquivamentoEnum.FINALIZADO,
         };
         it('deve atualizar desarquivamento se usuário pode editar', async () => {
             const mockDesarquivamentoToUpdate = {
@@ -247,7 +249,7 @@ describe('NugecidService', () => {
             const result = await service.update(1, updateDto, mockEditorUser);
             expect(mockDesarquivamentoToUpdate.canBeEditedBy).toHaveBeenCalledWith(mockEditorUser);
             expect(mockDesarquivamentoRepository.save).toHaveBeenCalled();
-            expect(result.status).toBe('DESARQUIVADO');
+            expect(result.status).toBe(status_desarquivamento_vo_1.StatusDesarquivamentoEnum.FINALIZADO);
         });
         it('deve lançar ForbiddenException se usuário não pode editar', async () => {
             const mockDesarquivamentoNoEdit = {

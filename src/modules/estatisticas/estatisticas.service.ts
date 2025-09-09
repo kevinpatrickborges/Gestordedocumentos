@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DesarquivamentoTypeOrmEntity } from '../nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
+import { StatusDesarquivamentoEnum } from '../nugecid/domain/enums/status-desarquivamento.enum';
 
 export interface CardData {
   totalAtendimentos: number;
@@ -39,7 +40,7 @@ export class EstatisticasService {
     const [total, pendentes, esteMes] = await Promise.all([
       this.desarquivamentoRepo.count(),
       this.desarquivamentoRepo.count({
-        where: { status: 'SOLICITADO' },
+        where: { status: StatusDesarquivamentoEnum.SOLICITADO },
       }),
       this.desarquivamentoRepo
         .createQueryBuilder('d')

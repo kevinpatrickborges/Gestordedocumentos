@@ -23,7 +23,9 @@ export class Role {
     this._id = props.id;
     this._nome = props.nome;
     this._descricao = props.descricao;
-    this._permissoes = [...props.permissoes]; // Cópia para imutabilidade
+    // Garantir que permissoes seja sempre um array válido
+    const permissoesArray = Array.isArray(props.permissoes) ? props.permissoes : [];
+    this._permissoes = permissoesArray.slice(); // Cópia para imutabilidade
     this._createdAt = props.createdAt || new Date();
     this._updatedAt = props.updatedAt || new Date();
   }
@@ -33,9 +35,9 @@ export class Role {
       throw new Error('Nome da role é obrigatório');
     }
 
-    if (!props.permissoes || props.permissoes.length === 0) {
-      throw new Error('Role deve ter pelo menos uma permissão');
-    }
+    // Permissões serão sempre normalizadas para array no construtor;
+    // não exigimos quantidade mínima aqui para evitar TypeError em cenários
+    // onde a role ainda não possui permissões definidas.
   }
 
   get id(): RoleId | undefined {

@@ -3,7 +3,7 @@ import { AppService } from './app.service';
 export declare class AppController {
     private readonly appService;
     constructor(appService: AppService);
-    getRoot(res: Response): Response<any, Record<string, any>>;
+    getRoot(res: Response): void;
     getDashboard(req: Request): Promise<{
         stats: {
             total: number;

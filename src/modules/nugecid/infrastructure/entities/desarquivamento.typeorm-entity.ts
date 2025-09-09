@@ -10,6 +10,7 @@ import {
   Index,
 } from 'typeorm';
 import { User } from '../../../users/entities/user.entity';
+import { StatusDesarquivamentoEnum } from '../../domain/enums/status-desarquivamento.enum';
 
 @Entity('desarquivamentos')
 @Index(['numeroNicLaudoAuto'], { unique: true })
@@ -26,7 +27,12 @@ export class DesarquivamentoTypeOrmEntity {
   @Column({ name: 'tipo_desarquivamento', type: 'varchar', nullable: false })
   tipoDesarquivamento: string;
 
-  @Column({ type: 'varchar', default: 'SOLICITADO' })
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 50,
+    default: 'SOLICITADO',
+  })
   status: string;
 
   @Column({ name: 'nome_completo', length: 255, nullable: false })
@@ -41,13 +47,13 @@ export class DesarquivamentoTypeOrmEntity {
   @Column({ name: 'tipo_documento', length: 100, nullable: false })
   tipoDocumento: string;
 
-  @Column({ name: 'data_solicitacao', type: 'timestamptz', nullable: false })
+  @Column({ name: 'data_solicitacao', type: 'timestamp', nullable: false })
   dataSolicitacao: Date;
 
-  @Column({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true })
+  @Column({ name: 'data_desarquivamento_sag', type: 'timestamp', nullable: true })
   dataDesarquivamentoSAG?: Date;
 
-  @Column({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true })
+  @Column({ name: 'data_devolucao_setor', type: 'timestamp', nullable: true })
   dataDevolucaoSetor?: Date;
 
   @Column({ name: 'setor_demandante', length: 255, nullable: false })

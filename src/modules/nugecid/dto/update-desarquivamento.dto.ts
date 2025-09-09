@@ -1,7 +1,7 @@
 import {
   IsString,
   IsOptional,
-  IsIn,
+  IsEnum,
   IsBoolean,
   IsDateString,
   MaxLength,
@@ -11,52 +11,31 @@ import {
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-
-// Status values from reference document
-const VALID_STATUS = [
-  'FINALIZADO',
-  'DESARQUIVADO', 
-  'NAO_COLETADO',
-  'SOLICITADO',
-  'REARQUIVAMENTO_SOLICITADO',
-  'RETIRADO_PELO_SETOR',
-  'NAO_LOCALIZADO'
-] as const;
-
-// Tipo desarquivamento values from reference document  
-const VALID_TIPO_DESARQUIVAMENTO = [
-  'FISICO',
-  'DIGITAL',
-  'NAO_LOCALIZADO'
-] as const;
+import { TipoDesarquivamentoEnum } from '../domain/enums/tipo-desarquivamento.enum';
+import { StatusDesarquivamentoEnum } from '../domain/enums/status-desarquivamento.enum';
 
 export class UpdateDesarquivamentoDto {
   @ApiPropertyOptional({
-    description: 'Tipo de desarquivamento',
-    example: 'FISICO',
-    enum: VALID_TIPO_DESARQUIVAMENTO,
-    maxLength: 50,
+    description: 'Desarquivamento Físico/Digital ou não localizado',
+    example: TipoDesarquivamentoEnum.FISICO,
+    enum: TipoDesarquivamentoEnum,
   })
   @IsOptional()
-  @IsString()
-  @IsIn(VALID_TIPO_DESARQUIVAMENTO, {
+  @IsEnum(TipoDesarquivamentoEnum, {
     message: 'Tipo de desarquivamento deve ser: FISICO, DIGITAL ou NAO_LOCALIZADO'
   })
-  @MaxLength(50)
-  @Transform(({ value }) => value?.trim())
-  tipoDesarquivamento?: string;
+  desarquivamentoFisicoDigital?: TipoDesarquivamentoEnum;
 
   @ApiPropertyOptional({
     description: 'Status da solicitação',
-    enum: VALID_STATUS,
-    example: 'SOLICITADO',
+    enum: StatusDesarquivamentoEnum,
+    example: StatusDesarquivamentoEnum.SOLICITADO,
   })
   @IsOptional()
-  @IsString()
-  @IsIn(VALID_STATUS, {
+  @IsEnum(StatusDesarquivamentoEnum, {
     message: 'Status deve ser um dos valores válidos: FINALIZADO, DESARQUIVADO, NAO_COLETADO, SOLICITADO, REARQUIVAMENTO_SOLICITADO, RETIRADO_PELO_SETOR, NAO_LOCALIZADO',
   })
-  status?: string;
+  status?: StatusDesarquivamentoEnum;
 
   @ApiPropertyOptional({
     description: 'Nome completo do solicitante',

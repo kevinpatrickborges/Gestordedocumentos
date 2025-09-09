@@ -43,7 +43,7 @@ import {
   Filter,
   X
 } from 'lucide-react'
-import { StatusDesarquivamento, TipoSolicitacao, TipoDesarquivamento, CreateDesarquivamentoDto } from '@/types'
+import { StatusDesarquivamento, TipoSolicitacao, TipoDesarquivamento, CreateDesarquivamentoDto, Desarquivamento } from '@/types'
 import { formatDate, getStatusLabel, getTipoLabel, getTipoDesarquivamentoLabel } from '@/utils/format'
 import { toast } from 'sonner'
 import { Pagination } from '@/components/ui/Pagination'
@@ -61,21 +61,35 @@ const DesarquivamentosPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: CreateDesarquivamentoDto | null }>({
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: Desarquivamento | null }>({
     isOpen: false,
     item: null,
   })
 
   // Query parameters
-  const queryParams = useMemo(() => ({
-    page: currentPage,
-    limit: pageSize,
-    search: searchTerm || undefined,
-    status: statusFilter !== 'all' ? statusFilter as StatusDesarquivamento : undefined,
-    tipo: tipoFilter !== 'all' ? tipoFilter as TipoSolicitacao : undefined,
-    startDate: dateRange.startDate ? dateRange.startDate.toISOString().split('T')[0] : undefined,
-    endDate: dateRange.endDate ? dateRange.endDate.toISOString().split('T')[0] : undefined,
-  }), [currentPage, pageSize, searchTerm, statusFilter, tipoFilter, dateRange])
+  const queryParams = useMemo(() => {
+    const toYMD = (d?: Date | null) => {
+      if (!d) return undefined
+      const yyyy = d.getFullYear()
+      const mm = String(d.getMonth() + 1).padStart(2, '0')
+      const dd = String(d.getDate()).padStart(2, '0')
+      return `${yyyy}-${mm}-${dd}`
+    }
+
+    return {
+      page: currentPage,
+      limit: pageSize,
+      search: searchTerm || undefined,
+      status: statusFilter !== 'all' ? [statusFilter as StatusDesarquivamento] : undefined,
+      tipo: tipoFilter !== 'all' ? (tipoFilter as TipoSolicitacao) : undefined,
+      tipoDesarquivamento:
+        tipoDesarquivamentoFilter !== 'all'
+          ? (tipoDesarquivamentoFilter as TipoDesarquivamento)
+          : undefined,
+      startDate: toYMD(dateRange.startDate),
+      endDate: toYMD(dateRange.endDate),
+    }
+  }, [currentPage, pageSize, searchTerm, statusFilter, tipoFilter, tipoDesarquivamentoFilter, dateRange])
 
   const { data, isLoading, error, refetch } = useDesarquivamentos(queryParams)
   const deleteDesarquivamento = useDeleteDesarquivamento()
@@ -84,19 +98,108 @@ const DesarquivamentosPage: React.FC = () => {
     setIsImportModalOpen(false)
   })
 
-  const handleDeleteClick = (item: CreateDesarquivamentoDto) => {
+  const handleDeleteClick = (item: Desarquivamento) => {
+    const timestamp = new Date().toISOString()
+    console.log(`[${timestamp}] 🎯 FRONTEND - handleDeleteClick chamado`)
+    console.log(`[${timestamp}] 📋 Item completo recebido:`, item)
+    
+    // Verificar se o ID existe e é válido
+    if (!item || !item.id) {
+      console.error(`[${timestamp}] ❌ ERRO: Item ou ID não encontrado`, { item, id: item?.id });
+      toast.error('Erro', {
+        description: 'Não foi possível identificar o registro para exclusão.',
+        duration: 5000,
+      })
+      return;
+    }
+    
+    console.log(`[${timestamp}] 📋 Item ID validado: ${item.id} (tipo: ${typeof item.id})`)
     setDeleteConfirm({ isOpen: true, item })
   }
 
   const handleDeleteConfirm = async () => {
     if (deleteConfirm.item) {
+      const itemId = deleteConfirm.item.id
+      const itemNic = deleteConfirm.item.numeroNicLaudoAuto || 'N/A'
+      
+      const timestamp = new Date().toISOString()
+      console.log(`[${timestamp}] 🚀 FRONTEND - INICIANDO EXCLUSÃO`)
+      console.log(`[${timestamp}] 📋 Dados do item:`, {
+        id: itemId,
+        idType: typeof itemId,
+        idValue: itemId,
+        nic: itemNic,
+        fullItem: deleteConfirm.item
+      })
+      
       try {
-        await deleteDesarquivamento.mutateAsync(Number(deleteConfirm.item.id))
-        setDeleteConfirm({ isOpen: false, item: null })
-      } catch (error) {
-        console.error('Delete error:', error)
-        setDeleteConfirm({ isOpen: false, item: null })
-      }
+          // Validar se o ID é válido (pode ser número ou string)
+          console.log(`[${timestamp}] 🔍 Validando ID: ${itemId} (tipo: ${typeof itemId})`);
+          
+          // Verificar se o ID não é nulo, undefined ou zero
+          if (itemId === null || itemId === undefined || itemId === 0) {
+            console.error(`[${timestamp}] ❌ ID inválido detectado:`, {
+              original: itemId,
+              type: typeof itemId,
+              isNull: itemId === null,
+              isUndefined: itemId === undefined,
+              isZero: itemId === 0
+            });
+            toast.error('ID inválido', {
+              description: 'O ID do desarquivamento não é válido.',
+              duration: 5000,
+            })
+            setDeleteConfirm({ isOpen: false, item: null })
+            return
+          }
+          
+          console.log(`[${timestamp}] ✅ ID válido: ${itemId}`);
+
+          console.log(`[${timestamp}] 📡 FRONTEND - Chamando deleteDesarquivamento.mutateAsync(${itemId})`);
+          
+          const result = await deleteDesarquivamento.mutateAsync(itemId)
+          
+          const responseTimestamp = new Date().toISOString()
+          console.log(`[${responseTimestamp}] 📥 FRONTEND - Resposta recebida:`, result)
+          
+          // Verifica se a exclusão foi bem-sucedida
+          if (result?.success) {
+            console.log(`[${responseTimestamp}] ✅ FRONTEND - Exclusão confirmada como bem-sucedida`)
+            toast.success('Desarquivamento excluído com sucesso!', {
+              description: `O item foi removido do banco de dados e movido para a lixeira.`,
+              duration: 5000,
+            })
+            
+            // A atualização da lista agora é gerenciada pelo onSuccess do hook useDeleteDesarquivamento
+            // O refetch() manual foi removido para evitar condições de corrida.
+          } else {
+            console.error(`[${responseTimestamp}] ❌ FRONTEND - Exclusão NÃO foi confirmada pelo servidor`)
+            toast.error('Erro na exclusão', {
+              description: 'A exclusão não foi confirmada pelo servidor.',
+            })
+          }
+          
+          setDeleteConfirm({ isOpen: false, item: null })
+        } catch (error: any) {
+          const errorTimestamp = new Date().toISOString()
+          console.error(`[${errorTimestamp}] ❌ FRONTEND - ERRO NA EXCLUSÃO:`, error)
+          console.error(`[${errorTimestamp}] 📋 Detalhes do erro:`, {
+            message: error?.message,
+            response: error?.response?.data,
+            status: error?.response?.status,
+            stack: error?.stack
+          })
+          
+          const errorMessage = error?.response?.data?.message || error?.message || 'Erro desconhecido'
+          toast.error('Falha ao excluir desarquivamento', {
+            description: `Erro: ${errorMessage}`,
+            duration: 7000,
+          })
+          
+          setDeleteConfirm({ isOpen: false, item: null })
+        }
+    } else {
+      console.warn(`[${new Date().toISOString()}] ⚠️ FRONTEND - handleDeleteConfirm chamado sem item selecionado`)
     }
   }
 
@@ -169,6 +272,14 @@ const DesarquivamentosPage: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Atualizar
           </Button>
+          {canDelete && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/desarquivamentos/lixeira">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Lixeira
+              </Link>
+            </Button>
+          )}
           {canEdit && (
             <>
               <Button onClick={() => setIsImportModalOpen(true)} 
@@ -321,7 +432,7 @@ const DesarquivamentosPage: React.FC = () => {
                         <TableRow key={item.id}>
                           <TableCell>
                             <Badge variant="outline">
-                              {item.tipoDesarquivamento ? getTipoDesarquivamentoLabel(item.tipoDesarquivamento) : '-'}
+                              {item.tipoDesarquivamento ? getTipoDesarquivamentoLabel(item.tipoDesarquivamento as TipoDesarquivamento) : '-'}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -336,37 +447,39 @@ const DesarquivamentosPage: React.FC = () => {
                               {getStatusLabel(item.status)}
                             </Badge>
                           </TableCell>
-                          <TableCell>{item.nomeCompleto || item.nomeRequerente || '-'}</TableCell>
+                          <TableCell>{item.nomeCompleto || '-'}</TableCell>
                           <TableCell>{item.numeroNicLaudoAuto || '-'}</TableCell>
-                          <TableCell>{item.numeroProcesso || item.numeroRegistro || '-'}</TableCell>
+                          <TableCell>{item.numeroProcesso || '-'}</TableCell>
                           <TableCell>{item.tipoDocumento || '-'}</TableCell>
                           <TableCell>
                             {formatDate(item.dataSolicitacao || item.createdAt)}
                           </TableCell>
                           <TableCell>
-                            {item.dataDesarquivamentoSag ? formatDate(item.dataDesarquivamentoSag) : '-'}
+                            {item.dataDesarquivamentoSAG ? formatDate(item.dataDesarquivamentoSAG) : '-'}
                           </TableCell>
                           <TableCell>
                             {item.dataDevolucaoSetor ? formatDate(item.dataDevolucaoSetor) : '-'}
                           </TableCell>
                           <TableCell>{item.setorDemandante || '-'}</TableCell>
                           <TableCell>{item.servidorResponsavel || '-'}</TableCell>
-                          <TableCell>{item.finalidadeDesarquivamento || item.finalidade || '-'}</TableCell>
+                          <TableCell>{item.finalidadeDesarquivamento || '-'}</TableCell>
                           <TableCell>
                             {item.solicitacaoProrrogacao ? 'Sim' : 'Não'}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button
-                                asChild
-                                variant="ghost"
-                                size="sm"
-                              >
-                                <Link to={`/desarquivamentos/${item.id}`}>
-                                  <Eye className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              {canEdit && (
+                              {item.id && item.id > 0 && (
+                                <Button
+                                  asChild
+                                  variant="ghost"
+                                  size="sm"
+                                >
+                                  <Link to={`/desarquivamentos/${item.id}`}>
+                                    <Eye className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                              )}
+                              {canEdit && item.id && item.id > 0 && (
                                 <Button
                                   asChild
                                   variant="ghost"
@@ -464,7 +577,6 @@ const DesarquivamentosPage: React.FC = () => {
         confirmText="Excluir"
         cancelText="Cancelar"
         variant="danger"
-        isLoading={deleteDesarquivamento.isPending}
       />
     </div>
   )

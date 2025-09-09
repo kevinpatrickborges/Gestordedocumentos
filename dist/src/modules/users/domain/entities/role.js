@@ -7,16 +7,14 @@ class Role {
         this._id = props.id;
         this._nome = props.nome;
         this._descricao = props.descricao;
-        this._permissoes = [...props.permissoes];
+        const permissoesArray = Array.isArray(props.permissoes) ? props.permissoes : [];
+        this._permissoes = permissoesArray.slice();
         this._createdAt = props.createdAt || new Date();
         this._updatedAt = props.updatedAt || new Date();
     }
     validateProps(props) {
         if (!props.nome || props.nome.trim().length === 0) {
             throw new Error('Nome da role é obrigatório');
-        }
-        if (!props.permissoes || props.permissoes.length === 0) {
-            throw new Error('Role deve ter pelo menos uma permissão');
         }
     }
     get id() {

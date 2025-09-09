@@ -4,6 +4,7 @@ import { IDesarquivamentoRepository, FindAllOptions, FindAllResult, DashboardSta
 import { DesarquivamentoDomain } from '../../domain/entities/desarquivamento.entity';
 import { DesarquivamentoMapper } from '../mappers/desarquivamento.mapper';
 import { DesarquivamentoId } from '../../domain/value-objects';
+import { StatusDesarquivamentoEnum } from '../../domain/enums/status-desarquivamento.enum';
 export declare class DesarquivamentoTypeOrmRepository implements IDesarquivamentoRepository {
     private readonly repository;
     private readonly mapper;
@@ -27,7 +28,7 @@ export declare class DesarquivamentoTypeOrmRepository implements IDesarquivament
         startDate: Date;
         endDate: Date;
     }): Promise<DashboardStats>;
-    countByStatus(status: string): Promise<number>;
+    countByStatus(status: StatusDesarquivamentoEnum): Promise<number>;
     countByTipo(tipo: string): Promise<number>;
     findByCodigoBarras(codigoBarras: string): Promise<DesarquivamentoDomain | null>;
     findByNumeroRegistro(numeroRegistro: string): Promise<DesarquivamentoDomain[]>;

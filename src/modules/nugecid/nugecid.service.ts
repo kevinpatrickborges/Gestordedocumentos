@@ -14,11 +14,7 @@ import * as path from 'path';
 import {
   DesarquivamentoTypeOrmEntity,
 } from './infrastructure/entities/desarquivamento.typeorm-entity';
-import {
-  TipoDesarquivamento,
-  TipoDesarquivamentoEnum,
-} from './domain/value-objects/tipo-desarquivamento.vo';
-import { TipoSolicitacaoEnum } from './domain/value-objects/tipo-solicitacao.vo';
+import { TipoDesarquivamentoEnum } from './domain/enums/tipo-desarquivamento.enum';
 import * as PDFDocument from 'pdfkit';
 import { User } from '../users/entities/user.entity';
 import { Auditoria } from '../audit/entities/auditoria.entity';
@@ -29,6 +25,7 @@ import { ImportResultDto } from './dto/import-result.dto';
 import { ImportDesarquivamentoDto } from './dto/import-desarquivamento.dto';
 import { ImportRegistroDto } from './dto/import-registro.dto';
 import { validate } from 'class-validator';
+import { StatusDesarquivamentoEnum } from './domain/enums/status-desarquivamento.enum';
 
 export interface PaginatedDesarquivamentos {
   desarquivamentos: DesarquivamentoTypeOrmEntity[];
@@ -73,11 +70,13 @@ export class NugecidService {
     const desarquivamento = this.desarquivamentoRepository.create({
       ...createDesarquivamentoDto,
       criadoPorId: currentUser.id,
-      status: 'SOLICITADO',
+      status: StatusDesarquivamentoEnum.SOLICITADO,
     });
 
-    const saved = await this.desarquivamentoRepository.save(desarquivamento);
-
+    const saved = (await this.desarquivamentoRepository.save(
+      desarquivamento,
+    )) as DesarquivamentoTypeOrmEntity;
+    
     if (Array.isArray(saved)) {
       throw new Error(
         'A operação de salvar retornou um array, mas um único objeto era esperado.',
@@ -125,7 +124,9 @@ export class NugecidService {
       'numeroNicLaudoAuto',
       'numeroProcesso',
       'status',
-      'tipoDesarquivamento',
+      'desarquivamentoFisicoDigital',
+      'setorDemandante',
+      'servidorResponsavel',
     ];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'dataSolicitacao';
     queryBuilder.orderBy(
@@ -168,7 +169,10 @@ export class NugecidService {
       queryBuilder.andWhere(
         '(desarquivamento.nomeCompleto ILIKE :search OR ' +
           'desarquivamento.numeroNicLaudoAuto ILIKE :search OR ' +
-          'desarquivamento.numeroProcesso ILIKE :search)',
+          'desarquivamento.numeroProcesso ILIKE :search OR ' +
+          'desarquivamento.setorDemandante ILIKE :search OR ' +
+          'desarquivamento.servidorResponsavel ILIKE :search OR ' +
+          'desarquivamento.tipoDocumento ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -180,7 +184,7 @@ export class NugecidService {
     }
 
     if (tipoDesarquivamento && tipoDesarquivamento.length > 0) {
-      queryBuilder.andWhere('desarquivamento.tipoDesarquivamento IN (:...tipoDesarquivamento)', { tipoDesarquivamento });
+      queryBuilder.andWhere('desarquivamento.desarquivamentoFisicoDigital IN (:...tipoDesarquivamento)', { tipoDesarquivamento });
     }
 
     if (usuarioId) {
@@ -220,7 +224,7 @@ export class NugecidService {
         thirtyDaysAgo,
       });
       queryBuilder.andWhere('desarquivamento.status != :finalizado', {
-        finalizado: 'FINALIZADO',
+        finalizado: StatusDesarquivamentoEnum.FINALIZADO,
       });
     }
   }
@@ -324,7 +328,16 @@ export class NugecidService {
       );
     }
 
-    await this.desarquivamentoRepository.softDelete(id);
+    const result = await this.desarquivamentoRepository.softDelete(id);
+
+    if (result.affected === 0) {
+      this.logger.warn(
+        `Tentativa de soft delete sem efeito para o ID: ${id}. O registro pode não ter sido encontrado.`,
+      );
+      throw new NotFoundException(
+        `Desarquivamento com ID ${id} não encontrado para remoção.`,
+      );
+    }
 
     // Salva auditoria
     await this.nugecidAuditService.saveAudit(
@@ -340,15 +353,80 @@ export class NugecidService {
     );
   }
 
-  
+  /**
+   * Lista desarquivamentos removidos (lixeira)
+   */
+  async findAllDeleted(
+    queryDto: QueryDesarquivamentoDto,
+  ): Promise<PaginatedDesarquivamentos> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'deletedAt',
+      sortOrder = 'DESC',
+    } = queryDto;
 
-  
+    const queryBuilder = this.desarquivamentoRepository
+      .createQueryBuilder('desarquivamento')
+      .withDeleted() // Adicionado para incluir os soft-deleted
+      .where('desarquivamento.deletedAt IS NOT NULL')
+      .leftJoinAndSelect('desarquivamento.criadoPor', 'criadoPor')
+      .leftJoinAndSelect('desarquivamento.responsavel', 'responsavel');
 
-  
+    this.applyFilters(queryBuilder, queryDto);
 
-  
+    const validSortFields = ['deletedAt', 'nomeCompleto', 'numeroNicLaudoAuto'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'deletedAt';
+    queryBuilder.orderBy(
+      `desarquivamento.${sortField}`,
+      sortOrder as 'ASC' | 'DESC',
+    );
 
-  
+    const offset = (page - 1) * limit;
+    queryBuilder.skip(offset).take(limit);
 
-  
+    const [desarquivamentos, total] = await queryBuilder.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      desarquivamentos,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  /**
+   * Restaura um desarquivamento removido (soft delete)
+   */
+  async restore(id: number, currentUser: User): Promise<void> {
+    // Apenas admins podem restaurar
+    if (!currentUser.isAdmin()) {
+      throw new ForbiddenException(
+        'Você não tem permissão para restaurar este desarquivamento',
+      );
+    }
+
+    const restoreResult = await this.desarquivamentoRepository.restore(id);
+
+    if (restoreResult.affected === 0) {
+      throw new NotFoundException('Desarquivamento não encontrado na lixeira');
+    }
+
+    const desarquivamento = await this.findOne(id);
+
+    // Salva auditoria
+    await this.nugecidAuditService.saveAudit(
+      currentUser.id,
+      'RESTORE',
+      'DESARQUIVamento',
+      `Desarquivamento restaurado: ${desarquivamento.numeroNicLaudoAuto}`,
+      { desarquivamentoId: id },
+    );
+
+    this.logger.log(
+      `Desarquivamento restaurado: ${desarquivamento.numeroNicLaudoAuto} por ${currentUser.usuario}`,
+    );
+  }
 }

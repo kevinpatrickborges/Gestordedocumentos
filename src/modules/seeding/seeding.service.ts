@@ -18,6 +18,12 @@ export class SeedingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    // Safety: do not run seeding automatically in production containers
+    if (process.env.NODE_ENV === 'production') {
+      this.logger.log('Ambiente `production` detectado — seeding automático desabilitado.');
+      return;
+    }
+
     this.logger.log('Iniciando o processo de seeding do banco de dados...');
     await this.seedRoles();
     await this.updateExistingRoles();

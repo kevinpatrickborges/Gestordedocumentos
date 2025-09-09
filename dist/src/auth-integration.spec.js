@@ -70,8 +70,8 @@ describe('Auth Integration Tests', () => {
                 .post('/auth/login')
                 .set('Accept', 'application/json')
                 .send({
-                usuario: 'admin@itep.rn.gov.br',
-                password: 'password123',
+                usuario: 'admin',
+                password: 'admin123',
             })
                 .expect(200);
             expect(response.body).toHaveProperty('user');
@@ -86,8 +86,8 @@ describe('Auth Integration Tests', () => {
                 .post('/auth/login')
                 .set('Accept', 'application/json')
                 .send({
-                usuario: 'admin@itep.rn.gov.br',
-                password: 'wrongpassword',
+                usuario: 'admin',
+                password: 'admin123',
             })
                 .expect(401);
         });
@@ -96,7 +96,7 @@ describe('Auth Integration Tests', () => {
                 .post('/auth/login')
                 .set('Accept', 'application/json')
                 .send({
-                usuario: 'nonexistent@itep.rn.gov.br',
+                usuario: 'teste',
                 password: 'password123',
             })
                 .expect(401);

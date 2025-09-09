@@ -20,7 +20,22 @@ export class Role {
   @Column({ length: 255, nullable: true })
   description: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ type: 'text', nullable: true, transformer: {
+    to: (value: string[]) => value ? JSON.stringify(value) : null,
+    from: (value: any) => {
+      if (!value) return [];
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [];
+        }
+      }
+      // If it's already an object (e.g. parsed by driver), try to return it as array
+      return value;
+    }
+  }})
   permissions: string[];
 
   @Column({ name: 'ativo', type: 'boolean', default: true })

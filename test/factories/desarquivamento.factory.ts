@@ -1,5 +1,6 @@
 import { DesarquivamentoTypeOrmEntity } from '../../src/modules/nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
 import { TipoDesarquivamentoEnum } from '../../src/modules/nugecid/domain/value-objects/tipo-desarquivamento.vo';
+import { StatusDesarquivamentoEnum } from '../../src/modules/nugecid/domain/enums/status-desarquivamento.enum';
 
 export class DesarquivamentoFactory {
   static build(data: Partial<DesarquivamentoTypeOrmEntity> = {}): Partial<DesarquivamentoTypeOrmEntity> {
@@ -7,7 +8,7 @@ export class DesarquivamentoFactory {
 
     return {
       tipoDesarquivamento: data.tipoDesarquivamento || TipoDesarquivamentoEnum.FISICO,
-      status: data.status || 'SOLICITADO',
+      status: (data.status as StatusDesarquivamentoEnum) || StatusDesarquivamentoEnum.SOLICITADO,
       nomeCompleto: data.nomeCompleto || 'Solicitante Teste',
       numeroNicLaudoAuto: data.numeroNicLaudoAuto || `NIC-${Date.now()}`,
       numeroProcesso: data.numeroProcesso || '123456',

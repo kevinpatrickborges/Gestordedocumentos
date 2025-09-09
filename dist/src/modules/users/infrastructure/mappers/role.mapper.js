@@ -11,7 +11,7 @@ class RoleMapper {
             id: roleId,
             nome: entity.name,
             descricao: entity.description,
-            permissoes: entity.permissions || [],
+            permissoes: Array.isArray(entity.permissions) ? entity.permissions : [],
             createdAt: entity.createdAt,
             updatedAt: entity.updatedAt,
         });

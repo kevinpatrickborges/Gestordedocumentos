@@ -37,7 +37,14 @@ export class Auditoria {
   @Column({ name: 'entity_id', nullable: true })
   entityId: number;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ 
+    type: 'text', 
+    nullable: true,
+    transformer: {
+      to: (value: any) => value ? JSON.stringify(value) : null,
+      from: (value: string) => value ? JSON.parse(value) : null,
+    },
+  })
   details: any;
 
   @Column({ name: 'ip_address', length: 45, nullable: true })
@@ -52,7 +59,14 @@ export class Auditoria {
   @Column({ type: 'text', nullable: true })
   error: string;
 
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ 
+    type: 'text', 
+    nullable: true,
+    transformer: {
+      to: (value: any) => value ? JSON.stringify(value) : null,
+      from: (value: string) => value ? JSON.parse(value) : null,
+    },
+  })
   response: any;
 
   @CreateDateColumn({ name: 'timestamp' })

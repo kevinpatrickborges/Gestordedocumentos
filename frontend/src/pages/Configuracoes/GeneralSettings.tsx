@@ -82,34 +82,6 @@ export const GeneralSettings: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Idioma */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Idioma
-          </CardTitle>
-          <CardDescription>
-            Selecione o idioma da interface
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="language">Idioma do sistema</Label>
-            <select
-              id="language"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="w-full px-3 py-2 border border-border bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-ring"
-            >
-              <option value="pt-BR">Português (Brasil)</option>
-              <option value="en-US">English (US)</option>
-              <option value="es-ES">Español</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Notificações */}
       <Card>
         <CardHeader>

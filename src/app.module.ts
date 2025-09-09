@@ -112,16 +112,30 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
     // Static Files
     ServeStaticModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => [
-        {
-          rootPath: join(__dirname, '..', 'public'),
-          serveRoot: '/public',
-        },
-        {
-          rootPath: configService.get<string>('UPLOAD_PATH', './uploads'),
-          serveRoot: '/uploads',
-        },
-      ],
+      useFactory: (configService: ConfigService) => {
+        // Usar 'any[]' para evitar o erro de tipo do TypeScript
+        const serveStaticOptions: any[] = [
+          {
+            rootPath: join(__dirname, '..', 'public'),
+            serveRoot: '/public',
+          },
+          {
+            rootPath: configService.get<string>('UPLOAD_PATH', './uploads'),
+            serveRoot: '/uploads',
+          },
+        ];
+
+        // Servir os arquivos do frontend apenas em produção
+        if (configService.get<string>('app.environment') === 'production') {
+          serveStaticOptions.push({
+            rootPath: join(__dirname, '..', 'frontend', 'dist'),
+            serveRoot: '/',
+            exclude: ['/api*'],
+          });
+        }
+
+        return serveStaticOptions;
+      },
       inject: [ConfigService],
     }),
 
@@ -154,8 +168,6 @@ import { DesarquivamentoTypeOrmEntity } from './modules/nugecid/infrastructure/e
   controllers: [AppController],
   providers: [
     AppService,
-    // O JwtAuthGuard foi removido daqui para ser aplicado manualmente
-    // nos controladores, evitando o bloqueio de rotas públicas.
   ],
 })
 export class AppModule {}

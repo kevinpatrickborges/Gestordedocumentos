@@ -42,4 +42,6 @@ export declare class NugecidService {
     findByBarcode(numeroNicLaudoAuto: string): Promise<DesarquivamentoTypeOrmEntity>;
     update(id: number, updateDesarquivamentoDto: UpdateDesarquivamentoDto, currentUser: User): Promise<DesarquivamentoTypeOrmEntity>;
     remove(id: number, currentUser: User): Promise<void>;
+    findAllDeleted(queryDto: QueryDesarquivamentoDto): Promise<PaginatedDesarquivamentos>;
+    restore(id: number, currentUser: User): Promise<void>;
 }

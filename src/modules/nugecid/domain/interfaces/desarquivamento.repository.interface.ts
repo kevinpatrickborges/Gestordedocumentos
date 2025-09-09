@@ -1,5 +1,6 @@
 import { DesarquivamentoDomain } from '../entities';
 import { DesarquivamentoId } from '../value-objects';
+import { StatusDesarquivamentoEnum } from '../enums/status-desarquivamento.enum';
 
 export const DESARQUIVAMENTO_REPOSITORY = 'DesarquivamentoRepository';
 
@@ -10,8 +11,10 @@ export interface FindAllOptions {
   sortOrder?: 'ASC' | 'DESC';
   filters?: {
     search?: string;
-    status?: string;
-    tipoDesarquivamento?: string;
+    status?: string | string[];
+    statusList?: string[];
+    tipoDesarquivamento?: string | string[];
+    tipoDesarquivamentoList?: string[];
     nomeSolicitante?: string;
     numeroRegistro?: string;
     codigoBarras?: string;
@@ -95,7 +98,7 @@ export interface IDesarquivamentoRepository {
     userRoles?: string[],
     dateRange?: { startDate: Date; endDate: Date },
   ): Promise<DashboardStats>;
-  countByStatus(status: string): Promise<number>;
+  countByStatus(status: StatusDesarquivamentoEnum): Promise<number>;
   countByTipo(tipo: string): Promise<number>;
 
   // Operações de validação

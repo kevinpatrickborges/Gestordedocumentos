@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useDashboardStats } from '@/hooks/useDesarquivamentos'
+import { useDashboardStats } from '@/hooks/useDashboardStats'
 import { useOnlineUsers } from '@/hooks/useOnlineUsers'
 import { PageLoading } from '@/components/ui/Loading'
 import DashboardStats from '@/components/dashboard/DashboardStats'
@@ -62,7 +62,7 @@ const DashboardPage: React.FC = () => {
       {/* Stats Cards */}
       <DashboardStats 
         data={{
-          totalDesarquivamentos: stats?.data.totalDesarquivamentos || 0,
+          total: stats?.data?.totalRequests || 0,
           pendentes: stats?.data.pendentes || 0,
           emAndamento: stats?.data.emAndamento || 0,
           concluidos: stats?.data.concluidos || 0,

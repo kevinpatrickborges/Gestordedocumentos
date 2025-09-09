@@ -69,53 +69,70 @@ let DesarquivamentoTypeOrmRepository = DesarquivamentoTypeOrmRepository_1 = clas
             .skip((page - 1) * limit)
             .take(limit)
             .getManyAndCount();
+        const validEntities = entities.filter(entity => {
+            if (!entity.id || entity.id <= 0) {
+                console.warn(`[DesarquivamentoRepository] Entidade com ID inválido encontrada e filtrada: ${entity.id}`);
+                return false;
+            }
+            return true;
+        });
+        const domainEntities = validEntities.map(e => {
+            try {
+                return this.mapper.toDomain(e);
+            }
+            catch (error) {
+                console.error(`[DesarquivamentoRepository] Erro ao converter entidade para domínio (ID: ${e.id}):`, error.message);
+                return null;
+            }
+        }).filter(entity => entity !== null);
         return {
-            data: entities.map(e => this.mapper.toDomain(e)),
-            total,
+            data: domainEntities,
+            total: domainEntities.length,
             page,
             limit,
-            totalPages: Math.ceil(total / limit),
+            totalPages: Math.ceil(domainEntities.length / limit),
         };
     }
     async delete(id) {
         await this.repository.delete(id.value);
     }
     async softDelete(id) {
-        this.logger.log(`[REPOSITORY] Iniciando soft delete para ID: ${id.value}`);
+        this.logger.log(`[REPOSITORY] 🔄 Iniciando soft delete para ID: ${id.value}`);
         try {
             const exists = await this.repository.findOne({
                 where: { id: id.value },
                 withDeleted: true
             });
             if (!exists) {
-                this.logger.error(`[REPOSITORY] Registro com ID ${id.value} não encontrado para soft delete`);
+                this.logger.error(`[REPOSITORY] ❌ Registro com ID ${id.value} não encontrado para soft delete`);
                 throw new Error(`Registro com ID ${id.value} não encontrado`);
             }
-            this.logger.log(`[REPOSITORY] Registro encontrado, executando softDelete para ID: ${id.value}`);
-            const result = await this.repository.softDelete(id.value);
-            this.logger.log(`[REPOSITORY] Resultado do softDelete:`, {
-                affected: result.affected,
-                raw: result.raw
+            this.logger.log(`[REPOSITORY] ✅ Registro encontrado, estado atual:`, {
+                id: exists.id,
+                deletedAt: exists.deletedAt,
+                status: exists.status
             });
-            if (result.affected === 0) {
-                this.logger.warn(`[REPOSITORY] ⚠️ Soft delete não afetou nenhum registro para ID: ${id.value}`);
-            }
-            else {
-                this.logger.log(`[REPOSITORY] ✅ Soft delete executado com SUCESSO para ID: ${id.value}, ${result.affected} registro(s) afetado(s)`);
-            }
-            const afterDelete = await this.repository.findOne({
+            this.logger.log(`[REPOSITORY] 🗑️ Executando softDelete nativo do TypeORM`);
+            const result = await this.repository.softDelete(id.value);
+            this.logger.log(`[REPOSITORY] 📋 Resultado do softDelete:`, result);
+            const finalCheck = await this.repository.findOne({
                 where: { id: id.value },
                 withDeleted: true
             });
-            if (afterDelete && afterDelete.deletedAt) {
-                this.logger.log(`[REPOSITORY] ✅ CONFIRMAÇÃO: Registro ID ${id.value} possui deletedAt = ${afterDelete.deletedAt}`);
+            this.logger.log(`[REPOSITORY] 🔍 Verificação final:`, {
+                id: finalCheck?.id,
+                deletedAt: finalCheck?.deletedAt,
+                encontrado: !!finalCheck,
+                foiDeletado: !!finalCheck?.deletedAt
+            });
+            if (!finalCheck?.deletedAt) {
+                this.logger.error(`[REPOSITORY] ❌ FALHA: deleted_at ainda é NULL após softDelete`);
+                throw new Error('Soft delete falhou - deleted_at permanece NULL');
             }
-            else {
-                this.logger.error(`[REPOSITORY] ❌ ERRO: Registro ID ${id.value} NÃO possui deletedAt após soft delete!`);
-            }
+            this.logger.log(`[REPOSITORY] ✅ SUCESSO: Soft delete concluído para ID ${id.value}`);
         }
         catch (error) {
-            this.logger.error(`[REPOSITORY] ❌ ERRO durante soft delete para ID ${id.value}: ${error.message}`, error.stack);
+            this.logger.error(`[REPOSITORY] ❌ ERRO durante soft delete para ID ${id.value}: ${error.message}`);
             throw error;
         }
     }
@@ -293,11 +310,19 @@ let DesarquivamentoTypeOrmRepository = DesarquivamentoTypeOrmRepository_1 = clas
     applyFilters(qb, filters) {
         if (!filters)
             return;
-        const { status, tipoDesarquivamento, search, criadoPorId, responsavelId, urgente, dataInicio, dataFim, incluirExcluidos, } = filters;
-        if (status)
+        const { status, statusList, tipoDesarquivamento, tipoDesarquivamentoList, search, criadoPorId, responsavelId, urgente, dataInicio, dataFim, incluirExcluidos, } = filters;
+        if (Array.isArray(statusList) && statusList.length > 0) {
+            qb.andWhere('d.status IN (:...statusList)', { statusList });
+        }
+        else if (status) {
             qb.andWhere('d.status = :status', { status });
-        if (tipoDesarquivamento)
+        }
+        if (Array.isArray(tipoDesarquivamentoList) && tipoDesarquivamentoList.length > 0) {
+            qb.andWhere('d.tipoDesarquivamento IN (:...tipoDesarquivamentoList)', { tipoDesarquivamentoList });
+        }
+        else if (tipoDesarquivamento) {
             qb.andWhere('d.tipoDesarquivamento = :tipoDesarquivamento', { tipoDesarquivamento });
+        }
         if (criadoPorId)
             qb.andWhere('d.criadoPorId = :criadoPorId', { criadoPorId });
         if (responsavelId)
@@ -319,7 +344,7 @@ let DesarquivamentoTypeOrmRepository = DesarquivamentoTypeOrmRepository_1 = clas
             }));
         }
         if (incluirExcluidos) {
-            qb.withDeleted();
+            qb.withDeleted().andWhere('d.deletedAt IS NOT NULL');
         }
     }
 };

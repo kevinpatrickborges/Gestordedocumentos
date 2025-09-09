@@ -15,6 +15,7 @@ import {
   DesarquivamentoId,
   StatusDesarquivamento,
 } from '../../domain/value-objects';
+import { StatusDesarquivamentoEnum } from '../../domain/enums/status-desarquivamento.enum';
 
 @Injectable()
 export class DesarquivamentoTypeOrmRepository
@@ -84,12 +85,30 @@ export class DesarquivamentoTypeOrmRepository
       .take(limit)
       .getManyAndCount();
 
+    // Filtrar entidades com IDs válidos e converter para domínio
+    const validEntities = entities.filter(entity => {
+      if (!entity.id || entity.id <= 0) {
+        console.warn(`[DesarquivamentoRepository] Entidade com ID inválido encontrada e filtrada: ${entity.id}`);
+        return false;
+      }
+      return true;
+    });
+
+    const domainEntities = validEntities.map(e => {
+      try {
+        return this.mapper.toDomain(e);
+      } catch (error) {
+        console.error(`[DesarquivamentoRepository] Erro ao converter entidade para domínio (ID: ${e.id}):`, error.message);
+        return null;
+      }
+    }).filter(entity => entity !== null);
+
     return {
-      data: entities.map(e => this.mapper.toDomain(e)),
-      total,
+      data: domainEntities,
+      total: domainEntities.length, // Ajustar total para refletir apenas entidades válidas
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(domainEntities.length / limit),
     };
   }
 
@@ -98,50 +117,53 @@ export class DesarquivamentoTypeOrmRepository
   }
 
   async softDelete(id: DesarquivamentoId): Promise<void> {
-    this.logger.log(`[REPOSITORY] Iniciando soft delete para ID: ${id.value}`);
+    this.logger.log(`[REPOSITORY] 🔄 Iniciando soft delete para ID: ${id.value}`);
     
     try {
       // Primeiro, verificar se o registro existe
       const exists = await this.repository.findOne({
         where: { id: id.value },
-        withDeleted: true // Incluir registros já deletados para verificar se existe
+        withDeleted: true
       });
       
       if (!exists) {
-        this.logger.error(`[REPOSITORY] Registro com ID ${id.value} não encontrado para soft delete`);
+        this.logger.error(`[REPOSITORY] ❌ Registro com ID ${id.value} não encontrado para soft delete`);
         throw new Error(`Registro com ID ${id.value} não encontrado`);
       }
       
-      this.logger.log(`[REPOSITORY] Registro encontrado, executando softDelete para ID: ${id.value}`);
-      
-      // Executar o soft delete
-      const result = await this.repository.softDelete(id.value);
-      
-      this.logger.log(`[REPOSITORY] Resultado do softDelete:`, {
-        affected: result.affected,
-        raw: result.raw
+      this.logger.log(`[REPOSITORY] ✅ Registro encontrado, estado atual:`, {
+        id: exists.id,
+        deletedAt: exists.deletedAt,
+        status: exists.status
       });
       
-      if (result.affected === 0) {
-        this.logger.warn(`[REPOSITORY] ⚠️ Soft delete não afetou nenhum registro para ID: ${id.value}`);
-      } else {
-        this.logger.log(`[REPOSITORY] ✅ Soft delete executado com SUCESSO para ID: ${id.value}, ${result.affected} registro(s) afetado(s)`);
-      }
+      // Usar o método softDelete nativo do TypeORM
+      this.logger.log(`[REPOSITORY] 🗑️ Executando softDelete nativo do TypeORM`);
+      const result = await this.repository.softDelete(id.value);
+      this.logger.log(`[REPOSITORY] 📋 Resultado do softDelete:`, result);
       
-      // Verificar se o registro foi realmente soft deleted
-      const afterDelete = await this.repository.findOne({
+      // Verificação final
+      const finalCheck = await this.repository.findOne({
         where: { id: id.value },
         withDeleted: true
       });
       
-      if (afterDelete && afterDelete.deletedAt) {
-        this.logger.log(`[REPOSITORY] ✅ CONFIRMAÇÃO: Registro ID ${id.value} possui deletedAt = ${afterDelete.deletedAt}`);
-      } else {
-        this.logger.error(`[REPOSITORY] ❌ ERRO: Registro ID ${id.value} NÃO possui deletedAt após soft delete!`);
+      this.logger.log(`[REPOSITORY] 🔍 Verificação final:`, {
+        id: finalCheck?.id,
+        deletedAt: finalCheck?.deletedAt,
+        encontrado: !!finalCheck,
+        foiDeletado: !!finalCheck?.deletedAt
+      });
+      
+      if (!finalCheck?.deletedAt) {
+        this.logger.error(`[REPOSITORY] ❌ FALHA: deleted_at ainda é NULL após softDelete`);
+        throw new Error('Soft delete falhou - deleted_at permanece NULL');
       }
       
+      this.logger.log(`[REPOSITORY] ✅ SUCESSO: Soft delete concluído para ID ${id.value}`);
+      
     } catch (error) {
-      this.logger.error(`[REPOSITORY] ❌ ERRO durante soft delete para ID ${id.value}: ${error.message}`, error.stack);
+      this.logger.error(`[REPOSITORY] ❌ ERRO durante soft delete para ID ${id.value}: ${error.message}`);
       throw error;
     }
   }
@@ -321,7 +343,7 @@ export class DesarquivamentoTypeOrmRepository
     };
   }
 
-  async countByStatus(status: string): Promise<number> {
+  async countByStatus(status: StatusDesarquivamentoEnum): Promise<number> {
     return this.repository.count({ where: { status } });
   }
 
@@ -392,7 +414,9 @@ export class DesarquivamentoTypeOrmRepository
 
     const {
       status,
+      statusList,
       tipoDesarquivamento,
+      tipoDesarquivamentoList,
       search,
       criadoPorId,
       responsavelId,
@@ -402,9 +426,19 @@ export class DesarquivamentoTypeOrmRepository
       incluirExcluidos,
     } = filters;
 
-    if (status) qb.andWhere('d.status = :status', { status });
-    if (tipoDesarquivamento)
+    // Filtro por status (suporta múltiplos)
+    if (Array.isArray(statusList) && statusList.length > 0) {
+      qb.andWhere('d.status IN (:...statusList)', { statusList });
+    } else if (status) {
+      qb.andWhere('d.status = :status', { status });
+    }
+
+    // Filtro por tipo de desarquivamento (suporta múltiplos futuramente)
+    if (Array.isArray((tipoDesarquivamentoList as any)) && (tipoDesarquivamentoList as any).length > 0) {
+      qb.andWhere('d.tipoDesarquivamento IN (:...tipoDesarquivamentoList)', { tipoDesarquivamentoList });
+    } else if (tipoDesarquivamento) {
       qb.andWhere('d.tipoDesarquivamento = :tipoDesarquivamento', { tipoDesarquivamento });
+    }
     if (criadoPorId)
       qb.andWhere('d.criadoPorId = :criadoPorId', { criadoPorId });
     if (responsavelId)
@@ -428,10 +462,9 @@ export class DesarquivamentoTypeOrmRepository
       );
     }
 
-    // O TypeORM automaticamente aplica o filtro 'deleted_at IS NULL' devido ao @DeleteDateColumn
-    // Apenas aplicamos o filtro manualmente quando queremos incluir registros excluídos
+    // Controla a inclusão de registros soft-deleted
     if (incluirExcluidos) {
-      qb.withDeleted();
+      qb.withDeleted().andWhere('d.deletedAt IS NOT NULL');
     }
   }
 }

@@ -81,7 +81,12 @@ __decorate([
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "tipoDesarquivamento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', default: 'SOLICITADO' }),
+    (0, typeorm_1.Column)({
+        name: 'status',
+        type: 'varchar',
+        length: 50,
+        default: 'SOLICITADO',
+    }),
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "status", void 0);
 __decorate([
@@ -101,15 +106,15 @@ __decorate([
     __metadata("design:type", String)
 ], DesarquivamentoTypeOrmEntity.prototype, "tipoDocumento", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'data_solicitacao', type: 'timestamptz', nullable: false }),
+    (0, typeorm_1.Column)({ name: 'data_solicitacao', type: 'timestamp', nullable: false }),
     __metadata("design:type", Date)
 ], DesarquivamentoTypeOrmEntity.prototype, "dataSolicitacao", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'data_desarquivamento_sag', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_desarquivamento_sag', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], DesarquivamentoTypeOrmEntity.prototype, "dataDesarquivamentoSAG", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: 'data_devolucao_setor', type: 'timestamptz', nullable: true }),
+    (0, typeorm_1.Column)({ name: 'data_devolucao_setor', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], DesarquivamentoTypeOrmEntity.prototype, "dataDevolucaoSetor", void 0);
 __decorate([

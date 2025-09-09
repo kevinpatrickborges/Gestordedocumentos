@@ -117,7 +117,14 @@ __decorate([
     __metadata("design:type", Number)
 ], Auditoria.prototype, "entityId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, typeorm_1.Column)({
+        type: 'text',
+        nullable: true,
+        transformer: {
+            to: (value) => value ? JSON.stringify(value) : null,
+            from: (value) => value ? JSON.parse(value) : null,
+        },
+    }),
     __metadata("design:type", Object)
 ], Auditoria.prototype, "details", void 0);
 __decorate([
@@ -137,7 +144,14 @@ __decorate([
     __metadata("design:type", String)
 ], Auditoria.prototype, "error", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, typeorm_1.Column)({
+        type: 'text',
+        nullable: true,
+        transformer: {
+            to: (value) => value ? JSON.stringify(value) : null,
+            from: (value) => value ? JSON.parse(value) : null,
+        },
+    }),
     __metadata("design:type", Object)
 ], Auditoria.prototype, "response", void 0);
 __decorate([

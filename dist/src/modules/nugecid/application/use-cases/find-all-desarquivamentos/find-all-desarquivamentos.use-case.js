@@ -95,13 +95,21 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
                 'RETIRADO_PELO_SETOR',
                 'NAO_LOCALIZADO'
             ];
-            if (!validStatuses.includes(request.filters.status)) {
+            const statuses = Array.isArray(request.filters.status)
+                ? request.filters.status
+                : [request.filters.status];
+            const allValid = statuses.every((s) => validStatuses.includes(s));
+            if (!allValid) {
                 throw new Error(`Status inválido. Status válidos: ${validStatuses.join(', ')}`);
             }
         }
         if (request.filters?.tipoDesarquivamento) {
             const validTypes = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
-            if (!validTypes.includes(request.filters.tipoDesarquivamento)) {
+            const tipos = Array.isArray(request.filters.tipoDesarquivamento)
+                ? request.filters.tipoDesarquivamento
+                : [request.filters.tipoDesarquivamento];
+            const allValidTipos = tipos.every((t) => validTypes.includes(t));
+            if (!allValidTipos) {
                 throw new Error(`Tipo de desarquivamento inválido. Tipos válidos: ${validTypes.join(', ')}`);
             }
         }
@@ -113,11 +121,12 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         }
     }
     applySecurityFilters(filters, userId, userRoles) {
-        if (userRoles.includes('ADMIN')) {
+        const upperCaseUserRoles = (userRoles || []).map((r) => r?.toUpperCase?.() || '');
+        if (upperCaseUserRoles.includes('ADMIN')) {
             return filters;
         }
-        if (userRoles.includes('NUGECID_VIEWER') ||
-            userRoles.includes('NUGECID_OPERATOR')) {
+        if (upperCaseUserRoles.includes('NUGECID_VIEWER') ||
+            upperCaseUserRoles.includes('NUGECID_OPERATOR')) {
             return filters;
         }
         return {
@@ -126,8 +135,11 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
         };
     }
     mapToResponse(desarquivamento) {
+        if (!desarquivamento.id?.value || desarquivamento.id.value <= 0) {
+            throw new Error(`Desarquivamento com ID inválido encontrado: ${desarquivamento.id?.value}`);
+        }
         return {
-            id: desarquivamento.id?.value || 0,
+            id: desarquivamento.id.value,
             codigoBarras: desarquivamento.numeroNicLaudoAuto,
             tipoDesarquivamento: desarquivamento.tipoDesarquivamento,
             status: desarquivamento.status.value,
@@ -147,6 +159,7 @@ let FindAllDesarquivamentosUseCase = class FindAllDesarquivamentosUseCase {
             responsavelId: desarquivamento.responsavelId,
             createdAt: desarquivamento.createdAt,
             updatedAt: desarquivamento.updatedAt,
+            deletedAt: desarquivamento.deletedAt,
             isOverdue: desarquivamento.isOverdue ? desarquivamento.isOverdue() : false,
             daysUntilDeadline: desarquivamento.getDaysUntilDeadline ? desarquivamento.getDaysUntilDeadline() : undefined,
         };

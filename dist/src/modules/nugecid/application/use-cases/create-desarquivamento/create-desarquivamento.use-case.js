@@ -11,38 +11,59 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var CreateDesarquivamentoUseCase_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateDesarquivamentoUseCase = void 0;
 const common_1 = require("@nestjs/common");
 const domain_1 = require("../../../domain");
+const tipo_desarquivamento_enum_1 = require("../../../domain/enums/tipo-desarquivamento.enum");
 const nugecid_constants_1 = require("../../../domain/nugecid.constants");
-let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
+let CreateDesarquivamentoUseCase = CreateDesarquivamentoUseCase_1 = class CreateDesarquivamentoUseCase {
     constructor(desarquivamentoRepository) {
         this.desarquivamentoRepository = desarquivamentoRepository;
+        this.logger = new common_1.Logger(CreateDesarquivamentoUseCase_1.name);
     }
     async execute(request) {
-        await this.validateRequest(request);
-        const statusVO = domain_1.StatusDesarquivamento.createSolicitado();
-        const desarquivamento = domain_1.DesarquivamentoDomain.create({
+        this.logger.log(`[NUGECID] Iniciando criação de desarquivamento para usuário ${request.criadoPorId}`);
+        this.logger.debug(`[NUGECID] Dados recebidos: ${JSON.stringify({
             tipoDesarquivamento: request.tipoDesarquivamento,
-            status: statusVO,
             nomeCompleto: request.nomeCompleto,
-            numeroNicLaudoAuto: request.numeroNicLaudoAuto,
             numeroProcesso: request.numeroProcesso,
-            tipoDocumento: request.tipoDocumento,
-            dataSolicitacao: new Date(request.dataSolicitacao),
-            dataDesarquivamentoSAG: request.dataDesarquivamentoSAG ? new Date(request.dataDesarquivamentoSAG) : undefined,
-            dataDevolucaoSetor: request.dataDevolucaoSetor ? new Date(request.dataDevolucaoSetor) : undefined,
-            setorDemandante: request.setorDemandante,
-            servidorResponsavel: request.servidorResponsavel,
-            finalidadeDesarquivamento: request.finalidadeDesarquivamento,
-            solicitacaoProrrogacao: request.solicitacaoProrrogacao,
-            urgente: request.urgente,
-            criadoPorId: request.criadoPorId,
-            responsavelId: request.responsavelId,
-        });
-        const savedDesarquivamento = await this.desarquivamentoRepository.create(desarquivamento);
-        return this.mapToResponse(savedDesarquivamento);
+            urgente: request.urgente
+        })}`);
+        try {
+            await this.validateRequest(request);
+            this.logger.log(`[NUGECID] Validações concluídas com sucesso para processo ${request.numeroProcesso}`);
+            const statusVO = domain_1.StatusDesarquivamento.createSolicitado();
+            const desarquivamento = domain_1.DesarquivamentoDomain.create({
+                tipoDesarquivamento: request.tipoDesarquivamento,
+                status: statusVO,
+                nomeCompleto: request.nomeCompleto,
+                numeroNicLaudoAuto: request.numeroNicLaudoAuto,
+                numeroProcesso: request.numeroProcesso,
+                tipoDocumento: request.tipoDocumento,
+                dataSolicitacao: new Date(request.dataSolicitacao),
+                dataDesarquivamentoSAG: request.dataDesarquivamentoSAG ? new Date(request.dataDesarquivamentoSAG) : undefined,
+                dataDevolucaoSetor: request.dataDevolucaoSetor ? new Date(request.dataDevolucaoSetor) : undefined,
+                setorDemandante: request.setorDemandante,
+                servidorResponsavel: request.servidorResponsavel,
+                finalidadeDesarquivamento: request.finalidadeDesarquivamento,
+                solicitacaoProrrogacao: request.solicitacaoProrrogacao,
+                urgente: request.urgente,
+                criadoPorId: request.criadoPorId,
+                responsavelId: request.responsavelId,
+            });
+            this.logger.log(`[NUGECID] Salvando desarquivamento no banco de dados - Processo: ${request.numeroProcesso}`);
+            const savedDesarquivamento = await this.desarquivamentoRepository.create(desarquivamento);
+            this.logger.log(`[NUGECID] Desarquivamento criado com sucesso - ID: ${savedDesarquivamento.id.value}, NIC/Laudo: ${savedDesarquivamento.numeroNicLaudoAuto}`);
+            const response = this.mapToResponse(savedDesarquivamento);
+            this.logger.debug(`[NUGECID] Resposta gerada: ${JSON.stringify({ id: response.id, codigoBarras: response.codigoBarras, status: response.status })}`);
+            return response;
+        }
+        catch (error) {
+            this.logger.error(`[NUGECID] Erro ao criar desarquivamento para processo ${request.numeroProcesso}: ${error.message}`, error.stack);
+            throw error;
+        }
     }
     async validateRequest(request) {
         if (!request.nomeCompleto ||
@@ -62,7 +83,7 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
         if (existingByNumero.length > 0) {
             throw new Error(`Já existe um desarquivamento com o número de processo: ${request.numeroProcesso}`);
         }
-        const tiposValidos = ['FISICO', 'DIGITAL', 'NAO_LOCALIZADO'];
+        const tiposValidos = Object.values(tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum);
         if (!tiposValidos.includes(request.tipoDesarquivamento)) {
             throw new Error(`Tipo de desarquivamento inválido. Valores aceitos: ${tiposValidos.join(', ')}`);
         }
@@ -134,7 +155,7 @@ let CreateDesarquivamentoUseCase = class CreateDesarquivamentoUseCase {
     }
 };
 exports.CreateDesarquivamentoUseCase = CreateDesarquivamentoUseCase;
-exports.CreateDesarquivamentoUseCase = CreateDesarquivamentoUseCase = __decorate([
+exports.CreateDesarquivamentoUseCase = CreateDesarquivamentoUseCase = CreateDesarquivamentoUseCase_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(nugecid_constants_1.DESARQUIVAMENTO_REPOSITORY_TOKEN)),
     __metadata("design:paramtypes", [Object])

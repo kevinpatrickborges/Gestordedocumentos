@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ImportResultDto } from '@/modules/nugecid/dto/import-result.dto';
+import { apiService } from '@/services/api';
+import { ImportResultDto } from '@/types';
 
 export const useDesarquivamentosImport = (onImportSuccess?: () => void) => {
   const [isImportModalOpen, setImportModalOpen] = useState(false);
@@ -13,23 +14,7 @@ export const useDesarquivamentosImport = (onImportSuccess?: () => void) => {
     setImportResult(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/nugecid/import-desarquivamentos', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao importar planilha');
-      }
-
-      const result = await response.json();
+      const result = await apiService.importDesarquivamentos(file);
       setImportResult(result.data || result);
       
       if (onImportSuccess) {

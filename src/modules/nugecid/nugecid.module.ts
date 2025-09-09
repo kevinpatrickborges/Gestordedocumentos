@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import * as multer from 'multer';
 
 // Controller
 import { NugecidController } from './nugecid.controller';
@@ -55,47 +53,28 @@ import { NugecidService } from './nugecid.service';
       User,
       Auditoria,
     ]),
-    MulterModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        storage: diskStorage({
-          destination: (req, file, cb) => {
-            const uploadPath = configService.get<string>(
-              'UPLOAD_PATH',
-              './uploads',
-            );
-            cb(null, uploadPath);
-          },
-          filename: (req, file, cb) => {
-            const uniqueSuffix =
-              Date.now() + '-' + Math.round(Math.random() * 1e9);
-            cb(
-              null,
-              `${file.fieldname}-${uniqueSuffix}${extname(file.originalname)}`,
-            );
-          },
-        }),
-        fileFilter: (req, file, cb) => {
-          const allowedMimes = [
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'text/csv',
-          ];
+    MulterModule.register({
+      storage: multer.memoryStorage(),
+      fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'text/csv',
+          'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
+        ];
 
-          if (allowedMimes.includes(file.mimetype)) {
-            cb(null, true);
-          } else {
-            cb(
-              new Error('Apenas arquivos .xls, .xlsx e .csv são permitidos.'),
-              false,
-            );
-          }
-        },
-        limits: {
-          fileSize: 10 * 1024 * 1024, // 10MB
-        },
-      }),
-      inject: [ConfigService],
+        if (allowedMimes.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(
+            new Error('Apenas arquivos .xls, .xlsx, .xlsm e .csv são permitidos.'),
+            false,
+          );
+        }
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB
+      },
     }),
   ],
   controllers: [NugecidController],

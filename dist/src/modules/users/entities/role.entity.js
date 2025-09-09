@@ -37,7 +37,24 @@ __decorate([
     __metadata("design:type", String)
 ], Role.prototype, "description", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    (0, typeorm_1.Column)({ type: 'text', nullable: true, transformer: {
+            to: (value) => value ? JSON.stringify(value) : null,
+            from: (value) => {
+                if (!value)
+                    return [];
+                if (Array.isArray(value))
+                    return value;
+                if (typeof value === 'string') {
+                    try {
+                        return JSON.parse(value);
+                    }
+                    catch {
+                        return [];
+                    }
+                }
+                return value;
+            }
+        } }),
     __metadata("design:type", Array)
 ], Role.prototype, "permissions", void 0);
 __decorate([

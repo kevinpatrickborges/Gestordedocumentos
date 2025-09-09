@@ -37,7 +37,7 @@ export class User {
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @Column({ name: 'ultimo_login', type: 'timestamptz', nullable: true })
+  @Column({ name: 'ultimo_login', type: 'timestamp', nullable: true })
   ultimoLogin: Date;
 
   @Column({ name: 'ativo', type: 'boolean', default: true })
@@ -46,13 +46,13 @@ export class User {
   @Column({ name: 'tentativas_login', type: 'integer', default: 0 })
   tentativasLogin: number;
 
-  @Column({ name: 'bloqueado_ate', type: 'timestamptz', nullable: true })
+  @Column({ name: 'bloqueado_ate', type: 'timestamp', nullable: true })
   bloqueadoAte: Date;
 
   @Column({ name: 'token_reset', length: 255, nullable: true })
   tokenReset: string;
 
-  @Column({ name: 'token_reset_expira', type: 'timestamptz', nullable: true })
+  @Column({ name: 'token_reset_expira', type: 'timestamp', nullable: true })
   tokenResetExpira: Date;
 
   @CreateDateColumn({ name: 'created_at' })

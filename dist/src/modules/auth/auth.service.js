@@ -28,14 +28,23 @@ let AuthService = AuthService_1 = class AuthService {
         this.auditoriaRepository = auditoriaRepository;
         this.jwtService = jwtService;
         this.logger = new common_1.Logger(AuthService_1.name);
+        this.onlineUsers = new Map();
     }
     async validateUser(usuario, password) {
         this.logger.debug(`[AuthService] Iniciando validação para o usuário: "${usuario}"`);
         try {
-            const user = await this.userRepository.findOne({
+            let user = await this.userRepository.findOne({
                 where: { usuario: usuario },
                 relations: ['role'],
             });
+            if (!user && usuario.includes('@')) {
+                const baseUsername = usuario.split('@')[0];
+                user = await this.userRepository.findOne({
+                    where: { usuario: baseUsername },
+                    relations: ['role'],
+                });
+                this.logger.debug(`[AuthService] Tentativa de busca alternativa com nome base: "${baseUsername}"`);
+            }
             if (!user) {
                 this.logger.warn(`[AuthService] Tentativa de login com usuário inexistente: "${usuario}"`);
                 return null;
@@ -84,6 +93,7 @@ let AuthService = AuthService_1 = class AuthService {
         };
         const refreshToken = this.jwtService.sign(refreshPayload, { expiresIn: '7d' });
         await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
+        this.onlineUsers.set(user.id, { lastActivity: new Date() });
         this.logger.log(`Login bem-sucedido para usuário: ${user.usuario}`);
         return {
             user: this.sanitizeUser(user),
@@ -105,6 +115,7 @@ let AuthService = AuthService_1 = class AuthService {
         };
         const accessToken = this.jwtService.sign(payload, { expiresIn: '50m' });
         await this.saveLoginAudit(user.id, ipAddress, userAgent, true);
+        this.onlineUsers.set(user.id, { lastActivity: new Date() });
         this.logger.log(`Login API v2 bem-sucedido para usuário: ${user.usuario}`);
         return {
             user: {
@@ -184,6 +195,7 @@ let AuthService = AuthService_1 = class AuthService {
     }
     async logout(userId, ipAddress, userAgent) {
         await this.saveLogoutAudit(userId, ipAddress, userAgent);
+        this.onlineUsers.delete(userId);
         this.logger.log(`Logout realizado para usuário ID: ${userId}`);
     }
     async findUserById(id) {
@@ -241,6 +253,23 @@ let AuthService = AuthService_1 = class AuthService {
         catch (auditError) {
             this.logger.error(`Erro ao salvar auditoria de logout: ${auditError.message}`);
         }
+    }
+    async getOnlineUsers() {
+        const onlineUserIds = Array.from(this.onlineUsers.keys());
+        if (onlineUserIds.length === 0) {
+            return [];
+        }
+        const users = await this.userRepository.find({
+            where: { id: (0, typeorm_2.In)(onlineUserIds) },
+            relations: ['role'],
+            select: ['id', 'nome', 'usuario'],
+        });
+        return users.map(user => ({
+            id: user.id,
+            nome: user.nome,
+            usuario: user.usuario,
+            role: user.role?.name || 'user',
+        }));
     }
     sanitizeUser(user) {
         const { senha, ...sanitizedUser } = user;

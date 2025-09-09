@@ -115,21 +115,21 @@ const QuickActions: React.FC = () => {
                 key={index}
                 variant="ghost"
                 className={cn(
-                  "h-auto p-4 flex flex-col items-start gap-3 border border-gray-200 transition-all duration-200",
+                  "min-h-[120px] h-auto p-4 flex flex-col items-center justify-center gap-3 border border-gray-200 transition-all duration-200",
                   action.hoverColor,
                   "hover:border-gray-300 hover:shadow-sm"
                 )}
                 asChild
               >
-                <Link to={action.href}>
-                  <div className={cn("p-2 rounded-md", action.bgColor)}>
-                    <Icon className={cn("h-5 w-5", action.color)} />
+                <Link to={action.href} className="w-full h-full flex flex-col items-center justify-center gap-3">
+                  <div className={cn("p-3 rounded-lg", action.bgColor)}>
+                    <Icon className={cn("h-6 w-6", action.color)} />
                   </div>
-                  <div className="text-left">
-                    <h3 className="font-medium text-gray-900 text-sm">
+                  <div className="text-center">
+                    <h3 className="font-medium text-gray-900 text-sm leading-tight">
                       {action.title}
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">
                       {action.description}
                     </p>
                   </div>

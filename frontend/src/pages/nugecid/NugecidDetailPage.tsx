@@ -263,16 +263,25 @@ const NugecidDetailPage: React.FC<NugecidDetailPageProps> = ({ className }) => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Código de Barras</label>
-                  <p className="text-lg font-mono font-semibold text-gray-900">
-                    {desarquivamento.codigoBarras}
+                  <label className="text-sm font-medium text-gray-500">Nome Completo</label>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {desarquivamento.nomeCompleto}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Tipo de Solicitação</label>
+                  <label className="text-sm font-medium text-gray-500">Tipo de Desarquivamento</label>
+                  <p className="text-base text-gray-900">
+                    {desarquivamento.tipoDesarquivamento}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Desarquivamento Físico/Digital</label>
                   <div className="mt-1">
-                    <Badge variant={getTipoBadgeVariant(desarquivamento.tipo)}>
-                      {getTipoLabel(desarquivamento.tipo)}
+                    <Badge variant="outline">
+                      {desarquivamento.desarquivamentoFisicoDigital}
                     </Badge>
                   </div>
                 </div>
@@ -280,95 +289,97 @@ const NugecidDetailPage: React.FC<NugecidDetailPageProps> = ({ className }) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Nome do Requerente</label>
+                  <label className="text-sm font-medium text-gray-500">Nº NIC/LAUDO/AUTO/IT</label>
                   <p className="text-base font-medium text-gray-900">
-                    {desarquivamento.nomeRequerente}
+                    {desarquivamento.numeroNicLaudoAuto}
                   </p>
                 </div>
-                {desarquivamento.nomeVitima && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Nome da Vítima</label>
-                    <p className="text-base font-medium text-gray-900">
-                      {desarquivamento.nomeVitima}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Nº do Processo</label>
+                  <p className="text-base font-medium text-gray-900">
+                    {desarquivamento.numeroProcesso}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Número do Registro</label>
-                  <p className="text-base font-medium text-gray-900">
-                    {desarquivamento.numeroRegistro}
-                  </p>
-                </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Tipo de Documento</label>
                   <p className="text-base text-gray-900">
                     {desarquivamento.tipoDocumento}
                   </p>
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Setor Demandante</label>
+                  <p className="text-base text-gray-900">
+                    {desarquivamento.setorDemandante}
+                  </p>
+                </div>
               </div>
 
-              {desarquivamento.observacoes && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Observações</label>
+                  <label className="text-sm font-medium text-gray-500">Servidor Responsável</label>
+                  <p className="text-base text-gray-900">
+                    {desarquivamento.servidorResponsavel}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Prorrogação Solicitada</label>
+                  <div className="mt-1">
+                    <Badge variant={desarquivamento.solicitacaoProrrogacao ? "default" : "secondary"}>
+                      {desarquivamento.solicitacaoProrrogacao ? "Sim" : "Não"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {desarquivamento.finalidadeDesarquivamento && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Finalidade do Desarquivamento</label>
                   <p className="text-base text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">
-                    {desarquivamento.observacoes}
+                    {desarquivamento.finalidadeDesarquivamento}
                   </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Informações de Contato */}
-          {(desarquivamento.telefoneContato || desarquivamento.emailContato || desarquivamento.enderecoEntrega) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Informações de Contato</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {desarquivamento.telefoneContato && (
-                    <div className="flex items-center space-x-3">
-                      <Phone className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Telefone</label>
-                        <p className="text-base text-gray-900">
-                          {desarquivamento.telefoneContato}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {desarquivamento.emailContato && (
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <label className="text-sm font-medium text-gray-500">Email</label>
-                        <p className="text-base text-gray-900">
-                          {desarquivamento.emailContato}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {desarquivamento.enderecoEntrega && (
-                  <div className="flex items-start space-x-3">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-1" />
-                    <div className="flex-1">
-                      <label className="text-sm font-medium text-gray-500">Endereço de Entrega</label>
-                      <p className="text-base text-gray-900 mt-1">
-                        {desarquivamento.enderecoEntrega}
+          {/* Informações de Datas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5" />
+                <span>Datas Importantes</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {desarquivamento.dataSolicitacao && (
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Data da Solicitação</label>
+                      <p className="text-base text-gray-900">
+                        {formatDate(desarquivamento.dataSolicitacao)}
                       </p>
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
+                {desarquivamento.dataDevolucaoSetor && (
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Data da Devolução pelo Setor</label>
+                      <p className="text-base text-gray-900">
+                        {formatDate(desarquivamento.dataDevolucaoSetor)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Coluna Lateral */}

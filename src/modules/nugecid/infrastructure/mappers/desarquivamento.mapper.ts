@@ -7,8 +7,35 @@ import {
 } from '../../domain/value-objects';
 import { StatusDesarquivamentoEnum } from '../../domain/value-objects/status-desarquivamento.vo';
 
+
 @Injectable()
 export class DesarquivamentoMapper {
+  /**
+   * Converte string do banco para StatusDesarquivamentoEnum
+   */
+  private mapStatusStringToEnum(statusString: string): StatusDesarquivamentoEnum {
+    switch (statusString?.toUpperCase()) {
+      case StatusDesarquivamentoEnum.FINALIZADO.toUpperCase():
+        return StatusDesarquivamentoEnum.FINALIZADO;
+      case StatusDesarquivamentoEnum.DESARQUIVADO.toUpperCase():
+        return StatusDesarquivamentoEnum.DESARQUIVADO;
+      case StatusDesarquivamentoEnum.NAO_COLETADO.toUpperCase():
+        return StatusDesarquivamentoEnum.NAO_COLETADO;
+      case StatusDesarquivamentoEnum.SOLICITADO.toUpperCase():
+        return StatusDesarquivamentoEnum.SOLICITADO;
+      case StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO.toUpperCase():
+        return StatusDesarquivamentoEnum.REARQUIVAMENTO_SOLICITADO;
+      case StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR.toUpperCase():
+        return StatusDesarquivamentoEnum.RETIRADO_PELO_SETOR;
+      case StatusDesarquivamentoEnum.NAO_LOCALIZADO.toUpperCase():
+        return StatusDesarquivamentoEnum.NAO_LOCALIZADO;
+      default:
+        // Valor padrão para casos desconhecidos
+        console.warn(`Status desconhecido do banco: ${statusString}, usando SOLICITADO como padrão`);
+        return StatusDesarquivamentoEnum.SOLICITADO;
+    }
+  }
+
   /**
    * Converte uma entidade de domínio para uma entidade TypeORM
    */
@@ -50,12 +77,21 @@ export class DesarquivamentoMapper {
    * Converte uma entidade TypeORM para uma entidade de domínio
    */
   toDomain(entity: DesarquivamentoTypeOrmEntity): DesarquivamentoDomain {
-    // Criar value objects
-    const id = entity.id ? DesarquivamentoId.create(entity.id) : undefined;
-    const status = StatusDesarquivamento.create(entity.status as any);
+    // Criar value objects - garantir que o ID seja válido
+    if (!entity.id || entity.id <= 0) {
+      throw new Error(`Entidade TypeORM com ID inválido encontrada: ${entity.id}`);
+    }
+    const id = DesarquivamentoId.create(entity.id);
 
-    // Reconstruir entidade de domínio
-    return DesarquivamentoDomain.reconstruct({
+    // Garantir que deletedAt seja undefined se for null do banco
+    const deletedAt = entity.deletedAt || undefined;
+
+    // Converter string do banco para StatusDesarquivamentoEnum
+    const statusEnum = this.mapStatusStringToEnum(entity.status);
+    const status = StatusDesarquivamento.create(statusEnum);
+
+    // Reconstruir domínio com o status value object correto
+    const domainData = {
       id,
       tipoDesarquivamento: entity.tipoDesarquivamento,
       status,
@@ -75,8 +111,10 @@ export class DesarquivamentoMapper {
       responsavelId: entity.responsavelId,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
-      deletedAt: entity.deletedAt,
-    });
+      deletedAt: deletedAt, // Agora será undefined se vier null do banco
+    };
+
+    return DesarquivamentoDomain.reconstruct(domainData);
   }
 
   /**
@@ -101,8 +139,13 @@ export class DesarquivamentoMapper {
    * Converte uma entidade de domínio para um objeto plano (para DTOs)
    */
   toPlainObject(domain: DesarquivamentoDomain): any {
+    // Garantir que o ID seja válido
+    if (!domain.id?.value || domain.id.value <= 0) {
+      throw new Error(`Tentativa de converter desarquivamento com ID inválido: ${domain.id?.value}`);
+    }
+    
     return {
-      id: domain.id?.value,
+      id: domain.id.value,
       tipoDesarquivamento: domain.tipoDesarquivamento,
       status: domain.status.value,
       nomeCompleto: domain.nomeCompleto,

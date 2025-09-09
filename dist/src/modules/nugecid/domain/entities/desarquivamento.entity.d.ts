@@ -68,6 +68,7 @@ export declare class DesarquivamentoDomain {
     private validate;
     canBeAccessedBy(userId: number, userRoles: string[]): boolean;
     canBeEditedBy(userId: number, userRoles: string[]): boolean;
+    canBeDeletedBy(userId: number, userRoles: string[]): boolean;
     canBeCancelled(): boolean;
     canBeCompleted(): boolean;
     isOverdue(): boolean;

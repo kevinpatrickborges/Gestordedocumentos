@@ -30,3 +30,4 @@ uploads/
 # Other
 *.local
 .pnpm-store/
+node_modules

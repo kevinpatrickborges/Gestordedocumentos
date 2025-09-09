@@ -13,48 +13,31 @@ exports.UpdateDesarquivamentoDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
-const VALID_STATUS = [
-    'FINALIZADO',
-    'DESARQUIVADO',
-    'NAO_COLETADO',
-    'SOLICITADO',
-    'REARQUIVAMENTO_SOLICITADO',
-    'RETIRADO_PELO_SETOR',
-    'NAO_LOCALIZADO'
-];
-const VALID_TIPO_DESARQUIVAMENTO = [
-    'FISICO',
-    'DIGITAL',
-    'NAO_LOCALIZADO'
-];
+const tipo_desarquivamento_enum_1 = require("../domain/enums/tipo-desarquivamento.enum");
+const status_desarquivamento_enum_1 = require("../domain/enums/status-desarquivamento.enum");
 class UpdateDesarquivamentoDto {
 }
 exports.UpdateDesarquivamentoDto = UpdateDesarquivamentoDto;
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Tipo de desarquivamento',
-        example: 'FISICO',
-        enum: VALID_TIPO_DESARQUIVAMENTO,
-        maxLength: 50,
+        description: 'Desarquivamento Físico/Digital ou não localizado',
+        example: tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum.FISICO,
+        enum: tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsIn)(VALID_TIPO_DESARQUIVAMENTO, {
+    (0, class_validator_1.IsEnum)(tipo_desarquivamento_enum_1.TipoDesarquivamentoEnum, {
         message: 'Tipo de desarquivamento deve ser: FISICO, DIGITAL ou NAO_LOCALIZADO'
     }),
-    (0, class_validator_1.MaxLength)(50),
-    (0, class_transformer_1.Transform)(({ value }) => value?.trim()),
     __metadata("design:type", String)
-], UpdateDesarquivamentoDto.prototype, "tipoDesarquivamento", void 0);
+], UpdateDesarquivamentoDto.prototype, "desarquivamentoFisicoDigital", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'Status da solicitação',
-        enum: VALID_STATUS,
-        example: 'SOLICITADO',
+        enum: status_desarquivamento_enum_1.StatusDesarquivamentoEnum,
+        example: status_desarquivamento_enum_1.StatusDesarquivamentoEnum.SOLICITADO,
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsIn)(VALID_STATUS, {
+    (0, class_validator_1.IsEnum)(status_desarquivamento_enum_1.StatusDesarquivamentoEnum, {
         message: 'Status deve ser um dos valores válidos: FINALIZADO, DESARQUIVADO, NAO_COLETADO, SOLICITADO, REARQUIVAMENTO_SOLICITADO, RETIRADO_PELO_SETOR, NAO_LOCALIZADO',
     }),
     __metadata("design:type", String)
