@@ -36,29 +36,15 @@ export class ImportRegistroDto {
       .trim();
   }
 
-  @Transform(({ value }) => {
-    const n = ImportRegistroDto.norm(value);
-    if (n.includes('digital')) return TipoDesarquivamento.DIGITAL;
-    if (n.includes('nao localizado')) return TipoDesarquivamento.NAO_LOCALIZADO;
-    return TipoDesarquivamento.FISICO;
-  })
-  @IsEnum(TipoDesarquivamento, { message: 'Valor inválido para "DESARQUIVAMENTO FISICO/DIGITAL".' })
+  @Transform(({ value }) => ImportRegistroDto.norm(value))
+  @IsString()
   @IsNotEmpty({ message: 'A coluna "DESARQUIVAMENTO FISICO/DIGITAL" é obrigatória.' })
-  desarquivamentoTipo: TipoDesarquivamento;
+  desarquivamentoTipo: string;
 
-  @Transform(({ value }) => {
-    const n = ImportRegistroDto.norm(value);
-    if (n.includes('finalizado')) return StatusDesarquivamento.FINALIZADO;
-    if (n.includes('desarquivado')) return StatusDesarquivamento.DESARQUIVADO;
-    if (n.includes('nao coletado')) return StatusDesarquivamento.NAO_COLETADO;
-    if (n.includes('rearquivamento solicitado')) return StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO;
-    if (n.includes('retirado pelo setor')) return StatusDesarquivamento.RETIRADO_PELO_SETOR;
-    if (n.includes('nao localizado')) return StatusDesarquivamento.NAO_LOCALIZADO;
-    return StatusDesarquivamento.SOLICITADO;
-  })
-  @IsEnum(StatusDesarquivamento, { message: 'Valor inválido para a coluna "Status".' })
+  @Transform(({ value }) => ImportRegistroDto.norm(value))
+  @IsString()
   @IsNotEmpty({ message: 'A coluna "Status" é obrigatória.' })
-  status: StatusDesarquivamento;
+  status: string;
 
   @IsString()
   @IsNotEmpty({ message: 'A coluna "Nome Completo" é obrigatória.' })
