@@ -6,38 +6,57 @@ import {
   IsEnum,
   IsBoolean,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
-// Enum para a Coluna B: DESARQUIVAMENTO FÍSICO/DIGITAL
+// Enums normalizados (sem acentos) apenas para validação do import
 export enum TipoDesarquivamento {
-  FISICO = 'Físico',
-  DIGITAL = 'Digital',
-  NAO_LOCALIZADO = 'Não Localizado',
+  FISICO = 'FISICO',
+  DIGITAL = 'DIGITAL',
+  NAO_LOCALIZADO = 'NAO_LOCALIZADO',
 }
 
-// Enum para a Coluna C: Status
 export enum StatusDesarquivamento {
-  FINALIZADO = 'Finalizado',
-  DESARQUIVADO = 'Desarquivado',
-  NAO_COLETADO = 'Não coletado',
-  SOLICITADO = 'Solicitado',
-  REARQUIVAMENTO_SOLICITADO = 'Rearquivamento Solicitado',
-  RETIRADO_PELO_SETOR = 'Retirado pelo setor',
-  NAO_LOCALIZADO = 'Não Localizado',
+  FINALIZADO = 'FINALIZADO',
+  DESARQUIVADO = 'DESARQUIVADO',
+  NAO_COLETADO = 'NAO_COLETADO',
+  SOLICITADO = 'SOLICITADO',
+  REARQUIVAMENTO_SOLICITADO = 'REARQUIVAMENTO_SOLICITADO',
+  RETIRADO_PELO_SETOR = 'RETIRADO_PELO_SETOR',
+  NAO_LOCALIZADO = 'NAO_LOCALIZADO',
 }
 
 export class ImportRegistroDto {
-  @IsEnum(TipoDesarquivamento, {
-    message:
-      'O valor para a coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é inválido.',
+  // Normalizador auxiliar
+  private static norm(v: any): string {
+    return (v ?? '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  @Transform(({ value }) => {
+    const n = ImportRegistroDto.norm(value);
+    if (n.includes('digital')) return TipoDesarquivamento.DIGITAL;
+    if (n.includes('nao localizado')) return TipoDesarquivamento.NAO_LOCALIZADO;
+    return TipoDesarquivamento.FISICO;
   })
-  @IsNotEmpty({
-    message: 'A coluna "DESARQUIVAMENTO FÍSICO/DIGITAL" é obrigatória.',
-  })
+  @IsEnum(TipoDesarquivamento, { message: 'Valor inválido para "DESARQUIVAMENTO FISICO/DIGITAL".' })
+  @IsNotEmpty({ message: 'A coluna "DESARQUIVAMENTO FISICO/DIGITAL" é obrigatória.' })
   desarquivamentoTipo: TipoDesarquivamento;
 
-  @IsEnum(StatusDesarquivamento, {
-    message: 'O valor para a coluna "Status" é inválido.',
+  @Transform(({ value }) => {
+    const n = ImportRegistroDto.norm(value);
+    if (n.includes('finalizado')) return StatusDesarquivamento.FINALIZADO;
+    if (n.includes('desarquivado')) return StatusDesarquivamento.DESARQUIVADO;
+    if (n.includes('nao coletado')) return StatusDesarquivamento.NAO_COLETADO;
+    if (n.includes('rearquivamento solicitado')) return StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO;
+    if (n.includes('retirado pelo setor')) return StatusDesarquivamento.RETIRADO_PELO_SETOR;
+    if (n.includes('nao localizado')) return StatusDesarquivamento.NAO_LOCALIZADO;
+    return StatusDesarquivamento.SOLICITADO;
   })
+  @IsEnum(StatusDesarquivamento, { message: 'Valor inválido para a coluna "Status".' })
   @IsNotEmpty({ message: 'A coluna "Status" é obrigatória.' })
   status: StatusDesarquivamento;
 
@@ -46,10 +65,7 @@ export class ImportRegistroDto {
   nomeCompleto: string;
 
   @IsString()
-  @IsNotEmpty({
-    message:
-      'A coluna "Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA" é obrigatória.',
-  })
+  @IsNotEmpty({ message: 'A coluna "Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA" é obrigatória.' })
   numDocumento: string;
 
   @IsString()
@@ -60,24 +76,15 @@ export class ImportRegistroDto {
   @IsOptional()
   tipoDocumento?: string;
 
-  @IsDateString(
-    {},
-    { message: 'A "Data de solicitação" deve ser uma data válida.' },
-  )
+  @IsDateString({}, { message: 'A "Data de solicitação" deve ser uma data válida.' })
   @IsNotEmpty({ message: 'A coluna "Data de solicitação" é obrigatória.' })
   dataSolicitacao: string;
 
-  @IsDateString(
-    {},
-    { message: 'A "Data do desarquivamento - SAG" deve ser uma data válida.' },
-  )
+  @IsDateString({}, { message: 'A "Data do desarquivamento - SAG" deve ser uma data válida.' })
   @IsOptional()
   dataDesarquivamento?: string;
 
-  @IsDateString(
-    {},
-    { message: 'A "Data da devolução pelo setor" deve ser uma data válida.' },
-  )
+  @IsDateString({}, { message: 'A "Data da devolução pelo setor" deve ser uma data válida.' })
   @IsOptional()
   dataDevolucao?: string;
 
@@ -93,10 +100,7 @@ export class ImportRegistroDto {
   @IsOptional()
   finalidade?: string;
 
-  @IsBoolean({
-    message:
-      'A coluna de "Prorrogação" deve ser um valor booleano (sim/não ou true/false).',
-  })
+  @IsBoolean({ message: 'A coluna de "Prorrogação" deve ser um valor booleano (sim/não ou true/false).' })
   @IsOptional()
   prorrogacao: boolean;
 }
