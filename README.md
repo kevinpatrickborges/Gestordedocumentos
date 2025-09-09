@@ -247,6 +247,15 @@ Este projeto é propriedade do Instituto Técnico-Científico de Perícia (ITEP/
 
 **Desenvolvido para o ITEP/RN**
 
+## Execução (atualizado)
+
+- Backend produção: `npm run build:backend && npm run start:prod` (equivalente a `node dist/src/main.js`).
+- Frontend: build e deploy separados na pasta `frontend/` (o backend não serve mais `frontend/dist`).
+
+Para desenvolvimento:
+- Backend: `npm run start:backend`
+- Frontend: `npm run start:frontend` (em `frontend/`)
+
 ## Configuração do Ambiente
 
 Para configurar variáveis de ambiente, utilize o arquivo `.env.example` como referência e crie um arquivo `.env` localmente. Não publique senhas nem chaves no README ou no repositório.
