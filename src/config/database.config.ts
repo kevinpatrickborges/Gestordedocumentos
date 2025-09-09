@@ -18,6 +18,12 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
     const dbPort = parseInt(process.env.DATABASE_PORT || '5432', 10);
     const dbName = process.env.DATABASE_NAME || 'sgc_itep';
     const dbUser = process.env.DATABASE_USERNAME || 'postgres';
+    const dbPassword = process.env.DATABASE_PASSWORD;
+
+    if (!dbPassword) {
+      this.logger.error('DATABASE_PASSWORD não está definido no ambiente (.env).');
+      throw new Error('DATABASE_PASSWORD não definido');
+    }
     
     // Log essencial
     this.logger.log(`Inicializando configuração do banco (${environment}).`);
@@ -40,7 +46,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       host: dbHost,
       port: dbPort,
       username: dbUser,
-      password: process.env.DATABASE_PASSWORD || '@Sanfona1',
+      password: dbPassword,
       database: dbName,
       ssl:
         process.env.DATABASE_SSL === 'true'
