@@ -85,3 +85,6 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({
       </Tooltip>
     </TooltipProvider>
   )
+}
+
+export default NotificationBadge

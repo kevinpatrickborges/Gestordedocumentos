@@ -124,7 +124,25 @@ export class NugecidImportService {
             }
 
             // NOME COMPLETO (Coluna C)
-            importDto.nomeCompleto = (rowData[2] || '').toString().trim() || 'N/A';
+            const nomeRaw = (rowData[2] || '').toString().trim();
+            const nomeClean = nomeRaw.replace(/\s+/g, ' ').trim();
+            const nomeUpperNoAccent = nomeClean
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toUpperCase();
+            const isNomeVazio =
+              !nomeClean ||
+              ['NA', 'N/A', 'N.A', '-', '--', 'N'].includes(nomeUpperNoAccent);
+            // Regra: nome vazio NÃO deve ser importado; exceção: "*" é permitido
+            if (isNomeVazio && nomeClean !== '*') {
+              result.errorCount++;
+              result.errors.push({
+                row: rowNumber,
+                details: { message: 'Nome completo vazio/indefinido. Linha ignorada.', data: rowData },
+              });
+              continue; // pula esta linha
+            }
+            importDto.nomeCompleto = nomeClean || '*';
 
             // DOCUMENTO (Coluna D - Nº DO NIC/LAUDO/AUTO/INFORMAÇÃO TÉCNICA)
             {
