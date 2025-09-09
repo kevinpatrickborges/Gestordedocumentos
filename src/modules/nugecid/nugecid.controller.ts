@@ -119,6 +119,52 @@ export class NugecidController {
     });
   }
 
+  // Alias de compatibilidade: alguns clientes chamam /api/nugecid/import-desarquivamentos
+  @Post('import-desarquivamentos')
+  @ApiOperation({ summary: 'Importar desarquivamentos (alias compatível com rotas legadas)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Arquivo Excel com desarquivamentos',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @Roles(RoleType.ADMIN)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  async importDesarquivamentosAlias(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() currentUser: User,
+    @Res() res: Response,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Arquivo nǜo enviado. Por favor, envie um arquivo Excel.');
+    }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('O arquivo enviado estǭ vazio. Verifique se o arquivo Excel tem dados.');
+    }
+
+    this.logger.log(`[${new Date().toISOString()}] Alias import: ${file.originalname} (${file.size} bytes)`);
+
+    const result = await this.nugecidImportService.importFromXLSX(
+      file,
+      currentUser,
+    );
+
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: `Importa��ǜo conclu��da: ${result.successCount} de ${result.totalRows} registros importados com sucesso.`,
+      data: result,
+    });
+  }
+
   @Post('import-registros')
   @ApiOperation({ summary: 'Importar registros de um arquivo .xlsx ou .csv' })
   @ApiConsumes('multipart/form-data')
