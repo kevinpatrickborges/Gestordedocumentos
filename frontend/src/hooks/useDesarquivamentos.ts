@@ -29,7 +29,8 @@ export const useDesarquivamentos = (
     endDate?: string
   } = {}
 ): UseQueryResult<PaginatedResponse<Desarquivamento>> => {
-  const { page = 1, limit = 10, ...filters } = params
+  // A API suporta até 100 por página; usar 100 para listar tudo
+  const { page = 1, limit = 100, ...filters } = params
   
   // Remove propriedades undefined para evitar cache desnecessário
   const cleanFilters = Object.fromEntries(

@@ -35,7 +35,7 @@ graph TB
     
     subgraph "Camada de Dados"
         N[TypeORM]
-        O[SQLite/PostgreSQL]
+        O[PostgreSQL]
         P[File System]
     end
     
@@ -208,7 +208,7 @@ GET /api/stats/alertas
 #### Listar Desarquivamentos
 
 ```
-GET /nugecid?page=1&limit=10&search=termo&status=ativo
+GET /api/nugecid?page=1&limit=10&search=termo&status=ativo
 ```
 
 **Query Parameters:**
@@ -250,7 +250,7 @@ GET /nugecid?page=1&limit=10&search=termo&status=ativo
 #### Criar Desarquivamento
 
 ```
-POST /nugecid
+POST /api/nugecid
 ```
 
 **Request:**
@@ -272,7 +272,7 @@ POST /nugecid
 #### Gerar PDF do Termo
 
 ```
-GET /nugecid/:id/pdf
+GET /api/nugecid/:id/pdf
 ```
 
 **Response:** Arquivo PDF com o termo de desarquivamento preenchido
@@ -280,7 +280,7 @@ GET /nugecid/:id/pdf
 #### Importar Planilha Excel
 
 ```
-POST /nugecid/import
+POST /api/nugecid/import
 Content-Type: multipart/form-data
 ```
 
@@ -293,13 +293,13 @@ Content-Type: multipart/form-data
 #### Listar Usuários
 
 ```
-GET /users?page=1&limit=10&ativo=true
+GET /api/users?page=1&limit=10&ativo=true
 ```
 
 #### Criar Usuário
 
 ```
-POST /users
+POST /api/users
 ```
 
 **Request:**
@@ -318,7 +318,7 @@ POST /users
 #### Dashboard Principal
 
 ```
-GET /nugecid/dashboard
+GET /api/stats/dashboard
 ```
 
 **Response:**
@@ -638,10 +638,10 @@ export class Desarquivamento {
 
 ### 6.2 Data Definition Language
 
-**Tabela de Usuários (users)**
+**Tabela de Usuários (usuarios)**
 
 ```sql
-CREATE TABLE users (
+CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     usuario VARCHAR(50) UNIQUE NOT NULL,
@@ -653,9 +653,9 @@ CREATE TABLE users (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_users_usuario ON users(usuario);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_ativo ON users(ativo);
+CREATE INDEX idx_usuarios_usuario ON usuarios(usuario);
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_usuarios_ativo ON usuarios(ativo);
 ```
 
 **Tabela de Roles (roles)**
@@ -694,7 +694,7 @@ CREATE TABLE desarquivamentos (
     "finalidadeDesarquivamento" TEXT NOT NULL,
     "solicitacaoProrrogacao" BOOLEAN DEFAULT false,
     urgente BOOLEAN DEFAULT false,
-    "userId" INTEGER REFERENCES users(id),
+    "userId" INTEGER REFERENCES usuarios(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -795,16 +795,13 @@ INSERT INTO user_roles (user_id, role_id) VALUES (1, 1);
 ### 7.1 Variáveis de Ambiente
 
 ```env
-# Database
-DATABASE_TYPE=sqlite
-DATABASE_PATH=./database.sqlite
-# Para produção:
-# DATABASE_TYPE=postgres
-# DATABASE_HOST=localhost
-# DATABASE_PORT=5432
-# DATABASE_USERNAME=sgc_user
-# DATABASE_PASSWORD=senha_segura
-# DATABASE_NAME=sgc_itep
+# Database (PostgreSQL via Docker)
+DATABASE_TYPE=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=sgc_user
+DATABASE_PASSWORD=senha_segura
+DATABASE_NAME=sgc_itep
 
 # JWT
 JWT_SECRET=sua_chave_secreta_muito_segura_aqui

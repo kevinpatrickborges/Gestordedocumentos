@@ -49,7 +49,13 @@ import { toast } from 'sonner'
 import { Pagination } from '@/components/ui/Pagination'
 import { TableLoading } from '@/components/ui/Loading'
 import { ImportModal } from '@/components/desarquivamentos/ImportModal'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui'
+import { MoreHorizontal } from 'lucide-react'
+import DesarquivamentoDetailModal from '@/components/desarquivamentos/DesarquivamentoDetailModal'
 import { AdminConfirmDialog } from '@/components/ui/AdminConfirmDialog'
+import '@/styles/desarquivamentos.css'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiService } from '@/services/api'
 
 const DesarquivamentosPage: React.FC = () => {
   const { user } = useAuth()
@@ -59,11 +65,30 @@ const DesarquivamentosPage: React.FC = () => {
   const [tipoDesarquivamentoFilter, setTipoDesarquivamentoFilter] = useState<string>('all')
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null })
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(10)
+  // Exibir todos em uma única página (até 100 itens)
+  const [pageSize] = useState(100)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [detailId, setDetailId] = useState<number | null>(null)
+  const [editingStatusId, setEditingStatusId] = useState<number | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; item: Desarquivamento | null }>({
     isOpen: false,
     item: null,
+  })
+
+  const queryClient = useQueryClient()
+
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: StatusDesarquivamento }) => {
+      return apiService.updateDesarquivamento(id, { status } as any)
+    },
+    onSuccess: () => {
+      setEditingStatusId(null)
+      // Invalida lista para refletir novo status
+      queryClient.invalidateQueries({ queryKey: ['desarquivamentos'] })
+    },
+    onError: () => {
+      setEditingStatusId(null)
+    }
   })
 
   // Query parameters
@@ -406,8 +431,8 @@ const DesarquivamentosPage: React.FC = () => {
             <TableLoading />
           ) : (
             <div className="space-y-4">
-              <div className="overflow-x-auto">
-                <Table>
+              <div>
+                <Table className="compact-desarquivamentos" containerClassName="overflow-y-auto overflow-x-hidden">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Desarquivamento Físico/Digital</TableHead>
@@ -429,29 +454,71 @@ const DesarquivamentosPage: React.FC = () => {
                   <TableBody>
                     {data?.data && data.data.length > 0 ? (
                       data.data.map((item) => (
-                        <TableRow key={item.id}>
+                        <TableRow
+                          key={item.id}
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={(e) => {
+                            const target = e.target as HTMLElement
+                            if (target && target.closest('[data-actions="true"]')) return
+                            if (item.id) setDetailId(item.id)
+                          }}
+                        >
                           <TableCell>
                             <Badge variant="outline">
                               {item.tipoDesarquivamento ? getTipoDesarquivamentoLabel(item.tipoDesarquivamento as TipoDesarquivamento) : '-'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={
-                                item.status === StatusDesarquivamento.FINALIZADO ? 'default' :
-                                item.status === StatusDesarquivamento.NAO_LOCALIZADO ? 'destructive' :
-                                item.status === StatusDesarquivamento.DESARQUIVADO ? 'secondary' :
-                                'outline'
-                              }
-                            >
-                              {getStatusLabel(item.status)}
-                            </Badge>
+                          <TableCell
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            {editingStatusId === item.id ? (
+                              <Select
+                                value={item.status}
+                                onValueChange={(value) => updateStatus.mutate({ id: item.id!, status: value as StatusDesarquivamento })}
+                              >
+                                <SelectTrigger className="w-[130px] h-7 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={StatusDesarquivamento.SOLICITADO}>{getStatusLabel(StatusDesarquivamento.SOLICITADO)}</SelectItem>
+                                  <SelectItem value={StatusDesarquivamento.DESARQUIVADO}>{getStatusLabel(StatusDesarquivamento.DESARQUIVADO)}</SelectItem>
+                                  <SelectItem value={StatusDesarquivamento.RETIRADO_PELO_SETOR}>{getStatusLabel(StatusDesarquivamento.RETIRADO_PELO_SETOR)}</SelectItem>
+                                  <SelectItem value={StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO}>{getStatusLabel(StatusDesarquivamento.REARQUIVAMENTO_SOLICITADO)}</SelectItem>
+                                  <SelectItem value={StatusDesarquivamento.NAO_COLETADO}>{getStatusLabel(StatusDesarquivamento.NAO_COLETADO)}</SelectItem>
+                                  <SelectItem value={StatusDesarquivamento.NAO_LOCALIZADO}>{getStatusLabel(StatusDesarquivamento.NAO_LOCALIZADO)}</SelectItem>
+                                  <SelectItem value={StatusDesarquivamento.FINALIZADO}>{getStatusLabel(StatusDesarquivamento.FINALIZADO)}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Badge
+                                onClick={() => setEditingStatusId(item.id!)}
+                                variant={
+                                  item.status === StatusDesarquivamento.FINALIZADO ? 'default' :
+                                  item.status === StatusDesarquivamento.NAO_LOCALIZADO ? 'destructive' :
+                                  item.status === StatusDesarquivamento.DESARQUIVADO ? 'secondary' :
+                                  'outline'
+                                }
+                                className="text-xs px-2 py-0.5 whitespace-nowrap leading-tight cursor-pointer"
+                              >
+                                {getStatusLabel(item.status)}
+                              </Badge>
+                            )}
                           </TableCell>
-                          <TableCell>{item.nomeCompleto || '-'}</TableCell>
-                          <TableCell>{item.numeroNicLaudoAuto || '-'}</TableCell>
-                          <TableCell>{item.numeroProcesso || '-'}</TableCell>
-                          <TableCell>{item.tipoDocumento || '-'}</TableCell>
                           <TableCell>
+                            <span className="block max-w-[260px] truncate" title={item.nomeCompleto || ''}>{item.nomeCompleto || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="block max-w-[160px] truncate font-mono" title={item.numeroNicLaudoAuto || ''}>{item.numeroNicLaudoAuto || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="block max-w-[140px] truncate font-mono" title={item.numeroProcesso || ''}>{item.numeroProcesso || '-'}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="block max-w-[160px] truncate" title={item.tipoDocumento || ''}>{item.tipoDocumento || '-'}</span>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
                             {formatDate(item.dataSolicitacao || item.createdAt)}
                           </TableCell>
                           <TableCell>
@@ -466,41 +533,37 @@ const DesarquivamentosPage: React.FC = () => {
                           <TableCell>
                             {item.solicitacaoProrrogacao ? 'Sim' : 'Não'}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {item.id && item.id > 0 && (
-                                <Button
-                                  asChild
-                                  variant="ghost"
-                                  size="sm"
-                                >
-                                  <Link to={`/desarquivamentos/${item.id}`}>
-                                    <Eye className="h-4 w-4" />
-                                  </Link>
+                          <TableCell
+                            className="text-right"
+                            data-actions="true"
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                                  <MoreHorizontal className="h-4 w-4" />
                                 </Button>
-                              )}
-                              {canEdit && item.id && item.id > 0 && (
-                                <Button
-                                  asChild
-                                  variant="ghost"
-                                  size="sm"
-                                >
-                                  <Link to={`/desarquivamentos/${item.id}/editar`}>
-                                    <Edit className="h-4 w-4" />
-                                  </Link>
-                                </Button>
-                              )}
-                              {canDelete && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(item)}
-                                  disabled={deleteDesarquivamento.isPending}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem onSelect={() => { setDetailId(item.id!) }}>
+                                  Ver detalhes
+                                </DropdownMenuItem>
+                                {canEdit && (
+                                  <DropdownMenuItem asChild>
+                                    <Link to={`/desarquivamentos/${item.id}/editar`} onClick={(e) => e.stopPropagation()}>
+                                      Editar
+                                    </Link>
+                                  </DropdownMenuItem>
+                                )}
+                                {canDelete && (
+                                  <DropdownMenuItem onSelect={() => { setDetailId(null); handleDeleteClick(item) }}>
+                                    Excluir
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))
@@ -567,6 +630,10 @@ const DesarquivamentosPage: React.FC = () => {
           setIsImportModalOpen(false)
         }}
       />
+
+      {detailId && (
+        <DesarquivamentoDetailModal id={detailId} onClose={() => setDetailId(null)} />
+      )}
 
       <AdminConfirmDialog
         isOpen={deleteConfirm.isOpen}

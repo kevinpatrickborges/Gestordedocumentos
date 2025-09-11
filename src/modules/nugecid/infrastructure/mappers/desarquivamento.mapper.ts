@@ -91,13 +91,17 @@ export class DesarquivamentoMapper {
     const status = StatusDesarquivamento.create(statusEnum);
 
     // Reconstruir domínio com o status value object correto
+    const safeNumeroProcesso = (entity.numeroProcesso && entity.numeroProcesso.toString().trim().length > 0)
+      ? entity.numeroProcesso
+      : 'N/A';
+
     const domainData = {
       id,
       tipoDesarquivamento: entity.tipoDesarquivamento,
       status,
       nomeCompleto: entity.nomeCompleto,
       numeroNicLaudoAuto: entity.numeroNicLaudoAuto,
-      numeroProcesso: entity.numeroProcesso,
+      numeroProcesso: safeNumeroProcesso,
       tipoDocumento: entity.tipoDocumento,
       dataSolicitacao: entity.dataSolicitacao,
       dataDesarquivamentoSAG: entity.dataDesarquivamentoSAG,

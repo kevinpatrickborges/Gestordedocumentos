@@ -197,9 +197,17 @@ export class UpdateDesarquivamentoUseCase {
 
     // Atualizar status
     if (request.status !== undefined) {
+      const upperRoles = (request.userRoles || []).map(r => (r || '').toUpperCase());
+      const isPrivileged =
+        upperRoles.includes('ADMIN') ||
+        upperRoles.includes('COORDENADOR') ||
+        upperRoles.includes('NUGECID_OPERATOR') ||
+        upperRoles.includes('OPERADOR');
+
       await this.updateStatus(
         desarquivamento,
         request.status,
+        isPrivileged,
       );
     }
 
@@ -209,28 +217,43 @@ export class UpdateDesarquivamentoUseCase {
   private async updateStatus(
     desarquivamento: DesarquivamentoDomain,
     newStatus: string,
+    isPrivileged: boolean = false,
   ): Promise<void> {
     switch (newStatus) {
       case 'SOLICITADO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createSolicitado());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createSolicitado())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createSolicitado());
         break;
       case 'DESARQUIVADO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createDesarquivado());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createDesarquivado())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createDesarquivado());
         break;
       case 'FINALIZADO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createFinalizado());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createFinalizado())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createFinalizado());
         break;
       case 'NAO_LOCALIZADO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createNaoLocalizado());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createNaoLocalizado())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createNaoLocalizado());
         break;
       case 'NAO_COLETADO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createNaoColetado());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createNaoColetado())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createNaoColetado());
         break;
       case 'RETIRADO_PELO_SETOR':
-        desarquivamento.changeStatus(StatusDesarquivamento.createRetiradoPeloSetor());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createRetiradoPeloSetor())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createRetiradoPeloSetor());
         break;
       case 'REARQUIVAMENTO_SOLICITADO':
-        desarquivamento.changeStatus(StatusDesarquivamento.createRearquivamentoSolicitado());
+        isPrivileged
+          ? desarquivamento.changeStatusForce(StatusDesarquivamento.createRearquivamentoSolicitado())
+          : desarquivamento.changeStatus(StatusDesarquivamento.createRearquivamentoSolicitado());
         break;
       default:
         throw new Error(`Status inválido: ${newStatus}`);

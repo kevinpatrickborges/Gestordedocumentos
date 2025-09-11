@@ -53,14 +53,14 @@ export class DesarquivamentoDomain {
     this.validate();
   }
 
-  // Factory method para criar nova instância
+  // Factory method para criar nova instÃ¢ncia
   static create(
     props: Omit<DesarquivamentoDomainProps, 'id' | 'createdAt' | 'updatedAt'>,
   ): DesarquivamentoDomain {
     const now = new Date();
 
     return new DesarquivamentoDomain(
-      undefined, // ID será gerado pelo repositório
+      undefined, // ID serÃ¡ gerado pelo repositÃ³rio
       props.tipoDesarquivamento,
       props.status || StatusDesarquivamento.createSolicitado(),
       props.nomeCompleto,
@@ -190,42 +190,42 @@ export class DesarquivamentoDomain {
     return this._deletedAt;
   }
 
-  // Métodos de negócio
+  // MÃ©todos de negÃ³cio
   private validate(): void {
     if (!this._nomeCompleto || this._nomeCompleto.trim().length === 0) {
-      throw new Error('Nome completo é obrigatório');
+      throw new Error('Nome completo Ã© obrigatÃ³rio');
     }
 
     if (this._nomeCompleto.length > 255) {
-      throw new Error('Nome completo deve ter no máximo 255 caracteres');
+      throw new Error('Nome completo deve ter no mÃ¡ximo 255 caracteres');
     }
 
     if (!this._numeroNicLaudoAuto || this._numeroNicLaudoAuto.trim().length === 0) {
-      throw new Error('Número NIC/Laudo/Auto é obrigatório');
+      throw new Error('NÃºmero NIC/Laudo/Auto Ã© obrigatÃ³rio');
     }
 
     if (!this._numeroProcesso || this._numeroProcesso.trim().length === 0) {
-      throw new Error('Número do processo é obrigatório');
+      throw new Error('NÃºmero do processo Ã© obrigatÃ³rio');
     }
 
     if (!this._tipoDocumento || this._tipoDocumento.trim().length === 0) {
-      throw new Error('Tipo do documento é obrigatório');
+      throw new Error('Tipo do documento Ã© obrigatÃ³rio');
     }
 
     if (!this._setorDemandante || this._setorDemandante.trim().length === 0) {
-      throw new Error('Setor demandante é obrigatório');
+      throw new Error('Setor demandante Ã© obrigatÃ³rio');
     }
 
     if (!this._servidorResponsavel || this._servidorResponsavel.trim().length === 0) {
-      throw new Error('Servidor responsável é obrigatório');
+      throw new Error('Servidor responsÃ¡vel Ã© obrigatÃ³rio');
     }
 
     if (!this._finalidadeDesarquivamento || this._finalidadeDesarquivamento.trim().length === 0) {
-      throw new Error('Finalidade do desarquivamento é obrigatória');
+      throw new Error('Finalidade do desarquivamento Ã© obrigatÃ³ria');
     }
 
     if (this._criadoPorId <= 0) {
-      throw new Error('ID do usuário criador deve ser válido');
+      throw new Error('ID do usuÃ¡rio criador deve ser vÃ¡lido');
     }
 
     if (
@@ -233,12 +233,12 @@ export class DesarquivamentoDomain {
       this._responsavelId !== null &&
       this._responsavelId < 0
     ) {
-      throw new Error('ID do responsável deve ser válido');
+      throw new Error('ID do responsÃ¡vel deve ser vÃ¡lido');
     }
   }
 
 
-  // Verifica se pode ser acessado por um usuário
+  // Verifica se pode ser acessado por um usuÃ¡rio
   canBeAccessedBy(userId: number, userRoles: string[]): boolean {
     const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
     // Criador sempre pode acessar
@@ -246,7 +246,7 @@ export class DesarquivamentoDomain {
       return true;
     }
 
-    // Responsável pode acessar
+    // ResponsÃ¡vel pode acessar
     if (this._responsavelId === userId) {
       return true;
     }
@@ -256,7 +256,7 @@ export class DesarquivamentoDomain {
       return true;
     }
 
-    // Usuários com role específica podem acessar
+    // UsuÃ¡rios com role especÃ­fica podem acessar
     if (
       upperCaseUserRoles.includes('NUGECID_VIEWER') ||
       upperCaseUserRoles.includes('NUGECID_OPERATOR')
@@ -267,10 +267,15 @@ export class DesarquivamentoDomain {
     return false;
   }
 
-  // Verifica se pode ser editado por um usuário
+  // Verifica se pode ser editado por um usuÃ¡rio
   canBeEditedBy(userId: number, userRoles: string[]): boolean {
-    const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
-    // Não pode editar se estiver concluído
+    // Normaliza roles vindas do controller (ex.: 'admin', 'coordenador', 'usuario')
+    const upperCaseUserRoles = (userRoles || []).map(role => (role || '').toUpperCase());
+    // Administradores sempre podem editar (override), independentemente do status
+    if (upperCaseUserRoles.includes('ADMIN')) {
+      return true;
+    }
+    // NÃ£o pode editar se estiver concluÃ­do (exceto ADMIN - jÃ¡ tratado acima)
     if (this._status.isFinal()) {
       return false;
     }
@@ -280,42 +285,46 @@ export class DesarquivamentoDomain {
       return true;
     }
 
-    // Responsável pode editar
+    // ResponsÃ¡vel pode editar
     if (this._responsavelId === userId) {
       return true;
     }
 
-    // Administradores e operadores podem editar
-    if (upperCaseUserRoles.includes('ADMIN') || upperCaseUserRoles.includes('NUGECID_OPERATOR')) {
+    // Operadores/coordenadores podem editar
+    if (
+      upperCaseUserRoles.includes('NUGECID_OPERATOR') ||
+      upperCaseUserRoles.includes('COORDENADOR') ||
+      upperCaseUserRoles.includes('OPERADOR')
+    ) {
       return true;
     }
 
     return false;
   }
 
-  // Verifica se pode ser excluído por um usuário (regras específicas para exclusão)
+  // Verifica se pode ser excluÃ­do por um usuÃ¡rio (regras especÃ­ficas para exclusÃ£o)
   canBeDeletedBy(userId: number, userRoles: string[]): boolean {
     const upperCaseUserRoles = userRoles.map(role => role.toUpperCase());
     
     // Administradores podem excluir qualquer coisa (exceto em andamento)
     if (upperCaseUserRoles.includes('ADMIN')) {
-      // Não permitir exclusão de registros em andamento, mesmo para admin
+      // NÃ£o permitir exclusÃ£o de registros em andamento, mesmo para admin
       if (this._status.isInProgress()) {
         return false;
       }
       return true;
     }
 
-    // Criador pode excluir apenas suas próprias solicitações que não estão finalizadas ou em andamento
+    // Criador pode excluir apenas suas prÃ³prias solicitaÃ§Ãµes que nÃ£o estÃ£o finalizadas ou em andamento
     if (this._criadoPorId === userId) {
-      // Não pode excluir se finalizado ou em andamento
+      // NÃ£o pode excluir se finalizado ou em andamento
       if (this._status.isFinal() || this._status.isInProgress()) {
         return false;
       }
       return true;
     }
 
-    // Responsável pode excluir apenas se não estiver finalizado
+    // ResponsÃ¡vel pode excluir apenas se nÃ£o estiver finalizado
     if (this._responsavelId === userId) {
       if (this._status.isFinal()) {
         return false;
@@ -331,29 +340,29 @@ export class DesarquivamentoDomain {
     return this._status.canBeCancelled();
   }
 
-  // Verifica se pode ser concluído
+  // Verifica se pode ser concluÃ­do
   canBeCompleted(): boolean {
     return this._status.canBeCompleted();
   }
 
-  // Verifica se está vencido (baseado na data de solicitação + 30 dias)
+  // Verifica se estÃ¡ vencido (baseado na data de solicitaÃ§Ã£o + 30 dias)
   isOverdue(): boolean {
     if (this._status.isFinal()) {
       return false;
     }
     const deadline = new Date(this._dataSolicitacao);
-    deadline.setDate(deadline.getDate() + 30); // 30 dias padrão
+    deadline.setDate(deadline.getDate() + 30); // 30 dias padrÃ£o
     return new Date() > deadline;
   }
 
-  // Calcula dias restantes até o vencimento
+  // Calcula dias restantes atÃ© o vencimento
   getDaysUntilDeadline(): number | null {
     if (this._status.isFinal()) {
       return null;
     }
 
     const deadline = new Date(this._dataSolicitacao);
-    deadline.setDate(deadline.getDate() + 30); // 30 dias padrão
+    deadline.setDate(deadline.getDate() + 30); // 30 dias padrÃ£o
     const now = new Date();
     const diffTime = deadline.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -361,18 +370,18 @@ export class DesarquivamentoDomain {
     return diffDays;
   }
 
-  // Métodos para alterar estado
+  // MÃ©todos para alterar estado
   changeStatus(newStatus: StatusDesarquivamento): void {
     if (!this._status.canTransitionTo(newStatus)) {
       throw new Error(
-        `Não é possível alterar status de ${this._status.toString()} para ${newStatus.toString()}`,
+        `NÃ£o Ã© possÃ­vel alterar status de ${this._status.toString()} para ${newStatus.toString()}`,
       );
     }
 
     this._status = newStatus;
     this._updatedAt = new Date();
 
-    // Se foi concluído, define data de desarquivamento se não foi definida
+    // Se foi concluÃ­do, define data de desarquivamento se nÃ£o foi definida
     if (
       newStatus.value === StatusDesarquivamentoEnum.FINALIZADO &&
       !this._dataDesarquivamentoSAG
@@ -381,10 +390,24 @@ export class DesarquivamentoDomain {
     }
   }
 
-  // Atribui responsável
+  // ForÃ§a alteraÃ§Ã£o de status, ignorando regra de transiÃ§Ã£o (uso administrativo)
+  changeStatusForce(newStatus: StatusDesarquivamento): void {
+    this._status = newStatus;
+    this._updatedAt = new Date();
+
+    // Se for finalizado e nÃ£o houver data de desarquivamento, define agora
+    if (
+      newStatus.value === StatusDesarquivamentoEnum.FINALIZADO &&
+      !this._dataDesarquivamentoSAG
+    ) {
+      this._dataDesarquivamentoSAG = new Date();
+    }
+  }
+
+  // Atribui responsÃ¡vel
   assignResponsible(responsavelId: number): void {
     if (responsavelId < 0) {
-      throw new Error('ID do responsável deve ser válido');
+      throw new Error('ID do responsÃ¡vel deve ser vÃ¡lido');
     }
 
     this._responsavelId = responsavelId;
@@ -402,7 +425,7 @@ export class DesarquivamentoDomain {
     this._updatedAt = new Date();
   }
 
-  // Define data de devolução ao setor
+  // Define data de devoluÃ§Ã£o ao setor
   setDataDevolucaoSetor(data: Date): void {
     this._dataDevolucaoSetor = data;
     this._updatedAt = new Date();
@@ -411,7 +434,7 @@ export class DesarquivamentoDomain {
   // Conclui o atendimento
   complete(): void {
     if (!this._status.canBeCompleted()) {
-      throw new Error('Desarquivamento não pode ser concluído no status atual');
+      throw new Error('Desarquivamento nÃ£o pode ser concluÃ­do no status atual');
     }
 
     this._status = StatusDesarquivamento.createFinalizado();
@@ -424,18 +447,18 @@ export class DesarquivamentoDomain {
   // Cancela o desarquivamento
   cancel(motivo?: string): void {
     if (!this._status.canBeCancelled()) {
-      throw new Error('Desarquivamento não pode ser cancelado no status atual');
+      throw new Error('Desarquivamento nÃ£o pode ser cancelado no status atual');
     }
 
     // Cancel functionality not available in new status structure
-    throw new Error('Cancelamento não está disponível na nova estrutura de status');
+    throw new Error('Cancelamento nÃ£o estÃ¡ disponÃ­vel na nova estrutura de status');
     this._updatedAt = new Date();
   }
 
   // Soft delete
   delete(): void {
     if (this._status.isInProgress()) {
-      throw new Error('Não é possível excluir desarquivamento em andamento');
+      throw new Error('NÃ£o Ã© possÃ­vel excluir desarquivamento em andamento');
     }
 
     this._deletedAt = new Date();
@@ -448,18 +471,18 @@ export class DesarquivamentoDomain {
     this._updatedAt = new Date();
   }
 
-  // Marca como excluído (soft delete)
+  // Marca como excluÃ­do (soft delete)
   markAsDeleted(): void {
     this._deletedAt = new Date();
     this._updatedAt = new Date();
   }
 
-  // Verifica se foi excluído
+  // Verifica se foi excluÃ­do
   isDeleted(): boolean {
     return this._deletedAt !== undefined;
   }
 
-  // Converte para objeto simples (para serialização)
+  // Converte para objeto simples (para serializaÃ§Ã£o)
   toPlainObject(): any {
     return {
       id: this._id?.value,

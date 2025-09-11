@@ -348,11 +348,23 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Refresh token inválido ou expirado' })
-  async refreshToken(@Body() body: { refreshToken: string }) {
+  async refreshToken(
+    @Body() body: { refreshToken: string },
+    @Response() res: ExpressResponse,
+  ) {
     try {
       const result = await this.authService.refreshToken(body.refreshToken);
       this.logger.log('Token renovado com sucesso');
-      return result;
+
+      // Atualiza o cookie httpOnly com o novo access token
+      res.cookie('access_token', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 50 * 60 * 1000, // 50 minutos
+      });
+
+      return res.json(result);
     } catch (error) {
       this.logger.error(`Erro ao renovar token: ${error.message}`);
       throw error;

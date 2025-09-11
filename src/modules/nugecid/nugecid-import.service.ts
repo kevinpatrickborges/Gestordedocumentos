@@ -24,6 +24,15 @@ export class NugecidImportService {
     return this.importRegistrosFromXLSX(file, currentUser);
   }
 
+  // Normaliza strings: remove acentos/diacríticos, deixa minúsculo e trim
+  private normalize(value: string): string {
+    return value
+      ?.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
+
   async importRegistrosFromXLSX(
     file: Express.Multer.File,
     currentUser: User,
@@ -93,7 +102,7 @@ export class NugecidImportService {
             // Mapear dados da coluna baseada na estrutura original da planilha
 
             // TIPO DE DESARQUIVAMENTO (Coluna A - DESARQUIVAMENTO FÍSICO/DIGITAL)
-            const tipoValue = (rowData[0] || '').toString().toLowerCase().trim();
+            const tipoValue = this.normalize((rowData[0] || '').toString());
             if (tipoValue.includes('digital')) {
               importDto.desarquivamentoTipo = 'DIGITAL' as any;
             } else if (tipoValue.includes('não localizado') || tipoValue.includes('nao localizado')) {
@@ -103,7 +112,7 @@ export class NugecidImportService {
             }
 
             // STATUS (Coluna B - Status)
-            const statusValue = (rowData[1] || '').toString().toLowerCase().trim();
+            const statusValue = this.normalize((rowData[1] || '').toString());
             this.logger.log(`Debug status: "${statusValue}"`);
 
             if (statusValue.includes('finalizado')) {
@@ -293,6 +302,7 @@ export class NugecidImportService {
             desarquivamentoFisicoDigital: this.mapTipoDesarquivamentoFromExcel(
               importDto.desarquivamentoTipo,
             ),
+            status: (importDto.status as any),
             nomeCompleto: importDto.nomeCompleto,
             numeroNicLaudoAuto: importDto.numDocumento || 'N/A',
             numeroProcesso: importDto.numProcesso || '',
@@ -345,8 +355,11 @@ export class NugecidImportService {
 
     const tipoLower = tipo.toString().toLowerCase().trim();
 
-    if (tipoLower.includes('digital') || tipoLower.includes('DIGITAL')) {
+    if (tipoLower.includes('digital')) {
       return TipoDesarquivamentoEnum.DIGITAL;
+    }
+    if (tipoLower.includes('nao localizado') || tipoLower.includes('não localizado')) {
+      return TipoDesarquivamentoEnum.NAO_LOCALIZADO;
     }
 
     return TipoDesarquivamentoEnum.FISICO;

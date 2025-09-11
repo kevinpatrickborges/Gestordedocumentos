@@ -525,18 +525,33 @@ export class NugecidController {
     @Body() updateDesarquivamentoDto: UpdateDesarquivamentoDto,
     @CurrentUser() currentUser: User,
   ) {
-    const result = await this.updateDesarquivamentoUseCase.execute({
-      id,
-      ...updateDesarquivamentoDto,
-      userId: currentUser.id,
-      userRoles: [currentUser.role?.name || 'USER'],
-    });
+    try {
+      const result = await this.updateDesarquivamentoUseCase.execute({
+        id,
+        ...updateDesarquivamentoDto,
+        userId: currentUser.id,
+        userRoles: [currentUser.role?.name || 'USER'],
+      });
 
-    return {
-      success: true,
-      message: 'Desarquivamento atualizado com sucesso',
-      data: result,
-    };
+      return {
+        success: true,
+        message: 'Desarquivamento atualizado com sucesso',
+        data: result,
+      };
+    } catch (error) {
+      // Normaliza erros conhecidos para não retornar 500 indevidamente
+      const msg = (error?.message || '').toString();
+      if (msg.includes('Acesso negado')) {
+        throw new ForbiddenException('Você não tem permissão para editar este desarquivamento');
+      }
+      if (msg.includes('não encontrado') || msg.includes('no encontrado')) {
+        throw new NotFoundException('Desarquivamento não encontrado');
+      }
+      if (msg.toLowerCase().includes('status inv') || msg.toLowerCase().includes('id deve ser')) {
+        throw new BadRequestException(msg);
+      }
+      throw new BadRequestException(msg || 'Erro ao atualizar desarquivamento');
+    }
   }
 
   @Delete(':id')

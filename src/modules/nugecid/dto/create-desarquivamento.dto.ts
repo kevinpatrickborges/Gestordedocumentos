@@ -11,6 +11,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { TipoDesarquivamentoEnum } from '../domain/enums/tipo-desarquivamento.enum';
+import { StatusDesarquivamentoEnum } from '../domain/enums/status-desarquivamento.enum';
 
 export class CreateDesarquivamentoDto {
   @ApiProperty({
@@ -156,4 +157,12 @@ export class CreateDesarquivamentoDto {
   @IsOptional()
   @IsBoolean()
   urgente?: boolean = false;
+
+  @ApiPropertyOptional({
+    description: 'Status inicial do desarquivamento (opcional em importações)',
+    enum: StatusDesarquivamentoEnum,
+  })
+  @IsOptional()
+  @IsEnum(StatusDesarquivamentoEnum, { message: 'Status deve ser um dos valores válidos' })
+  status?: StatusDesarquivamentoEnum;
 }

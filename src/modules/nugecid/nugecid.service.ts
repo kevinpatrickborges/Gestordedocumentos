@@ -69,7 +69,8 @@ export class NugecidService {
     const desarquivamento = this.desarquivamentoRepository.create({
       ...createDesarquivamentoDto,
       criadoPorId: currentUser.id,
-      status: StatusDesarquivamentoEnum.SOLICITADO,
+      status:
+        (createDesarquivamentoDto as any).status || StatusDesarquivamentoEnum.SOLICITADO,
     });
 
     const saved = (await this.desarquivamentoRepository.save(

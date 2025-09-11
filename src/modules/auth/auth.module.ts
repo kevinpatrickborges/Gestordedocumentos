@@ -28,9 +28,14 @@ import { RolesGuard } from './guards/roles.guard';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'sgc-itep-jwt-secret'),
+        // Use the same config namespace as JwtStrategy to avoid secret mismatch
+        secret:
+          configService.get<string>('auth.jwt.secret') ||
+          configService.get<string>('JWT_SECRET', 'sgc-itep-secret-key-change-in-production'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
+          expiresIn:
+            configService.get<string>('auth.jwt.expiresIn') ||
+            configService.get<string>('JWT_EXPIRES_IN', '50m'),
         },
       }),
       inject: [ConfigService],

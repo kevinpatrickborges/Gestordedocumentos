@@ -18,7 +18,8 @@ import { toast } from 'sonner'
 const NugecidListPage: React.FC = () => {
   const [query, setQuery] = useState<QueryDesarquivamentoDto>({
     page: 1,
-    limit: 10,
+    // Exibir tudo em uma única página (até 100 itens suportados pela API)
+    limit: 100,
     sortBy: 'createdAt',
     sortOrder: 'DESC'
   })
@@ -232,9 +233,9 @@ const NugecidListPage: React.FC = () => {
               <p className="text-sm mt-1">Componente NugecidFilters será reimplementado</p>
               <Button 
                 onClick={() => {
-                  setQuery({
+                setQuery({
                     page: 1,
-                    limit: 10,
+                    limit: 100,
                     sortBy: 'createdAt',
                     sortOrder: 'DESC'
                   })

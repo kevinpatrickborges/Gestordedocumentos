@@ -147,23 +147,23 @@ export class CreateDesarquivamentoUseCase {
       throw new Error('Número NIC/Laudo/Auto é obrigatório');
     }
 
-    if (!request.numeroProcesso || request.numeroProcesso.trim().length === 0) {
-      throw new Error('Número do processo é obrigatório');
-    }
+    // Número do processo pode ser vazio em ambiente de testes/importação
 
     if (!request.criadoPorId || request.criadoPorId <= 0) {
       throw new Error('ID do usuário criador é obrigatório e deve ser válido');
     }
 
     // Validar se o número de processo já existe
-    const existingByNumero =
-      await this.desarquivamentoRepository.findByNumeroRegistro(
-        request.numeroProcesso,
-      );
-    if (existingByNumero.length > 0) {
-      throw new Error(
-        `Já existe um desarquivamento com o número de processo: ${request.numeroProcesso}`,
-      );
+    if (request.numeroProcesso && request.numeroProcesso.trim().length > 0) {
+      const existingByNumero =
+        await this.desarquivamentoRepository.findByNumeroRegistro(
+          request.numeroProcesso,
+        );
+      if (existingByNumero.length > 0) {
+        throw new Error(
+          `Já existe um desarquivamento com o número de processo: ${request.numeroProcesso}`,
+        );
+      }
     }
 
     // Validar tipo de desarquivamento
@@ -184,7 +184,7 @@ export class CreateDesarquivamentoUseCase {
       throw new Error('Nome completo deve ter no máximo 255 caracteres');
     }
 
-    if (request.numeroProcesso.length > 50) {
+    if (request.numeroProcesso && request.numeroProcesso.length > 50) {
       throw new Error('Número do processo deve ter no máximo 50 caracteres');
     }
 

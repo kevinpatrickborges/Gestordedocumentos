@@ -76,34 +76,34 @@ npm run start:debug
 O sistema estará disponível em:
 - **Aplicação**: http://localhost:3000
 - **API Docs**: http://localhost:3000/api/docs
-- **Health Check**: http://localhost:3000/health
+- **Health Check**: http://localhost:3000/api/health
 
 ## 📚 Documentação da API
 
 ### Endpoints Principais
 
 #### Autenticação
-- `POST /auth/login` - Login do usuário
-- `POST /auth/logout` - Logout do usuário
-- `GET /auth/profile` - Perfil do usuário autenticado
-- `POST /auth/refresh` - Renovar token JWT
+- `POST /api/auth/login` - Login do usuário
+- `POST /api/auth/logout` - Logout do usuário
+- `GET /api/auth/profile` - Perfil do usuário autenticado
+- `POST /api/auth/refresh` - Renovar token JWT
 
 #### Usuários
-- `GET /users` - Listar usuários
-- `POST /users` - Criar usuário
-- `GET /users/:id` - Buscar usuário por ID
-- `PUT /users/:id` - Atualizar usuário
-- `DELETE /users/:id` - Excluir usuário
+- `GET /api/users` - Listar usuários
+- `POST /api/users` - Criar usuário
+- `GET /api/users/:id` - Buscar usuário por ID
+- `PUT /api/users/:id` - Atualizar usuário
+- `DELETE /api/users/:id` - Excluir usuário
 
 #### NUGECID (Desarquivamentos)
-- `GET /nugecid` - Listar desarquivamentos
-- `POST /nugecid` - Criar desarquivamento
-- `GET /nugecid/:id` - Buscar desarquivamento por ID
-- `PUT /nugecid/:id` - Atualizar desarquivamento
-- `DELETE /nugecid/:id` - Excluir desarquivamento
-- `POST /nugecid/import` - Importar planilha Excel
-- `GET /nugecid/export` - Exportar para Excel
-- `GET /nugecid/barcode/:codigo` - Buscar por código de barras
+- `GET /api/nugecid` - Listar desarquivamentos
+- `POST /api/nugecid` - Criar desarquivamento
+- `GET /api/nugecid/:id` - Buscar desarquivamento por ID
+- `PUT /api/nugecid/:id` - Atualizar desarquivamento
+- `DELETE /api/nugecid/:id` - Excluir desarquivamento
+- `POST /api/nugecid/import` - Importar planilha Excel
+- `GET /api/nugecid/export` - Exportar para Excel
+- `GET /api/nugecid/barcode/:codigo` - Buscar por código de barras
 
 ### Autenticação
 
@@ -161,7 +161,7 @@ Todas as ações importantes são registradas:
 
 ### Health Check
 
-Endpoint `/health` fornece informações sobre:
+Endpoint `/api/health` fornece informações sobre:
 - Status da aplicação
 - Conectividade com banco de dados
 - Uso de memória
