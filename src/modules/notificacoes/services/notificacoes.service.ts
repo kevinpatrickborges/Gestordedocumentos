@@ -5,10 +5,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions, Between } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { Notificacao, TipoNotificacao, PrioridadeNotificacao } from '../entities';
 import { User } from '../../users/entities/user.entity';
 import { Tarefa } from '../../tarefas/entities/tarefa.entity';
+import { DesarquivamentoTypeOrmEntity } from '../../nugecid/infrastructure/entities/desarquivamento.typeorm-entity';
+import { StatusDesarquivamentoEnum } from '../../nugecid/domain/enums/status-desarquivamento.enum';
 
 export interface CreateNotificacaoDto {
   tipo: TipoNotificacao;
@@ -40,6 +42,8 @@ export class NotificacoesService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Tarefa)
     private readonly tarefaRepository: Repository<Tarefa>,
+    @InjectRepository(DesarquivamentoTypeOrmEntity)
+    private readonly desarquivamentoRepository: Repository<DesarquivamentoTypeOrmEntity>,
   ) {}
 
   async create(createNotificacaoDto: CreateNotificacaoDto): Promise<Notificacao> {
@@ -282,6 +286,49 @@ export class NotificacoesService {
     const cincoDiasAtras = new Date();
     cincoDiasAtras.setDate(cincoDiasAtras.getDate() - 5);
 
+    const notificacoesCriadas: Notificacao[] = [];
+
+    // Buscar desarquivamentos com status SOLICITADO há mais de 5 dias
+    const desarquivamentosPendentes = await this.desarquivamentoRepository.find({
+      where: {
+        status: StatusDesarquivamentoEnum.SOLICITADO,
+        dataSolicitacao: LessThan(cincoDiasAtras),
+      },
+    });
+
+    for (const desarquivamento of desarquivamentosPendentes) {
+      const notificacaoExistente = await this.notificacaoRepository.findOne({
+        where: {
+          tipo: TipoNotificacao.SOLICITACAO_PENDENTE,
+          processoId: desarquivamento.id,
+          lida: false,
+        },
+      });
+
+      if (notificacaoExistente) {
+        continue;
+      }
+
+      const diasPendentes = Math.floor(
+        (Date.now() - new Date(desarquivamento.dataSolicitacao).getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+
+      const usuarioId = desarquivamento.responsavelId || desarquivamento.criadoPorId;
+
+      if (!usuarioId) {
+        continue;
+      }
+
+      const notificacao = await this.criarNotificacaoArquivoSolicitado(
+        usuarioId,
+        desarquivamento,
+        diasPendentes,
+      );
+
+      notificacoesCriadas.push(notificacao);
+    }
+
     // Buscar tarefas que não foram movimentadas há mais de 5 dias
     const solicitacoesPendentes = await this.tarefaRepository
       .createQueryBuilder('tarefa')
@@ -289,8 +336,6 @@ export class NotificacoesService {
       .leftJoinAndSelect('projeto.membros', 'membros')
       .where('tarefa.updatedAt < :cincoDiasAtras', { cincoDiasAtras })
       .getMany();
-
-    const notificacoesCriadas: Notificacao[] = [];
 
     for (const solicitacao of solicitacoesPendentes) {
       // Verificar se já existe notificação para esta solicitação
@@ -322,5 +367,33 @@ export class NotificacoesService {
     }
 
     return notificacoesCriadas;
+  }
+
+  private async criarNotificacaoArquivoSolicitado(
+    usuarioId: number,
+    desarquivamento: DesarquivamentoTypeOrmEntity,
+    diasPendentes: number,
+  ): Promise<Notificacao> {
+    const titulo = `Desarquivamento aguardando há ${diasPendentes} dias`;
+    const descricao =
+      'Um desarquivamento permanece com status SOLICITADO há mais de 5 dias.';
+    const detalhes = {
+      dias_pendentes: diasPendentes,
+      numero_processo: desarquivamento.numeroProcesso,
+      tipo_documento: desarquivamento.tipoDocumento,
+      nome_completo: desarquivamento.nomeCompleto,
+      data_solicitacao: desarquivamento.dataSolicitacao,
+      acao_requerida: 'Verificar andamento do desarquivamento',
+    };
+
+    return this.create({
+      tipo: TipoNotificacao.SOLICITACAO_PENDENTE,
+      titulo,
+      descricao,
+      detalhes,
+      prioridade: PrioridadeNotificacao.ALTA,
+      usuarioId,
+      processoId: desarquivamento.id,
+    });
   }
 }
