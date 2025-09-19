@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    command: ["postgres", "-c", "max_connections=200", "-c", "shared_buffers=256MB"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DOCKER_DB_NAME:-sgc_itep}
+      POSTGRES_USER: ${DOCKER_DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DOCKER_DB_PASSWORD:-@Sanfona1}
+    ports:
+      - "${DOCKER_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DOCKER_DB_USERNAME:-postgres} -d ${DOCKER_DB_NAME:-sgc_itep}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  sgc-itep-app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_HOST: ${DOCKER_DB_HOST:-postgres}
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: ${DOCKER_DB_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DOCKER_DB_PASSWORD:-@Sanfona1}
+      DATABASE_NAME: ${DOCKER_DB_NAME:-sgc_itep}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
