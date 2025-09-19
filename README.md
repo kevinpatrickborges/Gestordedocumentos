@@ -103,6 +103,7 @@ O sistema estará disponível em:
 - `DELETE /api/nugecid/:id` - Excluir desarquivamento
 - `POST /api/nugecid/import` - Importar planilha Excel
 - `GET /api/nugecid/export` - Exportar para Excel
+- `GET /api/nugecid/barcode/:codigo` - Buscar por código de barras
 
 ### Autenticação
 
@@ -255,13 +256,3 @@ Para desenvolvimento:
 - Backend: `npm run start:backend`
 - Frontend: `npm run start:frontend` (em `frontend/`)
 
-## Configuração do Ambiente
-
-Para configurar variáveis de ambiente, utilize o arquivo `.env.example` como referência e crie um arquivo `.env` localmente. Não publique senhas nem chaves no README ou no repositório.
-
-- Copie: `cp .env.example .env`
-- Edite o `.env` e defina valores privados, como `DATABASE_PASSWORD`, `JWT_SECRET`, etc.
-- O arquivo `.env` está no `.gitignore` e não é versionado.
-- O `docker-compose.yml` utiliza `POSTGRES_PASSWORD` do ambiente; defina no seu `.env` antes de subir os containers.
-
-Nota: Removemos exemplos anteriores que exibiam valores de senha. Utilize sempre placeholders em documentação pública.
